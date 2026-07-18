@@ -1,25 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://apple.com">
 <plist version="1.0">
 <dict>
-	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>This app needs speech recognition to detect when you say &apos;Ok/Hey Nimbus&apos; or &apos;Ok/Hey Numbers&apos; to launch drone control commands.</string>
-	<key>DJISDKAppKey</key>
-	<string>dd41f343bf432b0adcc41965</string>
-	<key>ELEVENLABS_API_KEY</key>
-	<string>a565fc97fe1f3cc5570bd0c7f822d9882b10588e1a9016386079984967aa2ad4</string>
-	<key>BACKEND_BASE_URL</key>
-	<string>$(BACKEND_BASE_URL)</string>
-	<key>NSAppTransportSecurity</key>
-	<dict>
-		<key>NSAllowsArbitraryLoads</key>
-		<true/>
-	</dict>
-	<key>UISupportedExternalAccessoryProtocols</key>
-	<array>
-		<string>com.dji.video</string>
-		<string>com.dji.protocol</string>
-		<string>com.dji.common</string>
-	</array>
+    <key>CFBundleIdentifier</key>
+    <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+    <key>CFBundleExecutable</key>
+    <string>$(EXECUTABLE_NAME)</string>
+    <key>CFBundleName</key>
+    <string>$(PRODUCT_NAME)</string>
+    <key>CFBundlePackageType</key>
+    <string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+    <key>UILaunchScreen</key>
+    <dict/>
+    <key>DJISDKAppKey</key>
+    <string>$(DJI_APP_KEY)</string>
+    <key>ELEVENLABS_API_KEY</key>
+    <string>$(ELEVENLABS_API_KEY)</string>
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsArbitraryLoads</key>
+        <true/>
+    </dict>
+    <key>UISupportedExternalAccessoryProtocols</key>
+    <array>
+        <string>com.dji.video</string>
+        <string>com.dji.protocol</string>
+        <string>com.dji.common</string>
+    </array>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>This app requires microphone access to record your voice flight commands for ElevenLabs.</string>
+    <key>NSSpeechRecognitionUsageDescription</key>
+    <string>This app needs speech recognition to detect when you say 'Ok/Hey Nimbus' or 'Ok/Hey Numbers' to launch drone control commands.</string>
 </dict>
 </plist>
