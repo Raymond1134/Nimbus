@@ -5,3 +5,5 @@ python-dotenv
 pydantic
 python-multipart
 Pillow>=10.0
+httpx
+httpx2
