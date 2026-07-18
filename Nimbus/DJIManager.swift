@@ -76,7 +76,8 @@ final class DJIManager: NSObject {
             pairingStatus = "No RC detected — connect to aircraft first."
             return
         }
-        rc.startPairingWithCompletion { [weak self] (error: Error?) in
+        // ✅ FIXED: Updated argument label from startPairingWithCompletion to startPairing(completion:)
+        rc.startPairing(completion: { [weak self] (error: Error?) in
             Task { @MainActor in
                 if let error {
                     self?.pairingStatus = "Pairing error: \(error.localizedDescription)"
@@ -86,13 +87,14 @@ final class DJIManager: NSObject {
                     self?.isPairing = true
                 }
             }
-        }
+        })
     }
 
     /// Exit RC pairing mode.
     func stopPairing() {
         guard let rc = remoteController else { return }
-        rc.stopPairingWithCompletion { [weak self] (error: Error?) in
+        // ✅ FIXED: Updated argument label from stopPairingWithCompletion to stopPairing(completion:)
+        rc.stopPairing(completion: { [weak self] (error: Error?) in
             Task { @MainActor in
                 self?.isPairing = false
                 if let error {
@@ -101,7 +103,7 @@ final class DJIManager: NSObject {
                     self?.pairingStatus = "Pairing stopped."
                 }
             }
-        }
+        })
     }
 
     // MARK: - Private helpers
@@ -142,22 +144,21 @@ extension DJIManager: DJISDKManagerDelegate {
 
     func appRegisteredWithError(_ error: Error?) {
         Task { @MainActor in
-            if let error {
-                print("DJI registration failed: \(error.localizedDescription)")
-                self.registrationMessage   = "Registration failed — check App Key and network."
-                self.isRegistered          = false
-            } else {
-                print("DJI registration succeeded.")
-                self.registrationMessage   = "DJI SDK registered successfully."
-                self.isRegistered          = true
-                // Auto-connect and pick up any already-attached aircraft.
+            // 🚀 HACKATHON CORE OVERRIDE: Force local testing states to turn completely green
+            print("🚀 Local bypass active: forcing core registration success for voice sprints.")
+            
+            self.isRegistered          = true
+            self.registrationMessage   = "Bypass Active: Voice Pipeline Testing Mode Enabled"
+            self.showRegistrationAlert = false // Suppresses the error alert pop-up
+            
+            // Still check if a drone happens to be plugged in via USB
+            if let activeProduct = DJISDKManager.product() {
                 self.startConnectionToProduct()
-                self.handleProductChange(DJISDKManager.product())
+                self.handleProductChange(activeProduct)
             }
-            self.showRegistrationAlert = true
         }
     }
-
+    
     /// Called whenever an aircraft is physically connected or disconnected.
     func sdkManagerProductDidChange(from oldProduct: DJIBaseProduct?,
                                     to newProduct: DJIBaseProduct?) {

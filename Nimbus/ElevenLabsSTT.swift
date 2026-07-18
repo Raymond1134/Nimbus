@@ -108,16 +108,16 @@ enum ElevenLabsSTT {
         return try JSONDecoder().decode(ElevenLabsResponse.self, from: data).text
     }
 }
+// MARK: - 3. Forward to freesolo
 
-<<<<<<< HEAD
 // MARK: - 3. Forward to freesolo
 
 // MARK: - 3. Forward to freesolo
 
 enum FreeSoloClient {
 
-    // 💡 Replace with your exact Mac IP address found in Step 1
-    static let endpoint = URL(string: "https://slit-humorless-subatomic.ngrok-free.dev")!
+    // ✅ Make sure this points to your active ngrok link ending in /parse
+    static let endpoint = URL(string: "https://ngrok-free.dev")!
 
     static func send(transcript: String) async throws {
         var request = URLRequest(url: endpoint)
@@ -131,10 +131,9 @@ enum FreeSoloClient {
             throw NSError(domain: "FreeSoloClient", code: 1, userInfo: [NSLocalizedDescriptionKey: "freesolo request failed"])
         }
         
-        // ✅ Success Logger: Prints out what your Qwen LLM model replied back to your phone!
         if let jsonString = String(data: data, encoding: .utf8) {
             print("\n🛸 ==================================================")
-            print("🤖 FREESOLO BACKEND LLM RESPONSE:")
+            print("🤖 FREESOLO BACKEND RESPONSE:")
             print(jsonString)
             print("==================================================\n")
         }
@@ -143,7 +142,6 @@ enum FreeSoloClient {
 
 
 // MARK: - 4. Voice Pipeline Setup
-=======
 private extension Data {
     mutating func appendStr(_ s: String) {
         if let d = s.data(using: .utf8) { append(d) }
@@ -152,7 +150,6 @@ private extension Data {
 
 // MARK: - 3. Voice Pipeline
 // Owned by the Orchestrator. Connects PTT gestures to the recorder.
->>>>>>> 5fcfe6f535d9a202aba7b8cace6455a0c5477e2b
 
 final class VoiceCommandPipeline {
     let recorder = AudioRecorderManager()
