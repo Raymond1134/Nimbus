@@ -7,6 +7,7 @@
 
 import Foundation
 import UIKit
+import Observation
 
 /// Single shared instance — created at app start, owned by Orchestrator.
 /// Uses @Observable so SwiftUI views that read nested properties (e.g. bridge.telemetry)
