@@ -99,3 +99,4 @@ venv/
 
 # Configuration files with secrets
 Nimbus/Config.plist
+Nimbus/Config.plist
