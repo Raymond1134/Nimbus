@@ -1,0 +1,120 @@
+{"input": "thanks", "output": "{\"intent\":\"say\",\"target\":null,\"say_text\":\"You're welcome.\",\"constraints\":{},\"confidence\":0.83}"}
+{"input": "uh safe landing now", "output": "{\"intent\":\"land\",\"target\":null,\"say_text\":null,\"constraints\":{},\"confidence\":0.96}"}
+{"input": "hey uh safe landing uh", "output": "{\"intent\":\"land\",\"target\":null,\"say_text\":null,\"constraints\":{},\"confidence\":0.98}"}
+{"input": "Look for bike and take a picture", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"bike\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.9}"}
+{"input": "come lan", "output": "{\"intent\":\"land\",\"target\":null,\"say_text\":null,\"constraints\":{},\"confidence\":0.93}"}
+{"input": "head to park bench and snap a pic please", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"park bench\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.93}"}
+{"input": "uh can you take a picture of the bench thanks", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"bench\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.86}"}
+{"input": "uh set down", "output": "{\"intent\":\"land\",\"target\":null,\"say_text\":null,\"constraints\":{},\"confidence\":0.94}"}
+{"input": "return above me", "output": "{\"intent\":\"return_to_station\",\"target\":null,\"say_text\":null,\"constraints\":{},\"confidence\":0.97}"}
+{"input": "okay fly back now", "output": "{\"intent\":\"return_to_station\",\"target\":null,\"say_text\":null,\"constraints\":{},\"confidence\":0.87}"}
+{"input": "uh stop thanks", "output": "{\"intent\":\"abort\",\"target\":null,\"say_text\":null,\"constraints\":{},\"confidence\":0.94}"}
+{"input": "hey move toward group of people and take a picture", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"group of people\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.88}"}
+{"input": "please uh land", "output": "{\"intent\":\"land\",\"target\":null,\"say_text\":null,\"constraints\":{},\"confidence\":0.92}"}
+{"input": "Uh find the food truck and photograph it", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"food truck\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.89}"}
+{"input": "drone, fly to the kids on playground and take a picture", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"kids on playground\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.91}"}
+{"input": "um quick photo of fountain please", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"fountain\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.89}"}
+{"input": "drone take a picture of the yellow backpack", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"yellow backpack\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.94}"}
+{"input": "Drone abort abort real quick", "output": "{\"intent\":\"abort\",\"target\":null,\"say_text\":null,\"constraints\":{},\"confidence\":0.91}"}
+{"input": "uh find the blanket on the grass and photograph it please", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"blanket on the grass\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.96}"}
+{"input": "kill da mission", "output": "{\"intent\":\"abort\",\"target\":null,\"say_text\":null,\"constraints\":{},\"confidence\":0.96}"}
+{"input": "take a picture of the trash can uh", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"trash can\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.92}"}
+{"input": "hey drone take a picture of group of people", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"group of people\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.94}"}
+{"input": "please uh hover over me again", "output": "{\"intent\":\"return_to_station\",\"target\":null,\"say_text\":null,\"constraints\":{},\"confidence\":0.96}"}
+{"input": "Get a shot of the building entrance please", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"building entrance\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.85}"}
+{"input": "uh quick photo of the sign", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"sign\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.94}"}
+{"input": "please photograph the building entrance now", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"building entrance\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.97}"}
+{"input": "okay take a picture of fire hydraet", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"fire hydrant\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.91}"}
+{"input": "hey move toward the bike aod take a picture uh", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"bike\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.95}"}
+{"input": "drone, don't move", "output": "{\"intent\":\"hover_station\",\"target\":null,\"say_text\":null,\"constraints\":{},\"confidence\":0.87}"}
+{"input": "photagraph the flagpole uh", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"flagpole\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.87}"}
+{"input": "take a picture of the people at picnic table uh", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"people at picnic table\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.86}"}
+{"input": "drone, abort mission", "output": "{\"intent\":\"abort\",\"target\":null,\"say_text\":null,\"constraints\":{},\"confidence\":0.97}"}
+{"input": "capture the basketball hoop", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"basketball hoop\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.94}"}
+{"input": "uh hold now", "output": "{\"intent\":\"hover_station\",\"target\":null,\"say_text\":null,\"constraints\":{},\"confidence\":0.86}"}
+{"input": "get me a photo of that picnic tabel", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"picnic table\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.97}"}
+{"input": "get a shot of bicycle", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"bicycle\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.97}"}
+{"input": "drone huh", "output": "{\"intent\":\"say\",\"target\":null,\"say_text\":\"Sorry, I didn't catch that. Try a flight command.\",\"constraints\":{},\"confidence\":0.8}"}
+{"input": "navigate to da blanket on da grass then take a photo thanks", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"blanket on the grass\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.91}"}
+{"input": "um find orange cone take photo uh", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"orange cone\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.97}"}
+{"input": "uh nevermind", "output": "{\"intent\":\"abort\",\"target\":null,\"say_text\":null,\"constraints\":{},\"confidence\":0.98}"}
+{"input": "lan the drone", "output": "{\"intent\":\"land\",\"target\":null,\"say_text\":null,\"constraints\":{},\"confidence\":0.92}"}
+{"input": "find umbrella and photograph it please", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"umbrella\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.97}"}
+{"input": "look for sign and take a picture real quick", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"sign\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.88}"}
+{"input": "go check out the group of people and take a photo uh", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"group of people\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.88}"}
+{"input": "Uh get back over here", "output": "{\"intent\":\"return_to_station\",\"target\":null,\"say_text\":null,\"constraints\":{},\"confidence\":0.94}"}
+{"input": "uh approach the cooler and take a picture", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"cooler\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.87}"}
+{"input": "cut it out please", "output": "{\"intent\":\"abort\",\"target\":null,\"say_text\":null,\"constraints\":{},\"confidence\":0.96}"}
+{"input": "Okay touch down", "output": "{\"intent\":\"land\",\"target\":null,\"say_text\":null,\"constraints\":{},\"confidence\":0.94}"}
+{"input": "look for the white car and take a picture uh", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"white car\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.94}"}
+{"input": "navigate to the playground then take a photo uh thanks", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"playground\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.97}"}
+{"input": "approach stop sign and take a picture", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"stop sign\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.95}"}
+{"input": "could you photagraph the person waving for me", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"person waving\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.87}"}
+{"input": "photo da bike real quick", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"bike\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.92}"}
+{"input": "could you photagraph the group of people for me", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"group of people\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.89}"}
+{"input": "Drone set down", "output": "{\"intent\":\"land\",\"target\":null,\"say_text\":null,\"constraints\":{},\"confidence\":0.94}"}
+{"input": "approach the speaker and take a picture now", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"speaker\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.95}"}
+{"input": "could you photograph the building entrance for me please", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"building entrance\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.95}"}
+{"input": "drone, photograph the person waving", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"person waving\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.92}"}
+{"input": "drone come back here uh", "output": "{\"intent\":\"return_to_station\",\"target\":null,\"say_text\":null,\"constraints\":{},\"confidence\":0.95}"}
+{"input": "uh look for the bike and take a picture please", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"bike\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.88}"}
+{"input": "snap a photo of the oak tree", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"oak tree\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.87}"}
+{"input": "get a shot of person waving", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"person waving\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.96}"}
+{"input": "can you take a picture of frisbee", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"frisbee\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.94}"}
+{"input": "go find yellow backpack and take a picture", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"yellow backpack\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.92}"}
+{"input": "seek dog and shoot a photo uh", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"dog\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.92}"}
+{"input": "hey return", "output": "{\"intent\":\"return_to_station\",\"target\":null,\"say_text\":null,\"constraints\":{},\"confidence\":0.86}"}
+{"input": "move toward the crowd and take a picture please", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"crowd\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.92}"}
+{"input": "uh take a pic of the flagpole", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"flagpole\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.96}"}
+{"input": "return to station please", "output": "{\"intent\":\"return_to_station\",\"target\":null,\"say_text\":null,\"constraints\":{},\"confidence\":0.92}"}
+{"input": "Look for the yellow backpack and take a picture please", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"yellow backpack\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.94}"}
+{"input": "please set down", "output": "{\"intent\":\"land\",\"target\":null,\"say_text\":null,\"constraints\":{},\"confidence\":0.95}"}
+{"input": "land the drone", "output": "{\"intent\":\"land\",\"target\":null,\"say_text\":null,\"constraints\":{},\"confidence\":0.98}"}
+{"input": "hey stop flying there thanks", "output": "{\"intent\":\"abort\",\"target\":null,\"say_text\":null,\"constraints\":{},\"confidence\":0.94}"}
+{"input": "fly over to speaker and take a picture thanks", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"speaker\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.9}"}
+{"input": "abort abort thanks", "output": "{\"intent\":\"abort\",\"target\":null,\"say_text\":null,\"constraints\":{},\"confidence\":0.95}"}
+{"input": "please drone stop", "output": "{\"intent\":\"abort\",\"target\":null,\"say_text\":null,\"constraints\":{},\"confidence\":1.0}"}
+{"input": "tell me a joke", "output": "{\"intent\":\"say\",\"target\":null,\"say_text\":\"I only handle flight commands.\",\"constraints\":{},\"confidence\":0.88}"}
+{"input": "please land real quick", "output": "{\"intent\":\"land\",\"target\":null,\"say_text\":null,\"constraints\":{},\"confidence\":0.98}"}
+{"input": "can you take a picture of the grill", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"grill\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.92}"}
+{"input": "uh navigate to the crowd then take a photo please", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"crowd\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.86}"}
+{"input": "kill the mission uh", "output": "{\"intent\":\"abort\",\"target\":null,\"say_text\":null,\"constraints\":{},\"confidence\":0.97}"}
+{"input": "drone, fly to da people at picnic table and take a picture", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"people at picnic table\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.85}"}
+{"input": "drone, look for the group of people an take a picture real quick", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"group of people\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.94}"}
+{"input": "oiay land", "output": "{\"intent\":\"land\",\"target\":null,\"say_text\":null,\"constraints\":{},\"confidence\":0.97}"}
+{"input": "hey drone take a picture of the yellow backpack", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"yellow backpack\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.98}"}
+{"input": "stay hovering thanks", "output": "{\"intent\":\"hover_station\",\"target\":null,\"say_text\":null,\"constraints\":{},\"confidence\":0.9}"}
+{"input": "take a pic of the frisbee", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"frisbee\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.96}"}
+{"input": "Uh take a picture of cone please", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"cone\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.93}"}
+{"input": "take a picture of the blue tent", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"blue tent\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.95}"}
+{"input": "uh pic of kids on playuround please", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"kids on playground\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.89}"}
+{"input": "uh take a pic of the cooler", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"cooler\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.86}"}
+{"input": "okay go towards the crowd and shoot", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"crowd\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.98}"}
+{"input": "please seek the yellow backpack and shoot a photo please", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"yellow backpack\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.97}"}
+{"input": "zoom over to the stop sign and snap a pic", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"stop sign\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.97}"}
+{"input": "back too station real quick", "output": "{\"intent\":\"return_to_station\",\"target\":null,\"say_text\":null,\"constraints\":{},\"confidence\":0.97}"}
+{"input": "quick photo of the umbrella", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"umbrella\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.86}"}
+{"input": "approach basketball hoop and take a picture", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"basketball hoop\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.91}"}
+{"input": "snap a photo of the stage", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"stage\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.87}"}
+{"input": "drone hover station real quick", "output": "{\"intent\":\"hover_station\",\"target\":null,\"say_text\":null,\"constraints\":{},\"confidence\":0.88}"}
+{"input": "fly over to the person waving and take a picture", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"person waving\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.88}"}
+{"input": "I want a picture of the blue tent", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"blue tent\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.95}"}
+{"input": "please stop flying there", "output": "{\"intent\":\"abort\",\"target\":null,\"say_text\":null,\"constraints\":{},\"confidence\":0.98}"}
+{"input": "hey snap a photo of red tent", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"red tent\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.87}"}
+{"input": "quick photo of the soccer goal", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"soccer goal\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.95}"}
+{"input": "okay come home now", "output": "{\"intent\":\"return_to_station\",\"target\":null,\"say_text\":null,\"constraints\":{},\"confidence\":0.94}"}
+{"input": "could you photograph cone for me real quick", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"cone\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.86}"}
+{"input": "drone stop what you're doing", "output": "{\"intent\":\"abort\",\"target\":null,\"say_text\":null,\"constraints\":{},\"confidence\":0.97}"}
+{"input": "drone snap a photo of bike uh", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"bike\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.97}"}
+{"input": "navigate to the bike then take a photo", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"bike\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.91}"}
+{"input": "drone, fly to da fire hydrant and take a picture", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"fire hydrant\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.92}"}
+{"input": "navigate to the grill then take a photo", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"grill\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.93}"}
+{"input": "please pic of grill please uh", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"grill\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.97}"}
+{"input": "drone seek the grill and shoot a photo uh", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"grill\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.87}"}
+{"input": "can you take a picture of the cooler", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"cooler\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.94}"}
+{"input": "end the flight", "output": "{\"intent\":\"land\",\"target\":null,\"say_text\":null,\"constraints\":{},\"confidence\":0.95}"}
+{"input": "laid the drone uh", "output": "{\"intent\":\"land\",\"target\":null,\"say_text\":null,\"constraints\":{},\"confidence\":0.93}"}
+{"input": "um find speaker and photograph it", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"speaker\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.9}"}
+{"input": "navigate to the umbrella then take a photo", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"umbrella\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.97}"}
+{"input": "drone, drone, fly to the tree and take a picture please", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"tree\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.96}"}
+{"input": "um uh go find soccer goal and take a picture", "output": "{\"intent\":\"seek_and_photo\",\"target\":\"soccer goal\",\"say_text\":null,\"constraints\":{\"max_seconds\":45.0,\"max_radius_m\":30.0},\"confidence\":0.87}"}

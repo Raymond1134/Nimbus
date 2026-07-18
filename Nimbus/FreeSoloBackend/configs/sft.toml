@@ -1,0 +1,14 @@
+model = "Qwen/Qwen3.5-4B"
+algorithm = "sft"
+seed = 42
+
+# Paste the id printed by: flash env push --name voice-drone-objective .
+[environment]
+id = "nimbus/voice-drone-objective"
+
+[train]
+epochs = 3
+max_examples = 1500
+lora_rank = 32
+lora_alpha = 64
+max_context_tokens = 2048
