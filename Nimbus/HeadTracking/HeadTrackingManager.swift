@@ -2,6 +2,11 @@
 // Streams AirPods head attitude via CMHeadphoneMotionManager.
 // Spec §3 component 6.
 //
+// Connection model:
+//   isAvailable   = AirPods with motion support are physically connected now
+//   isTracking    = motion data is actively streaming
+//   isCalibrated  = user has set a zero-reference pose
+//
 // Calibration: at session start pass the phone compass heading so that
 // relative AirPods yaw is mapped to a true-north world frame.  During
 // push-to-talk the attitude is frozen so the grounding image stays stable.
@@ -9,49 +14,70 @@
 import CoreMotion
 import Observation
 
+/// NSObject inheritance is required to conform to CMHeadphoneMotionManagerDelegate
+/// (which extends NSObjectProtocol).  @Observable still works fine.
 @Observable
-final class HeadTrackingManager {
+final class HeadTrackingManager: NSObject {
 
+    // MARK: - Public state
+
+    /// True when AirPods Pro / Max with head-motion support are physically connected.
+    var isAvailable  = false
+    /// True while device-motion data is streaming from the AirPods.
+    var isTracking   = false
+    var isCalibrated = false
     var currentAttitude = HeadAttitude.zero
-    var isAvailable    = false
-    var isCalibrated   = false
 
-    private let motionManager    = CMHeadphoneMotionManager()
-    private var calibYawOffset   = 0.0  // sensor raw yaw at calibration
-    private var compassNorthDeg  = 0.0  // phone compass heading at calibration
+    // MARK: - Private
 
-    private var isFrozen         = false
+    private let motionManager   = CMHeadphoneMotionManager()
+    private var calibYawOffset  = 0.0
+    private var compassNorthDeg = 0.0
+    private var isFrozen        = false
     private var frozenAttitude: HeadAttitude?
+
+    // MARK: - Init
+
+    override init() {
+        super.init()
+        // Wire delegate BEFORE startConnectionStatusUpdates so we don't miss
+        // an already-connected device callback on the first run-loop turn.
+        motionManager.delegate = self
+        motionManager.startConnectionStatusUpdates()
+        // Reflect initial state synchronously in case AirPods are already connected.
+        isAvailable = motionManager.isDeviceMotionAvailable
+    }
 
     // MARK: - Session
 
-    /// Start head tracking. `compassHeadingDeg` is from `CLLocationManager`
-    /// (or 0 if unavailable — tracking still works but without true-north mapping).
+    /// Begin streaming motion data.  No-op if AirPods are not yet connected;
+    /// call again from `headphoneMotionManagerDidConnect` when they arrive.
     func start(compassHeadingDeg: Double = 0) {
         guard motionManager.isDeviceMotionAvailable else {
-            print("HeadTrackingManager: CMHeadphoneMotionManager not available (AirPods not connected?).")
-            isAvailable = false
+            print("HeadTrackingManager: AirPods not connected — start() deferred.")
             return
         }
         compassNorthDeg = compassHeadingDeg
-        isAvailable     = true
-
-        motionManager.startDeviceMotionUpdates(to: .main) { [weak self] motion, error in
+        motionManager.startDeviceMotionUpdates(to: .main) { [weak self] motion, _ in
             guard let self, let motion, !self.isFrozen else { return }
             self.handleMotion(motion)
         }
+        isTracking = true
+        print("HeadTrackingManager: tracking started.")
     }
 
     func stop() {
         motionManager.stopDeviceMotionUpdates()
-        isAvailable  = false
+        isTracking   = false
         isCalibrated = false
+        currentAttitude = .zero
+        print("HeadTrackingManager: tracking stopped.")
     }
 
     // MARK: - Calibration
 
     /// Record the current raw sensor yaw as the zero reference.
-    /// Should be called once after start(), ideally when the drone is in front of the user.
+    /// Call once after start(), ideally when the drone is in front of the user.
     func calibrate() {
         guard let d = motionManager.deviceMotion else { return }
         calibYawOffset = d.attitude.yaw * 180 / .pi
@@ -61,19 +87,19 @@ final class HeadTrackingManager {
 
     // MARK: - Frame Lock (spec §5 step 2)
 
-    /// Freeze the yaw-follow so the drone holds its view while the user speaks.
+    /// Freeze the attitude snapshot so the grounding image stays stable during PTT.
     func freeze() {
         isFrozen       = true
         frozenAttitude = currentAttitude
     }
 
-    /// Resume yaw-follow after command has been dispatched.
+    /// Resume live attitude after command has been dispatched.
     func unfreeze() {
         isFrozen       = false
         frozenAttitude = nil
     }
 
-    /// The attitude value the Orchestrator should use for drone yaw commands.
+    /// The attitude the Orchestrator should use for grounding / yaw commands.
     var effectiveAttitude: HeadAttitude {
         frozenAttitude ?? currentAttitude
     }
@@ -81,13 +107,41 @@ final class HeadTrackingManager {
     // MARK: - Private
 
     private func handleMotion(_ motion: CMDeviceMotion) {
-        let rawYaw     = motion.attitude.yaw * 180 / .pi
-        let relative   = rawYaw - calibYawOffset
-        let worldYaw   = (compassNorthDeg + relative).truncatingRemainder(dividingBy: 360)
+        let rawYaw   = motion.attitude.yaw * 180 / .pi
+        let relative = rawYaw - calibYawOffset
+        let worldYaw = (compassNorthDeg + relative).truncatingRemainder(dividingBy: 360)
         currentAttitude = HeadAttitude(
             yawDeg:   worldYaw,
             pitchDeg: motion.attitude.pitch * 180 / .pi,
             rollDeg:  motion.attitude.roll  * 180 / .pi
         )
+    }
+}
+
+// MARK: - CMHeadphoneMotionManagerDelegate
+
+extension HeadTrackingManager: CMHeadphoneMotionManagerDelegate {
+
+    func headphoneMotionManagerDidConnect(_ manager: CMHeadphoneMotionManager) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.isAvailable = true
+            print("HeadTrackingManager: AirPods connected.")
+            // Auto-resume tracking if it was running before disconnection.
+            if !self.isTracking {
+                self.start(compassHeadingDeg: self.compassNorthDeg)
+            }
+        }
+    }
+
+    func headphoneMotionManagerDidDisconnect(_ manager: CMHeadphoneMotionManager) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.isAvailable    = false
+            self.isTracking     = false
+            self.isCalibrated   = false
+            self.currentAttitude = .zero
+            print("HeadTrackingManager: AirPods disconnected.")
+        }
     }
 }

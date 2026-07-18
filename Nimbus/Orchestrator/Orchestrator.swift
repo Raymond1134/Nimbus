@@ -24,6 +24,9 @@ final class Orchestrator {
     var lastResponse: BackendVoiceCommandResponse?
     var logMessages: [LogEntry]         = []
     var isBackendReachable              = false
+    var rememberedSpots: [RememberedSpot] = []
+    var isOverheadFollowModeEnabled     = true
+    var followTargetBox: CGRect?
 
     // MARK: - Subsystems
 
@@ -42,16 +45,23 @@ final class Orchestrator {
     /// on bridge + safety (@Observable is incompatible with lazy stored properties).
     /// @ObservationIgnored because behaviors is never read in a SwiftUI body.
     @ObservationIgnored private(set) var behaviors: FlightBehaviors!
+    @ObservationIgnored private let rememberedSpotsKey = "Nimbus.RememberedSpots"
 
     // MARK: - Init
 
     init() {
-        let b = FlightBehaviors(bridge: bridge, safety: safety)
+        let b = FlightBehaviors(bridge: bridge, safety: safety, headTracking: headTracking)
         b.onBehaviorComplete = { [weak self] in
             self?.log("Behavior complete → idle.")
             self?.returnToIdle()
         }
+        b.onFollowTargetBoxUpdated = { [weak self] box in
+            self?.followTargetBox = box
+        }
         behaviors = b
+        loadRememberedSpots()
+        headTracking.start(compassHeadingDeg: bridge.telemetry.headingDeg)
+        headTracking.calibrate()
         log("Orchestrator initialised.")
         Task { await checkBackendHealth() }
     }
@@ -231,6 +241,72 @@ final class Orchestrator {
         returnToIdle()
     }
 
+    func saveRememberedSpot(name: String? = nil) {
+        guard let location = bridge.telemetry.currentLocation else {
+            log("Remember spot failed — GPS location unavailable.", level: .warning)
+            return
+        }
+
+        let trimmedName = name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let finalName = trimmedName.isEmpty ? "Spot \(rememberedSpots.count + 1)" : trimmedName
+        let spot = RememberedSpot(name: finalName, coordinate: location, capturedAt: Date())
+        rememberedSpots.append(spot)
+        persistRememberedSpots()
+        let lat = String(format: "%.6f", location.latitude)
+        let lon = String(format: "%.6f", location.longitude)
+        log("Remembered spot saved: \(finalName) @ \(lat), \(lon)")
+    }
+
+    func returnToRememberedSpot(_ spot: RememberedSpot? = nil) {
+        let destination = spot ?? rememberedSpots.last
+        guard let destination else {
+            log("No remembered spot saved yet.", level: .warning)
+            return
+        }
+        guard bridge.telemetry.currentLocation != nil else {
+            log("Remembered spot unavailable — no GPS fix.", level: .warning)
+            return
+        }
+        log("Returning to remembered spot: \(destination.name)")
+        behaviors.goToCoordinate(destination.coordinate, toleranceM: 1.5, maxSeconds: 120)
+        appState = .executing(verb: "RETURN SPOT", target: destination.name)
+    }
+
+    func deleteRememberedSpots(at offsets: IndexSet) {
+        guard !offsets.isEmpty else { return }
+        rememberedSpots.remove(atOffsets: offsets)
+        persistRememberedSpots()
+    }
+
+    func clearRememberedSpots() {
+        rememberedSpots.removeAll()
+        persistRememberedSpots()
+    }
+
+    func startPersonFollow() {
+        guard bridge.isAircraftConnected else {
+            log("Cannot start follow — aircraft not connected.", level: .warning)
+            return
+        }
+        if !headTracking.isTracking {
+            headTracking.start(compassHeadingDeg: bridge.telemetry.headingDeg)
+        }
+        // Recalibrate at follow start so drone heading alignment matches the user's current forward direction.
+        headTracking.calibrate()
+        bridge.pointGimbalDownImmediately(airpodsPitchDeg: CGFloat(headTracking.effectiveAttitude.pitchDeg),
+                                          strictDown: true)
+        behaviors.followPerson(maxSeconds: 90,
+                               overheadMode: isOverheadFollowModeEnabled)
+        appState = .executing(verb: "FOLLOW", target: "head")
+        log("Person follow started (mode: \(isOverheadFollowModeEnabled ? "overhead-topdown" : "heading-follow"), airpodsTracking=\(headTracking.isTracking), calibrated=\(headTracking.isCalibrated)).")
+    }
+
+    func stopSpecialMission() {
+        behaviors.stop()
+        headTracking.unfreeze()
+        returnToIdle()
+    }
+
     // MARK: - Backend Health
 
     func checkBackendHealth() async {
@@ -278,5 +354,25 @@ final class Orchestrator {
         let entry = LogEntry(timestamp: Date(), message: message, level: level)
         logMessages.append(entry)
         if logMessages.count > 200 { logMessages.removeFirst(50) }
+    }
+
+    // MARK: - Remembered Spots Persistence
+
+    private func loadRememberedSpots() {
+        guard let data = UserDefaults.standard.data(forKey: rememberedSpotsKey) else { return }
+        do {
+            rememberedSpots = try JSONDecoder().decode([RememberedSpot].self, from: data)
+        } catch {
+            log("Failed to load remembered spots: \(error.localizedDescription)", level: .warning)
+        }
+    }
+
+    private func persistRememberedSpots() {
+        do {
+            let data = try JSONEncoder().encode(rememberedSpots)
+            UserDefaults.standard.set(data, forKey: rememberedSpotsKey)
+        } catch {
+            log("Failed to persist remembered spots: \(error.localizedDescription)", level: .error)
+        }
     }
 }

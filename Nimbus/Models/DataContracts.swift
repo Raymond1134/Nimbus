@@ -4,6 +4,7 @@
 
 import Foundation
 import CoreGraphics
+import CoreLocation
 import SwiftUI
 
 // MARK: - App State (spec §5)
@@ -142,12 +143,40 @@ struct TelemetrySnapshot: Sendable {
     let batteryPercent: Int
     let isGPSValid: Bool
     let satelliteCount: Int
+    let isFlying: Bool
+    let currentLocation: GPSCoordinate?
+    let homeLocation: GPSCoordinate?
 
     static let zero = TelemetrySnapshot(
         altitudeM: 0, headingDeg: 0,
         velocityX: 0, velocityY: 0, velocityZ: 0,
-        batteryPercent: 0, isGPSValid: false, satelliteCount: 0
+        batteryPercent: 0, isGPSValid: false, satelliteCount: 0,
+        isFlying: false, currentLocation: nil, homeLocation: nil
     )
+}
+
+// MARK: - GPS Coordinate
+
+struct GPSCoordinate: Codable, Sendable, Equatable {
+    let latitude: Double
+    let longitude: Double
+    let altitudeM: Double?
+
+    init(latitude: Double, longitude: Double, altitudeM: Double? = nil) {
+        self.latitude = latitude
+        self.longitude = longitude
+        self.altitudeM = altitudeM
+    }
+
+    var clLocationCoordinate2D: CLLocationCoordinate2D {
+        CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+    }
+}
+
+struct RememberedSpot: Codable, Sendable, Equatable {
+    let name: String
+    let coordinate: GPSCoordinate
+    let capturedAt: Date
 }
 
 // MARK: - Flight Target (Orchestrator → Flight Behavior Library)

@@ -18,6 +18,7 @@ struct DebugView: View {
             List {
                 djiSection
                 rcSection
+                manualFlightControlSection
                 backendSection
                 lastCommandSection
                 logSection
@@ -47,6 +48,24 @@ struct DebugView: View {
                 row("GPS",        t.isGPSValid ? "\(t.satelliteCount) sat" : "No fix",
                     color: t.isGPSValid ? .primary : .orange)
                 row("Vel X/Y/Z",  "\(String(format: "%.2f / %.2f / %.2f", t.velocityX, t.velocityY, t.velocityZ)) m/s")
+            }
+            Divider()
+            row("AirPods Available", orc.headTracking.isAvailable ? "✓ Yes" : "✗ No",
+                color: orc.headTracking.isAvailable ? .green : .secondary)
+            row("AirPods Tracking", orc.headTracking.isTracking ? "✓ Active" : "✗ Inactive",
+                color: orc.headTracking.isTracking ? .green : .orange)
+            row("AirPods Calibrated", orc.headTracking.isCalibrated ? "✓ Yes" : "✗ No",
+                color: orc.headTracking.isCalibrated ? .green : .orange)
+            row("Head Yaw/Pitch/Roll",
+                String(format: "%.1f / %.1f / %.1f°",
+                       orc.headTracking.effectiveAttitude.yawDeg,
+                       orc.headTracking.effectiveAttitude.pitchDeg,
+                       orc.headTracking.effectiveAttitude.rollDeg))
+            if orc.bridge.isAircraftConnected {
+                let yawDelta = shortestAngleDelta(target: orc.headTracking.effectiveAttitude.yawDeg,
+                                                  current: orc.bridge.telemetry.headingDeg)
+                row("Drone-Head Yaw Δ", String(format: "%.1f°", yawDelta),
+                    color: abs(yawDelta) < 15 ? .green : .orange)
             }
 
             // Connection controls
@@ -104,6 +123,30 @@ struct DebugView: View {
         }
     }
 
+    // MARK: - Manual Flight Control
+
+    private var manualFlightControlSection: some View {
+        Section("Manual Flight Control (DEBUG)") {
+            NavigationLink(destination: ManualFlightControlView()) {
+                HStack {
+                    Label("Flight Control Panel", systemImage: "joystick.fill")
+                        .font(.subheadline.weight(.semibold))
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .disabled(!orc.bridge.isAircraftConnected)
+
+            if !orc.bridge.isAircraftConnected {
+                Text("Connect aircraft to enable manual controls")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
     // MARK: - Backend
 
     private var backendSection: some View {
@@ -111,6 +154,7 @@ struct DebugView: View {
             row("URL",       BackendClient.baseURL.absoluteString)
             row("Reachable", orc.isBackendReachable ? "✓ Yes" : "✗ No",
                 color: orc.isBackendReachable ? .green : .red)
+            row("Object Detector", orc.detector.isModelAvailable ? "YOLO loaded" : "YOLO missing (follow still works)")
             Button("Re-check health") {
                 Task { await orc.checkBackendHealth() }
             }
@@ -243,6 +287,10 @@ struct DebugView: View {
                 .multilineTextAlignment(.trailing)
                 .lineLimit(3)
         }
+    }
+
+    private func shortestAngleDelta(target: Double, current: Double) -> Double {
+        (target - current + 540).truncatingRemainder(dividingBy: 360) - 180
     }
 }
 

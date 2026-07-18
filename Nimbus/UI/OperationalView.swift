@@ -3,12 +3,15 @@
 // drone camera feed (or placeholder), status bar, state pill, and PTT button.
 // Tab 1 of ContentView.
 
+import Combine
 import SwiftUI
 
 struct OperationalView: View {
 
     @Environment(Orchestrator.self) private var orc
     @State private var isPressing = false
+    @State private var overlayDetections: [DetectedObject] = []
+    private let overlayTimer = Timer.publish(every: 0.25, on: .main, in: .common).autoconnect()
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -23,16 +26,56 @@ struct OperationalView: View {
             }
         }
         .preferredColorScheme(.dark)
+        .onAppear {
+            orc.detector.onDetectionsUpdated = { detections in
+                overlayDetections = detections
+            }
+        }
+        .onDisappear {
+            orc.detector.onDetectionsUpdated = nil
+        }
+        .onReceive(overlayTimer) { _ in
+            processCurrentFrameForOverlays()
+        }
     }
 
     // MARK: - Camera / Placeholder
 
     @ViewBuilder
     private var cameraBackground: some View {
-        if let frame = orc.bridge.cameraFrame {
-            Image(uiImage: frame)
-                .resizable()
-                .aspectRatio(contentMode: .fill)
+        if orc.bridge.isAircraftConnected {
+            ZStack {
+                DJICameraPreviewView(bridge: orc.bridge)
+                    .ignoresSafeArea()
+                GeometryReader { geo in
+                    ZStack {
+                        ForEach(Array(overlayDetections.enumerated()), id: \.element.id) { _, det in
+                            detectionBox(det.bbox,
+                                         in: geo.size,
+                                         color: .yellow,
+                                         label: det.label)
+                        }
+                        if let followBox = orc.followTargetBox {
+                            detectionBox(followBox,
+                                         in: geo.size,
+                                         color: .cyan,
+                                         label: "head_track")
+                        }
+                    }
+                }
+                if !orc.bridge.hasLiveVideoData {
+                    noFeedPlaceholder
+                }
+                VStack {
+                    HStack {
+                        videoDebugBadge
+                        Spacer()
+                    }
+                    Spacer()
+                }
+                .padding(.top, 56)
+                .padding(.horizontal, 12)
+            }
         } else {
             Rectangle()
                 .fill(LinearGradient(
@@ -41,6 +84,55 @@ struct OperationalView: View {
                 ))
                 .overlay(noFeedPlaceholder)
         }
+    }
+
+    private var videoDebugBadge: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text("VIDEO DEBUG")
+                .font(.system(size: 10, weight: .bold, design: .monospaced))
+            Text("pkts: \(orc.bridge.hasLiveVideoData ? "yes" : "no")")
+                .font(.system(size: 10, design: .monospaced))
+            Text("frame: \(orc.bridge.cameraFrame != nil ? "yes" : "no")")
+                .font(.system(size: 10, design: .monospaced))
+        }
+        .foregroundStyle(.white.opacity(0.9))
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .background(Color.black.opacity(0.45))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+
+    @ViewBuilder
+    private func detectionBox(_ bbox: CGRect, in size: CGSize, color: Color, label: String) -> some View {
+        let rect = visionRectToViewRect(bbox, in: size)
+        ZStack(alignment: .topLeading) {
+            Rectangle()
+                .stroke(color, lineWidth: 2)
+                .frame(width: rect.width, height: rect.height)
+                .position(x: rect.midX, y: rect.midY)
+            Text(label)
+                .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 5)
+                .padding(.vertical, 2)
+                .background(color.opacity(0.85))
+                .clipShape(RoundedRectangle(cornerRadius: 4))
+                .position(x: rect.minX + 34, y: max(12, rect.minY - 10))
+        }
+    }
+
+    private func visionRectToViewRect(_ bbox: CGRect, in size: CGSize) -> CGRect {
+        let x = bbox.minX * size.width
+        let y = (1 - bbox.maxY) * size.height
+        let w = bbox.width * size.width
+        let h = bbox.height * size.height
+        return CGRect(x: x, y: y, width: w, height: h)
+    }
+
+    private func processCurrentFrameForOverlays() {
+        guard let cgImage = orc.bridge.cameraFrame?.cgImage else { return }
+
+        orc.detector.process(cgImage: cgImage)
     }
 
     private var noFeedPlaceholder: some View {
@@ -144,7 +236,8 @@ struct OperationalView: View {
 
     private var connectionStatusSummary: String {
         if !orc.djiManager.isRegistered { return "Registering SDK…" }
-        return "Power on the drone and RC, then tap Connect."
+        if orc.djiManager.isRCConnected  { return "RC detected — power on the drone to link." }
+        return "Power on the drone and RC. Connecting automatically."
     }
 
     // MARK: - Status Bar
@@ -175,9 +268,14 @@ struct OperationalView: View {
                           warn: !t.isGPSValid)
             }
 
+            // AirPods: green = tracking, yellow = connected but idle, dim = not connected
             Image(systemName: "airpodspro")
                 .font(.caption2)
-                .foregroundStyle(orc.headTracking.isAvailable ? Color.green : Color.white.opacity(0.3))
+                .foregroundStyle(
+                    orc.headTracking.isTracking  ? Color.green :
+                    orc.headTracking.isAvailable ? Color.yellow :
+                    Color.white.opacity(0.3)
+                )
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 9)

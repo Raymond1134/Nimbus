@@ -164,13 +164,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Nimbus/Pods-Nimbus-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Nimbus/Pods-Nimbus-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -346,7 +342,10 @@
 				DEVELOPMENT_TEAM = N8N9GMMH66;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				HEADER_SEARCH_PATHS = "$(PODS_ROOT)/Headers/Public";
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PODS_ROOT)/Headers/Public",
+				);
 				INFOPLIST_FILE = Nimbus/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Nimbus;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Transcript speech to instructions to the drone";
@@ -389,7 +388,10 @@
 				DEVELOPMENT_TEAM = N8N9GMMH66;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				HEADER_SEARCH_PATHS = "$(PODS_ROOT)/Headers/Public";
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PODS_ROOT)/Headers/Public",
+				);
 				INFOPLIST_FILE = Nimbus/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Nimbus;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Transcript speech to instructions to the drone";
