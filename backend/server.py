@@ -4,7 +4,7 @@ import subprocess
 import json
 import os
 
-app = FastAPI()
+app = FastAPI(title="Nimbus E2E Bridging Core")
 
 class TranscriptPayload(BaseModel):
     text: str
@@ -13,53 +13,48 @@ class TranscriptPayload(BaseModel):
 async def parse_voice_command(payload: TranscriptPayload):
     print(f"\n📥 Received transcript from iPhone: '{payload.text}'")
     
-    # Safety Check: Fallback if ElevenLabs returns an empty string block
     text_to_parse = payload.text.strip()
     if not text_to_parse:
-        return {"action": "hover", "value": 0, "message": "Empty voice string received"}
+        return {"ok": False, "message": "Empty voice string received"}
     
     try:
-        # ✅ FIXED: Passes text_to_parse as a direct positional argument to prevent infer.py from crashing
+        # ✅ CALL THE MASTER PIPELINE: Pass the transcript cleanly into the master orchestration script
         result = subprocess.run(
-            ["python3", "scripts/infer.py", text_to_parse],
+            ["python3", "e2e_pipeline.py", text_to_parse],
             capture_output=True,
             text=True,
             check=True
         )
         
-        # Print logs out to your terminal for real-time hackathon monitoring
-        print(f"📄 Raw stdout from infer.py:\n{result.stdout}")
-        
+        # Split output lines to find our structural telemetry headers
         lines = result.stdout.strip().splitlines()
+        print(f"📄 Raw stdout from pipeline loop:\n{result.stdout}")
+        
+        # Grab the very last non-empty line where the execution metadata json prints out
         last_line = ""
         for line in reversed(lines):
             if line.strip():
                 last_line = line.strip()
                 break
                 
-        structured_command = json.loads(last_line)
-        print(f"🎯 Model output securely parsed: {structured_command}")
-        return structured_command
+        structured_response = json.loads(last_line)
+        print(f"🎯 Core pipeline sequence executed successfully: {structured_response}")
+        return structured_response
         
     except subprocess.CalledProcessError as e:
-        print(f"❌ Inference error: {e.stderr or e.stdout}")
+        print(f"❌ Pipeline runtime script error: {e.stderr or e.stdout}")
         
-        # 💡 EMERGENCY HACKATHON FALLBACK: If your teammate's cloud models are offline,
-        # use a local regex rule engine so your live pitch presentation doesn't freeze!
-        print("⚠️ Cloud models offline. Engaging Local Rule Engine Fallback...")
+        # Emergency hackathon fallback if your cloud fine-tuning instances drop offline mid-pitch
+        print("⚠️ Cloud fine-tuning environment down. Engaging Local Structural Fallback...")
         cmd_lower = text_to_parse.lower()
-        if "forward" in cmd_lower:
-            return {"action": "move_forward", "meters": 2.0, "status": "success"}
-        elif "take off" in cmd_lower or "takeoff" in cmd_lower:
-            return {"action": "takeoff", "status": "success"}
-        elif "land" in cmd_lower:
-            return {"action": "land", "status": "success"}
+        if "forward" in cmd_lower or "straight" in cmd_lower:
+            return {"ok": True, "planner": "skeleton", "steps": 3, "fallback_active": True}
         else:
-            return {"action": "hover", "meters": 0.0, "status": "fallback_active"}
+            return {"ok": True, "planner": "skeleton", "steps": 1, "fallback_active": True}
             
     except Exception as e:
         print(f"❌ Structural mapping error: {str(e)}")
-        return {"raw_output": result.stdout.strip() if 'result' in locals() else str(e)}
+        return {"ok": False, "error": str(e)}
 
 if __name__ == "__main__":
     import uvicorn

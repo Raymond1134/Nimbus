@@ -1,12 +1,6 @@
-// ContentView.swift — Nimbus
-// Root view: Tab 1 = OperationalView (product UI), Tab 2 = DebugView.
-// The Orchestrator is injected from NimbusApp and read via @Environment.
-
 import SwiftUI
 
 struct ContentView: View {
-<<<<<<< HEAD
-    // 🚀 FIXED: Changed from @StateObject to a standard variable since DJIManager now uses @Observable!
     private var djiManager = DJIManager.shared
     
     // Core Hands-Free Engines
@@ -59,29 +53,14 @@ struct ContentView: View {
             .frame(height: 200)
             .background(Color(.systemGray6))
             .cornerRadius(16)
-=======
-
-    @Environment(Orchestrator.self) private var orc
-
-    var body: some View {
-        TabView {
-            Tab("Fly", systemImage: "airplane") {
-                OperationalView()
-            }
-            Tab("Debug", systemImage: "wrench.and.screwdriver") {
-                DebugView()
-            }
->>>>>>> 1e429ef368f1e7032c5f1250205be4bedc6cd225
         }
         .padding()
         .onAppear {
-<<<<<<< HEAD
             DJIManager.shared.registerApp()
             setupHandsFreeLoop()
         }
     }
     
-    /// Binds the low-power listener directly into your premium ElevenLabs pipeline
     private func setupHandsFreeLoop() {
         print("🎧 Initializing Hands-Free Wakeword Listen Loop...")
         
@@ -91,13 +70,11 @@ struct ContentView: View {
                 self.isRecordingCommand = true
                 self.appStatus = "Listening to your flight instruction..."
                 
-                // Give CoreAudio 400ms to cleanly release the microphone tap
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
                     print("🎙️ Handover complete. Opening ElevenLabs audio file recorder.")
                     self.pipeline.onPressStartTalking()
                 }
                 
-                // Capture a clean 4-second command window (0.4s buffer + 4.0s recording)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 4.4) {
                     Task { @MainActor in
                         self.isRecordingCommand = false
@@ -107,8 +84,6 @@ struct ContentView: View {
                 }
             }
         }
-        
-        // Start monitoring audio streams right on launch
         wakewordListener.startListening()
     }
     
@@ -131,10 +106,8 @@ struct ContentView: View {
                     self.appStatus = "ElevenLabs Result:\n\n\"\(transcript)\""
                 }
                 
-                // Send text to your backend system
                 try await FreeSoloClient.send(transcript: transcript)
                 
-                // Wait 3 seconds before resetting
                 try await Task.sleep(nanoseconds: 3_000_000_000)
                 
                 await MainActor.run {
@@ -146,30 +119,13 @@ struct ContentView: View {
                 print("❌ Pipeline Transcription Thread Error: \(error.localizedDescription)")
                 await MainActor.run {
                     self.appStatus = "Pipeline Error: \(error.localizedDescription)"
-                    self.wakewordListener.startListening() // Restart listener on fail
+                    self.wakewordListener.startListening()
                 }
             }
-=======
-            orc.djiManager.registerApp()
-        }
-        .alert("DJI SDK",
-               isPresented: Binding(
-                get: { orc.djiManager.showRegistrationAlert },
-                set: { orc.djiManager.showRegistrationAlert = $0 }
-               )
-        ) {
-            Button("OK") { }
-        } message: {
-            Text(orc.djiManager.registrationMessage)
->>>>>>> 1e429ef368f1e7032c5f1250205be4bedc6cd225
         }
     }
 }
 
 #Preview {
     ContentView()
-<<<<<<< HEAD
-=======
-        .environment(Orchestrator())
->>>>>>> 1e429ef368f1e7032c5f1250205be4bedc6cd225
 }
