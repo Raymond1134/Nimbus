@@ -6,35 +6,33 @@
 
 @implementation ViewController
 
-- (void)viewDidLoad {
-    [super viewDidLoad];
+- (void)viewDidAppear:(BOOL)animated {
+    [super viewDidAppear:animated];
     [self registerApp];
 }
 
 - (void)registerApp {
-    // Load App Key from Config.plist
-    NSString *configPath = [[NSBundle mainBundle] pathForResource:@"Config" ofType:@"plist"];
-    NSDictionary *config = [NSDictionary dictionaryWithContentsOfFile:configPath];
-    NSString *appKey = config[@"DJI_APP_KEY"];
-    
-    if (!appKey || [appKey containsString:@"YOUR_DJI_APP_KEY"]) {
-        NSLog(@"Error: DJI App Key not configured in Config.plist");
-        return;
-    }
-    
-    // Register the DJI SDK with your App Key
     [DJISDKManager registerAppWithDelegate:self];
 }
 
 #pragma mark - DJISDKManagerDelegate Methods
 
 - (void)appRegisteredWithError:(NSError *)error {
+    NSString *message = @"Register App Succeeded!";
     if (error) {
-        NSLog(@"App registration failed: %@", error.localizedDescription);
+        message = @"Register App Failed! Please enter your App Key in the plist file and check the network.";
     } else {
-        NSLog(@"App registered successfully");
-        [DJISDKManager startConnectionToProduct];
+        NSLog(@"registerAppSuccess");
     }
+    
+    [self showAlertViewWithTitle:@"Register App" withMessage:message];
+}
+
+- (void)showAlertViewWithTitle:(NSString *)title withMessage:(NSString *)message {
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:title message:message preferredStyle:UIAlertControllerStyleAlert];
+    UIAlertAction *okAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil];
+    [alert addAction:okAction];
+    [self presentViewController:alert animated:YES completion:nil];
 }
 
 - (void)productConnected:(DJIBaseProduct *)product {
