@@ -96,3 +96,6 @@ __pycache__/
 *.py[cod]
 .venv/
 venv/
+
+# Configuration files with secrets
+Nimbus/Config.plist

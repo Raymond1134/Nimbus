@@ -13,7 +13,5 @@
 		<string>com.dji.protocol</string>
 		<string>com.dji.common</string>
 	</array>
-	<key>DJISDKAppKey</key>
-	<string>{{YOUR_APP_KEY}}</string>
 </dict>
 </plist>

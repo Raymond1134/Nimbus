@@ -12,6 +12,16 @@
 }
 
 - (void)registerApp {
+    // Load App Key from Config.plist
+    NSString *configPath = [[NSBundle mainBundle] pathForResource:@"Config" ofType:@"plist"];
+    NSDictionary *config = [NSDictionary dictionaryWithContentsOfFile:configPath];
+    NSString *appKey = config[@"DJI_APP_KEY"];
+    
+    if (!appKey || [appKey containsString:@"YOUR_DJI_APP_KEY"]) {
+        NSLog(@"Error: DJI App Key not configured in Config.plist");
+        return;
+    }
+    
     // Register the DJI SDK with your App Key
     [DJISDKManager registerAppWithDelegate:self];
 }
