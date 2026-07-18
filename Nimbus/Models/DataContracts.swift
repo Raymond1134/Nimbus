@@ -98,24 +98,111 @@ struct IntentConstraints: Codable, Sendable {
     static let empty = IntentConstraints(maxSeconds: nil, maxRadiusM: nil)
 }
 
+// MARK: - FreeSolo OBJECTIVE (transcript → ordered high-level actions)
+
+struct ObjectiveAction: Codable, Sendable {
+    let op: String
+    let target: String?
+    let direction: String?
+    let distanceM: Double?
+    let durationS: Double?
+    let yawDeg: Double?
+    let pitchDeg: Double?
+    let revolutions: Double?
+    let text: String?
+
+    enum CodingKeys: String, CodingKey {
+        case op, target, direction, text
+        case distanceM   = "distance_m"
+        case durationS   = "duration_s"
+        case yawDeg      = "yaw_deg"
+        case pitchDeg    = "pitch_deg"
+        case revolutions
+    }
+}
+
+struct ObjectivePlan: Codable, Sendable {
+    let actions: [ObjectiveAction]
+    let confidence: Double
+}
+
+// MARK: - Gemini InstructionStep (mid-level flight op + optional box)
+//
+// App implements each op on Virtual Stick. Gemini mainly attaches box_2d.
+
+struct InstructionStep: Codable, Sendable, Identifiable {
+    let id: Int
+    /// fly_to | fly_higher | fly_lower | fly_above | rotate | orbit | hover |
+    /// look_at | photo | takeoff | land | selfie | panorama | follow | abort | say
+    let op: String
+    let target: String?
+    let found: Bool
+    /// [ymin, xmin, ymax, xmax] normalised 0–1000; empty when not found.
+    let box2d: [Int]
+    let needsGrounding: Bool
+    let groundingConfidence: Double
+    let direction: String?
+    let distanceM: Double?
+    let altitudeDeltaM: Double?
+    let durationS: Double?
+    let yawDeg: Double?
+    let revolutions: Double?
+    let radiusM: Double?
+    let standoffM: Double
+    let gimbalPitchDeg: Double?
+    let text: String?
+    let notes: String
+
+    enum CodingKeys: String, CodingKey {
+        case id, op, target, found, direction, text, notes, revolutions
+        case box2d               = "box_2d"
+        case needsGrounding      = "needs_grounding"
+        case groundingConfidence = "grounding_confidence"
+        case distanceM           = "distance_m"
+        case altitudeDeltaM      = "altitude_delta_m"
+        case durationS           = "duration_s"
+        case yawDeg              = "yaw_deg"
+        case radiusM             = "radius_m"
+        case standoffM           = "standoff_m"
+        case gimbalPitchDeg      = "gimbal_pitch_deg"
+    }
+}
+
+struct MissionPlan: Codable, Sendable {
+    let steps: [InstructionStep]
+    let confidence: Double
+    let blocked: Bool
+    let blockReason: String
+    let planner: String
+
+    enum CodingKeys: String, CodingKey {
+        case steps, confidence, blocked, planner
+        case blockReason = "block_reason"
+    }
+}
+
 // MARK: - Backend /voice_command combined response
 
 struct BackendVoiceCommandResponse: Codable, Sendable {
-    // Intent fields
+    // Legacy intent fields (kept for current Orchestrator dispatcher)
     let intent: String?
     let target: String?
     let sayText: String?
     let constraints: IntentConstraints?
     let confidence: Double?
-    // Grounding fields
+    // Grounding fields (first grounded visual step, for compat)
     let found: Bool
     /// [ymin, xmin, ymax, xmax] normalised 0–1000; empty when not found.
     let box2d: [Int]
     let label: String
     let groundingConfidence: Double
+    // New pipeline fields
+    let objective: ObjectivePlan?
+    let plan: MissionPlan?
 
     enum CodingKeys: String, CodingKey {
         case intent, target, constraints, confidence, found, label
+        case objective, plan
         case sayText            = "say_text"
         case box2d              = "box_2d"
         case groundingConfidence = "grounding_confidence"

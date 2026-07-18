@@ -2,6 +2,7 @@ import io
 import logging
 import os
 import time
+from pathlib import Path
 
 from dotenv import load_dotenv
 from google import genai
@@ -9,7 +10,7 @@ from google.genai import types
 from PIL import Image
 from pydantic import BaseModel
 
-load_dotenv()
+load_dotenv(Path(__file__).resolve().parent / ".env")
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +71,11 @@ def ground_target(
         logger.warning("Image preprocessing failed: %s", exc)
         return _FALLBACK
 
-    client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+    api_key = os.environ.get("GEMINI_API_KEY", "").strip()
+    if not api_key:
+        logger.warning("GEMINI_API_KEY unset — grounding returns not-found")
+        return GroundingResult(found=False, box_2d=[], label="", confidence=0.0)
+    client = genai.Client(api_key=api_key)
     last_exc: Exception | None = None
 
     for attempt in range(1, _MAX_ATTEMPTS + 1):

@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>This app needs speech recognition to detect when you say &apos;Ok/Hey Nimbus&apos; to launch drone control commands.</string>
+	<string>This app needs speech recognition to detect when you say &apos;Ok/Hey Nimbus&apos; or &apos;Ok/Hey Numbers&apos; to launch drone control commands.</string>
 	<key>DJISDKAppKey</key>
 	<string>dd41f343bf432b0adcc41965</string>
 	<key>ELEVENLABS_API_KEY</key>

@@ -1,0 +1,344 @@
+[
+  {
+    "run_id": "flash-1784352366-5ea3d30e",
+    "state": "deployed",
+    "spec": {
+      "model": "Qwen/Qwen3.5-4B",
+      "algorithm": "sft",
+      "environment": {
+        "id": "nimbus/voice-drone-objective",
+        "params": {},
+        "pip": [
+          "freesolo>=0.2.54"
+        ],
+        "secrets": [],
+        "resolved_sha": ""
+      },
+      "train": {
+        "epochs": 3,
+        "lora_rank": 32,
+        "lora_alpha": 64,
+        "init_from_adapter": "",
+        "hf_repo": "Freesolo-Co/flashrun-nimbus-voice-drone-objective-ee50b6e0b8cc780b",
+        "learning_rate": null,
+        "batch_size": null,
+        "max_context_tokens": 2048,
+        "save_every": null,
+        "max_steps": null,
+        "save_at_steps": [],
+        "max_examples": 1500,
+        "group_size": null,
+        "temperature": null,
+        "max_completion_tokens": null,
+        "kl_penalty_coef": null,
+        "advantage_clip": null,
+        "thinking_length_penalty_coef": null,
+        "teacher_model": "",
+        "stop_sequences": [],
+        "structured_outputs": ""
+      },
+      "gpu": {
+        "type": "RTX 5090",
+        "disk_gb": 60,
+        "max_wall_seconds": 86400,
+        "max_retries": 5,
+        "network_volume": "flash-weights",
+        "network_volume_gb": 100,
+        "provider": "",
+        "exact_type": ""
+      },
+      "run_id": "flash-1784352366-5ea3d30e",
+      "seed": 42,
+      "worker_env": {},
+      "model_policy": "catalog",
+      "thinking": false,
+      "wandb": {
+        "project": null,
+        "run_name": null
+      },
+      "model_revision": ""
+    },
+    "created_at": 1784352366.1517746,
+    "updated_at": 1784358770.9629745,
+    "cost_usd": 1.3649650834285714,
+    "estimated_cost_usd": 1.3649650834285714,
+    "error": null,
+    "artifacts_dir": "/root/.flash/results/runpod/sft/flash-1784352366-5ea3d30e",
+    "adapter_ref": "flash-1784352366-5ea3d30e",
+    "deployment": {
+      "adapter_hf_prefix": "sft/flash-1784352366-5ea3d30e/adapter",
+      "adapter_revision": "flash-1784352366-5ea3d30e@final.8422be45de4f2bebd9e8a3e6c8003b083639ae8f",
+      "checkpoint_step": null,
+      "detail": "immutable revision verified and alias activated",
+      "endpoint_name": "https://clado-ai--freesolo-lora-serving.modal.run",
+      "model": "Qwen/Qwen3.5-4B",
+      "openai_base_url": "https://clado-ai--freesolo-lora-serving.modal.run/v1",
+      "openai_model": "flash-1784352366-5ea3d30e",
+      "requested_at": 1784356111.1147447,
+      "run_id": "flash-1784352366-5ea3d30e",
+      "state": "ready",
+      "thinking_tag": false,
+      "updated_at": 1784356121.1247587,
+      "verified_at": 1784356120.0156806,
+      "verify": true,
+      "verify_finish_reason": "stop",
+      "verify_kind": "fixed_prompt",
+      "verify_latency_s": 1.3768675616011024,
+      "verify_sample": "{\"deployment\":\"smoke\",\"question\":\"2+2\",\"answer\":\"4.0\",\"confidence\":0.9}",
+      "verify_turns": 1
+    },
+    "remote": {
+      "allocated_gpu": "RTX 5090",
+      "attempt": 0,
+      "code_prefix": "code/d217e5f746890f11bda0af2912a87f3d/flash",
+      "gpu": "RTX 5090",
+      "hourly_usd": 0.4703703703703703,
+      "instance_id": 45216438,
+      "label": "flash-1784352366-5ea3d30e-s42-a0",
+      "machine_id": 100720,
+      "offer_id": 39555567,
+      "on_last_gpu": false,
+      "provider": "vast",
+      "seed": 42,
+      "started_ts": 1784352375.2786906
+    },
+    "submitted_instance_providers": [
+      "lambda",
+      "vast"
+    ],
+    "realized_cost_usd": 0.111887,
+    "reconciled_at": 1784358748.5653224,
+    "finished_at": 1784353231.610532,
+    "billing_context": {
+      "org_id": "e8a76013-acbf-4a32-b888-a455c5db42c5"
+    },
+    "billing_state": "charged",
+    "billing_error": null,
+    "billing_charge": {
+      "amountCents": 136,
+      "balanceCents": 9864,
+      "ledgerId": "bd2abed0-0171-48f6-aaca-91514331ca61",
+      "replay": false,
+      "runId": "flash-1784352366-5ea3d30e"
+    },
+    "platform_context": {
+      "api_key_id": "0a7faca1-9cff-42f1-9d6f-cd0c797aebd2",
+      "org_id": "e8a76013-acbf-4a32-b888-a455c5db42c5",
+      "user_id": "e48e2514-1ffa-4ee4-a150-ba70735c5056"
+    },
+    "last_heartbeat": {
+      "attempt": 0,
+      "mode": "sft",
+      "run_id": "flash-1784352366-5ea3d30e",
+      "seed": 42,
+      "stage": "checkpoint_deployable",
+      "step": 129,
+      "subfolder": "sft/flash-1784352366-5ea3d30e/checkpoints/step-129/adapter",
+      "ts": 1784353189.1653025
+    },
+    "gpu_status": null
+  },
+  {
+    "run_id": "flash-1784389705-55153e85",
+    "state": "done",
+    "spec": {
+      "model": "Qwen/Qwen3.5-4B",
+      "algorithm": "sft",
+      "environment": {
+        "id": "nimbus/voice-drone-objective",
+        "params": {
+          "split": "smoke"
+        },
+        "pip": [
+          "freesolo>=0.2.54"
+        ],
+        "secrets": [],
+        "resolved_sha": ""
+      },
+      "train": {
+        "epochs": 8,
+        "lora_rank": 32,
+        "lora_alpha": 64,
+        "init_from_adapter": "",
+        "hf_repo": "Freesolo-Co/flashrun-nimbus-voice-drone-objective-ee50b6e0b8cc780b",
+        "learning_rate": null,
+        "batch_size": null,
+        "max_context_tokens": 1024,
+        "save_every": null,
+        "max_steps": 40,
+        "save_at_steps": [],
+        "max_examples": 112,
+        "group_size": null,
+        "temperature": null,
+        "max_completion_tokens": null,
+        "kl_penalty_coef": null,
+        "advantage_clip": null,
+        "thinking_length_penalty_coef": null,
+        "teacher_model": "",
+        "stop_sequences": [],
+        "structured_outputs": ""
+      },
+      "gpu": {
+        "type": "RTX 4090",
+        "disk_gb": 60,
+        "max_wall_seconds": 86400,
+        "max_retries": 5,
+        "network_volume": "flash-weights",
+        "network_volume_gb": 100,
+        "provider": "",
+        "exact_type": ""
+      },
+      "run_id": "flash-1784389705-55153e85",
+      "seed": 42,
+      "worker_env": {},
+      "model_policy": "catalog",
+      "thinking": false,
+      "wandb": {
+        "project": null,
+        "run_name": null
+      },
+      "model_revision": ""
+    },
+    "created_at": 1784389705.5090203,
+    "updated_at": 1784391462.8916337,
+    "cost_usd": 0.17174403878787878,
+    "estimated_cost_usd": 0.17174403878787878,
+    "error": null,
+    "artifacts_dir": "/root/.flash/results/runpod/sft/flash-1784389705-55153e85",
+    "adapter_ref": "flash-1784389705-55153e85",
+    "deployment": {
+      "adapter_hf_prefix": "sft/flash-1784389705-55153e85/adapter",
+      "adapter_revision": "flash-1784389705-55153e85@final.31b1cdb053ca70dd519a4543b951b485c676baac",
+      "checkpoint_step": null,
+      "detail": "deployment failed; previous working alias was preserved",
+      "endpoint_name": "https://clado-ai--freesolo-lora-serving.modal.run",
+      "error": "smoke generation returned no content (finish_reason='stop')",
+      "model": "Qwen/Qwen3.5-4B",
+      "openai_base_url": "https://clado-ai--freesolo-lora-serving.modal.run/v1",
+      "openai_model": "flash-1784389705-55153e85",
+      "requested_at": 1784391459.9217348,
+      "run_id": "flash-1784389705-55153e85",
+      "state": "failed",
+      "updated_at": 1784391462.8912654,
+      "verified_at": null,
+      "verify": true
+    },
+    "remote": {
+      "allocated_gpu": "RTX 5090",
+      "attempt": 0,
+      "code_prefix": "code/b7e81e55271afc9be30afc610a232d7c/flash",
+      "gpu": "RTX 5090",
+      "hourly_usd": 0.4703703703703703,
+      "instance_id": 45244718,
+      "label": "flash-1784389705-55153e85-s42-a0",
+      "machine_id": 100726,
+      "offer_id": 44486777,
+      "on_last_gpu": false,
+      "provider": "vast",
+      "seed": 42,
+      "started_ts": 1784389709.1943777
+    },
+    "submitted_instance_providers": [
+      "lambda",
+      "vast"
+    ],
+    "realized_cost_usd": null,
+    "reconciled_at": null,
+    "finished_at": 1784390200.4630148,
+    "billing_context": {
+      "org_id": "e8a76013-acbf-4a32-b888-a455c5db42c5"
+    },
+    "billing_state": "charged",
+    "billing_error": null,
+    "billing_charge": {
+      "amountCents": 17,
+      "balanceCents": 6137,
+      "ledgerId": "cc370cc1-a2e6-4f72-a7ad-6aaa8a759ecc",
+      "replay": false,
+      "runId": "flash-1784389705-55153e85"
+    },
+    "platform_context": {
+      "api_key_id": "0a7faca1-9cff-42f1-9d6f-cd0c797aebd2",
+      "org_id": "e8a76013-acbf-4a32-b888-a455c5db42c5",
+      "user_id": "e48e2514-1ffa-4ee4-a150-ba70735c5056"
+    },
+    "last_heartbeat": {
+      "attempt": 0,
+      "gpu": {
+        "cuda_available": true,
+        "device_count": 1,
+        "device_name": "NVIDIA GeForce RTX 5090",
+        "driver_version": "595.58.03",
+        "gpu_util_pct": 0,
+        "index": 0,
+        "mem_clock_mhz": 13801,
+        "mem_util_pct": 0,
+        "memory_free_gb": 16.041,
+        "memory_total_gb": 31.843,
+        "memory_used_gb": 15.318,
+        "nvidia_smi": "0, GPU-7b4b6f3a-85ff-b996-328d-4f9adbce1bee, 595.58.03, NVIDIA GeForce RTX 5090, 0, 0, 32607, 15686, 16426, 47, 69.64, 500.00, P1, 2542, 13801, 5, 16",
+        "pcie_gen": 5,
+        "pcie_width": 16,
+        "power_limit_w": 500.0,
+        "power_w": 69.64,
+        "processes": [
+          {
+            "pid": 126,
+            "process_name": "/usr/bin/python3",
+            "used_memory_gb": 15.184
+          }
+        ],
+        "pstate": "P1",
+        "sm_clock_mhz": 2542,
+        "temperature_c": 47,
+        "torch": "2.10.0+cu128",
+        "torch_cuda": "12.8",
+        "torch_memory_allocated_gb": 8.803,
+        "torch_memory_free_gb": 16.041,
+        "torch_memory_reserved_gb": 12.756,
+        "torch_memory_total_gb": 31.358,
+        "uuid": "GPU-7b4b6f3a-85ff-b996-328d-4f9adbce1bee"
+      },
+      "mode": "sft",
+      "run_id": "flash-1784389705-55153e85",
+      "seed": 42,
+      "stage": "done",
+      "ts": 1784390150.415485
+    },
+    "gpu_status": {
+      "cuda_available": true,
+      "device_count": 1,
+      "device_name": "NVIDIA GeForce RTX 5090",
+      "driver_version": "595.58.03",
+      "gpu_util_pct": 0,
+      "index": 0,
+      "mem_clock_mhz": 13801,
+      "mem_util_pct": 0,
+      "memory_free_gb": 16.041,
+      "memory_total_gb": 31.843,
+      "memory_used_gb": 15.318,
+      "nvidia_smi": "0, GPU-7b4b6f3a-85ff-b996-328d-4f9adbce1bee, 595.58.03, NVIDIA GeForce RTX 5090, 0, 0, 32607, 15686, 16426, 47, 69.64, 500.00, P1, 2542, 13801, 5, 16",
+      "pcie_gen": 5,
+      "pcie_width": 16,
+      "power_limit_w": 500.0,
+      "power_w": 69.64,
+      "processes": [
+        {
+          "pid": 126,
+          "process_name": "/usr/bin/python3",
+          "used_memory_gb": 15.184
+        }
+      ],
+      "pstate": "P1",
+      "sm_clock_mhz": 2542,
+      "temperature_c": 47,
+      "torch": "2.10.0+cu128",
+      "torch_cuda": "12.8",
+      "torch_memory_allocated_gb": 8.803,
+      "torch_memory_free_gb": 16.041,
+      "torch_memory_reserved_gb": 12.756,
+      "torch_memory_total_gb": 31.358,
+      "uuid": "GPU-7b4b6f3a-85ff-b996-328d-4f9adbce1bee"
+    }
+  }
+]

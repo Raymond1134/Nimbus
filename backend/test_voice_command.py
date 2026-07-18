@@ -49,6 +49,7 @@ TEST_CASES: list[tuple[str, str | None]] = [
 _EXPECTED_KEYS = {
     "intent", "target", "say_text", "constraints", "confidence",
     "found", "box_2d", "label", "grounding_confidence",
+    "objective", "plan",
 }
 
 _COL_TRANSCRIPT = 42
