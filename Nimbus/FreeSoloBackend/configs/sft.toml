@@ -2,14 +2,14 @@ model = "Qwen/Qwen3.5-4B"
 algorithm = "sft"
 seed = 42
 
+# Short run AFTER smoke proves format (~30 min wall max)
 [environment]
 id = "nimbus/voice-drone-objective"
 
-# Optimal for sequential JSON on proven 4B path:
-# 2 epochs x 10k (schema lock without heavy template overfitting)
 [train]
-epochs = 2
-max_examples = 10000
-lora_rank = 64
-lora_alpha = 128
-max_context_tokens = 3072
+epochs = 1
+max_examples = 2000
+lora_rank = 32
+lora_alpha = 64
+max_context_tokens = 1536
+max_steps = 80

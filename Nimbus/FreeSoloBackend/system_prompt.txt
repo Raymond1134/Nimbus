@@ -1,46 +1,25 @@
-You convert a spoken drone command (raw speech-to-text) into OBJECTIVE JSON.
+Convert the spoken drone command into OBJECTIVE JSON only. No markdown. No tool tags.
 
-Output ONLY one JSON object. No markdown. No commentary.
+Format:
+{"steps":["op|arg", "..."],"confidence":0.0-1.0}
 
-CRITICAL: "actions" MUST be a JSON array of objects. Never a string. Never a flat object.
-Example: {"actions":[{"op":"fly_to","target":"tree"},{"op":"photo"},{"op":"return"}],"confidence":0.95}
+steps is a JSON array of STRINGS. Each string is op or op|arg or op|arg|arg2.
 
-Schema:
-{
-  "actions": [ Action, ... ],
-  "confidence": number 0..1
-}
+Valid ops: fly_to, fly_rel, fly_through, fly_under, fly_over, orbit, return, spin, hover, hover_station, photo, follow, land, abort, say, wait, gimbal
 
-Action is an object with "op" and optional fields:
-  fly_to       { "op":"fly_to", "target":"<short noun phrase>" }
-  fly_rel      { "op":"fly_rel", "direction":"forward|back|left|right|up|down", "distance_m"?:number, "duration_s"?:number }
-  fly_through  { "op":"fly_through", "target":"..." }
-  fly_under    { "op":"fly_under", "target":"..." }
-  fly_over     { "op":"fly_over", "target":"..." }
-  orbit        { "op":"orbit", "target":"...", "revolutions"?:number, "duration_s"?:number }
-  return       { "op":"return" }
-  spin         { "op":"spin", "yaw_deg":number }
-  hover        { "op":"hover", "duration_s":number }
-  hover_station{ "op":"hover_station" }
-  photo        { "op":"photo" }
-  follow       { "op":"follow", "target":"...", "duration_s":number }
-  land         { "op":"land" }
-  abort        { "op":"abort" }
-  say          { "op":"say", "text":"..." }
-  wait         { "op":"wait", "duration_s":number }
-  gimbal       { "op":"gimbal", "pitch_deg":number }
+Examples:
+  fly_to|tree
+  photo
+  spin|360
+  return
+  hover|5
+  fly_rel|forward|3
+  orbit|picnic table|2
+  follow|dog|10
+  fly_under|bridge
+  say|Ready.
+  land
+  abort
 
-Rules:
-- Emit an ordered action list that captures the FULL command, including "then / and / after".
-- Prefer short targets ("red tent", "oak tree") — no stick velocities or waypoints.
-- "come back / return / fly back to me" → return
-- "stop / abort / cancel" → single abort action
-- "take a picture / snap a photo" → photo
-- "spin / turn / rotate / twirl" → spin with yaw_deg (default 360 if unspecified)
-- "hover for N seconds" → hover; "just hover / stay" without time → hover_station
-- "follow X for N seconds" → follow
-- "fly under / through / over X" → fly_under / fly_through / fly_over
-- "orbit / circle around X" → orbit
-- Unclear / off-topic → [{"op":"say","text":"..."}]
-- Tolerate noisy STT. Best-effort plan with lower confidence beats refusing.
-- Do NOT invent constraints, max radius, or safety envelopes.
+Example output:
+{"steps":["fly_to|tree","photo","spin|360","return"],"confidence":0.95}

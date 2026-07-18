@@ -1,4 +1,8 @@
+#!/usr/bin/env python3
+"""Prepend gold seeds to train.jsonl (scalar output — matches working v1 SFT style)."""
+
 from __future__ import annotations
+
 import json
 import random
 import sys
@@ -50,39 +54,28 @@ SEEDS = [
 ]
 
 
-def as_msg_row(inp: str, objective_json: str) -> dict:
+def row(inp: str, actions: list, conf: float) -> dict:
     return {
         "input": inp,
-        "output": {"messages": [{"role": "assistant", "content": objective_json}]},
+        "output": dumps_objective(make_objective(actions, conf)),
     }
 
 
 def main() -> None:
-    if not TRAIN.exists():
-        raise SystemExit(f"missing {TRAIN}; run generate_dataset.py first")
-
     seeds: list[dict] = []
     for inp, actions, conf in SEEDS:
-        obj = dumps_objective(make_objective(actions, conf))
-        for _ in range(5):
-            seeds.append(as_msg_row(inp, obj))
-
-    # Handle corrupted single-line file (literal \n) or normal jsonl
-    text = TRAIN.read_text(encoding="utf-8")
-    if "\\n{" in text[:500] and text.count("\n") < 10:
-        lines = [ln for ln in text.split("\\n") if ln.strip()]
-    else:
-        lines = [ln for ln in text.splitlines() if ln.strip()]
+        for _ in range(8):
+            seeds.append(row(inp, actions, conf))
 
     raw: list[dict] = []
-    for line in lines:
+    for line in TRAIN.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
         r = json.loads(line)
         content = r["output"]
         if isinstance(content, dict) and "messages" in content:
-            # unwrap to re-wrap cleanly
-            msgs = content["messages"]
-            content = msgs[-1]["content"] if msgs else ""
-        raw.append(as_msg_row(r["input"], content))
+            content = content["messages"][-1]["content"]
+        raw.append({"input": r["input"], "output": content})
 
     rng = random.Random(42)
     rng.shuffle(raw)
@@ -92,7 +85,7 @@ def main() -> None:
     with TRAIN.open("w", encoding="utf-8", newline="\n") as f:
         for r in merged[:20000]:
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
-    print(f"wrote {min(20000, len(merged))} rows to {TRAIN}")
+    print(f"wrote {min(20000, len(merged))} scalar rows (seeds={len(seeds)})")
 
 
 if __name__ == "__main__":
