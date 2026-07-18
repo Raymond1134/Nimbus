@@ -63,6 +63,54 @@ TARGET_OPS = frozenset({"fly_to", "fly_above", "orbit", "look_at", "follow"})
 
 ROTATE_DIRECTIONS = frozenset({"left", "right"})
 
+# Near-miss ops the model may invent → closest valid op. Used only in
+# lenient (inference) mode — training rewards stay strict.
+OP_ALIASES: dict[str, str] = {
+    "fly_behind": "fly_to",
+    "fly_past": "fly_to",
+    "fly_toward": "fly_to",
+    "fly_towards": "fly_to",
+    "fly_over": "fly_above",
+    "fly_under": "fly_to",
+    "fly_through": "fly_to",
+    "go_to": "fly_to",
+    "approach": "fly_to",
+    "fly_up": "fly_higher",
+    "fly_down": "fly_lower",
+    "ascend": "fly_higher",
+    "descend": "fly_lower",
+    "climb": "fly_higher",
+    "spin": "rotate",
+    "turn": "rotate",
+    "yaw": "rotate",
+    "circle": "orbit",
+    "look": "look_at",
+    "point_at": "look_at",
+    "aim": "look_at",
+    "watch": "look_at",
+    "gimbal": "look_at",
+    "take_photo": "photo",
+    "take_picture": "photo",
+    "picture": "photo",
+    "snap": "photo",
+    "dronie": "selfie",
+    "pano": "panorama",
+    "track": "follow",
+    "take_off": "takeoff",
+    "launch": "takeoff",
+    "come_back": "return",
+    "fly_home": "return",
+    "return_home": "return",
+    "go_home": "return",
+    "rth": "return",
+    "stop": "abort",
+    "cancel": "abort",
+    "halt": "abort",
+    "wait": "hover",
+    "hold": "hover",
+    "hover_station": "hover",
+}
+
 DEFAULT_ALTITUDE_M = 2.0
 DEFAULT_ROTATE_DEG = 90.0
 DEFAULT_HOVER_S = 5.0
@@ -151,14 +199,27 @@ def _float_or_none(v: str) -> float | None:
         return None
 
 
-def parse_step(step: str) -> dict[str, Any] | None:
-    """One pipe-string step -> action dict. None when invalid."""
+def parse_step(step: str, lenient: bool = False) -> dict[str, Any] | None:
+    """One pipe-string step -> action dict. None when invalid.
+
+    lenient=True additionally maps near-miss op names (e.g. "fly_behind")
+    onto the closest valid op — use at inference, never for training rewards.
+    """
     if not isinstance(step, str) or not step.strip():
         return None
     parts = [p.strip() for p in step.split("|")]
-    op = parts[0].lower()
+    op = parts[0].lower().replace(" ", "_")
     if op not in OPS:
-        return None
+        if not lenient:
+            return None
+        op = OP_ALIASES.get(op, "")
+        if op not in OPS:
+            return None
+        # special case: bare "spin|360" style args parse as rotate deg
+        if op == "rotate" and parts[1:] and parts[1].lower() not in ROTATE_DIRECTIONS:
+            parts = [op, "right"] + parts[1:]
+        else:
+            parts = [op] + parts[1:]
     args = parts[1:]
     out: dict[str, Any] = {"op": op}
 
@@ -209,8 +270,12 @@ def parse_step(step: str) -> dict[str, Any] | None:
     return out
 
 
-def normalize_objective(data: dict[str, Any]) -> dict[str, Any] | None:
+def normalize_objective(data: dict[str, Any], lenient: bool = False) -> dict[str, Any] | None:
     """Validate raw {"steps": [...]} and attach structured actions.
+
+    strict (default): any invalid step invalidates the whole objective — used
+    for training rewards. lenient: near-miss ops are aliased and unsalvageable
+    steps are dropped; None only when nothing valid remains.
 
     Returns {"steps": [str], "actions": [dict], "confidence": float} or None.
     """
@@ -221,12 +286,18 @@ def normalize_objective(data: dict[str, Any]) -> dict[str, Any] | None:
     actions: list[dict[str, Any]] = []
     for item in steps_raw:
         if not isinstance(item, str):
+            if lenient:
+                continue
             return None
-        act = parse_step(item)
+        act = parse_step(item, lenient=lenient)
         if act is None:
+            if lenient:
+                continue
             return None
         steps.append(item.strip())
         actions.append(act)
+    if not actions:
+        return None
     try:
         conf = float(data.get("confidence", 0.8))
     except (TypeError, ValueError):
@@ -235,11 +306,11 @@ def normalize_objective(data: dict[str, Any]) -> dict[str, Any] | None:
     return {"steps": steps, "actions": actions, "confidence": conf}
 
 
-def parse_and_normalize(text: str) -> dict[str, Any] | None:
+def parse_and_normalize(text: str, lenient: bool = False) -> dict[str, Any] | None:
     parsed = loads_objective(text)
     if parsed is None:
         return None
-    return normalize_objective(parsed)
+    return normalize_objective(parsed, lenient=lenient)
 
 
 def score_objectives(predicted: dict[str, Any] | None, expected: dict[str, Any] | None) -> float:

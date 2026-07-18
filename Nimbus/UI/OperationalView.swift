@@ -377,6 +377,43 @@ struct OperationalView: View {
 
     private var controlsArea: some View {
         VStack(spacing: 18) {
+            // Session launch / end + hands-free
+            HStack(spacing: 12) {
+                if orc.isSessionActive {
+                    Button { orc.endSession() } label: {
+                        Label("End · Land", systemImage: "arrow.down.circle.fill")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 20).padding(.vertical, 10)
+                            .background(Color.orange.opacity(0.85))
+                            .clipShape(Capsule())
+                    }
+                } else {
+                    Button { orc.startSession() } label: {
+                        Label("Launch Nimbus", systemImage: "arrow.up.circle.fill")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 20).padding(.vertical, 10)
+                            .background(Color.green.opacity(0.85))
+                            .clipShape(Capsule())
+                    }
+                    .disabled(!orc.bridge.isAircraftConnected)
+                    .opacity(orc.bridge.isAircraftConnected ? 1 : 0.4)
+                }
+
+                // Hands-free wakeword toggle ("Nimbus …")
+                Button { orc.setHandsFree(!orc.isHandsFreeEnabled) } label: {
+                    Label(orc.isHandsFreeEnabled ? "\"Nimbus\" ON" : "\"Nimbus\" OFF",
+                          systemImage: orc.isHandsFreeEnabled ? "ear.fill" : "ear")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 16).padding(.vertical, 10)
+                        .background(orc.isHandsFreeEnabled ? Color.purple.opacity(0.85)
+                                                           : Color.white.opacity(0.12))
+                        .clipShape(Capsule())
+                }
+            }
+
             // Abort — visible only when a command is running
             if orc.appState.isActive {
                 Button { orc.abort() } label: {

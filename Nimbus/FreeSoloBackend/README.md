@@ -54,7 +54,14 @@ flash chat <run-id> -m "fly to the tree and take a picture"
 
 Runs so far:
 - `flash-1784395386-5c250929` — smoke (new grammar), done + deployed + verified
-- `flash-1784396024-91cbb2f2` — main SFT, 12k examples / 250 steps
+- `flash-1784396024-91cbb2f2` — main SFT (12k examples / 250 steps), done + deployed +
+  verified — **this is the production `FREESOLO_MODEL`**
+
+Note on robustness: the deployed model occasionally invents near-miss ops
+(e.g. `fly_behind`). Inference call sites parse with `lenient=True`, which
+aliases these onto valid ops (`fly_behind` → `fly_to`). Training rewards stay
+strict. The generator now includes behind/past/under/through phrasings for the
+next retrain.
 
 ## Using the deployed model
 

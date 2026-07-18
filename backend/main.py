@@ -178,7 +178,7 @@ def _normalize_freesolo_payload(data: dict) -> dict:
 
     # Canonical: {"steps": ["op|arg", ...]}
     if isinstance(data.get("steps"), list):
-        normalized = normalize_objective(data)
+        normalized = normalize_objective(data, lenient=True)
         if normalized is not None:
             return normalized
         logger.warning("Invalid steps in OBJECTIVE payload: %s", data.get("steps"))
@@ -245,7 +245,7 @@ async def _get_objective(transcript: str) -> dict:
             },
         ) from exc
 
-    objective = parse_and_normalize(raw_text)
+    objective = parse_and_normalize(raw_text, lenient=True)
     if objective is None:
         logger.warning("FreeSolo returned unparseable OBJECTIVE: %r", raw_text[:200])
         objective = {

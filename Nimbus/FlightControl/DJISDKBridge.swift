@@ -171,17 +171,110 @@ final class DJISDKBridge: NSObject {
         gimbal.rotate(with: rotation, completion: nil)
     }
 
+    // MARK: - Takeoff / Landing (async wrappers)
+
+    /// Auto-takeoff to ~1.2 m hover. Returns true on success.
+    @discardableResult
+    func takeOff() async -> Bool {
+        guard let fc = flightController else { return false }
+        return await withCheckedContinuation { cont in
+            fc.startTakeoff { error in
+                if let error {
+                    print("DJISDKBridge: takeoff error: \(error.localizedDescription)")
+                    cont.resume(returning: false)
+                } else {
+                    cont.resume(returning: true)
+                }
+            }
+        }
+    }
+
+    /// Auto-land. Returns true on success.
+    @discardableResult
+    func startLanding() async -> Bool {
+        guard let fc = flightController else { return false }
+        return await withCheckedContinuation { cont in
+            fc.startLanding { error in
+                if let error {
+                    print("DJISDKBridge: landing error: \(error.localizedDescription)")
+                    cont.resume(returning: false)
+                } else {
+                    cont.resume(returning: true)
+                }
+            }
+        }
+    }
+
+    // MARK: - Camera Photo Capture
+
+    /// Take a single still photo. Switches the camera into shoot-photo mode,
+    /// fires the shutter, and resumes. Live H264 feed keeps running.
+    @discardableResult
+    func capturePhoto() async -> Bool {
+        guard let camera = (DJISDKManager.product() as? DJIAircraft)?.camera else {
+            print("DJISDKBridge: capturePhoto — no camera.")
+            return false
+        }
+        // 1) Ensure shoot-photo mode.
+        let modeOK: Bool = await withCheckedContinuation { cont in
+            camera.setMode(.shootPhoto) { error in
+                if let error {
+                    print("DJISDKBridge: setMode(.shootPhoto) error: \(error.localizedDescription)")
+                }
+                cont.resume(returning: error == nil)
+            }
+        }
+        if modeOK {
+            // Small settle so the mode switch completes before the shutter.
+            try? await Task.sleep(for: .seconds(0.5))
+        }
+        // 2) Fire the shutter.
+        let shotOK: Bool = await withCheckedContinuation { cont in
+            camera.startShootPhoto { error in
+                if let error {
+                    print("DJISDKBridge: startShootPhoto error: \(error.localizedDescription)")
+                }
+                cont.resume(returning: error == nil)
+            }
+        }
+        // Give the camera a beat to store the photo.
+        try? await Task.sleep(for: .seconds(1.0))
+        print("DJISDKBridge: capturePhoto \(shotOK ? "ok" : "failed").")
+        return shotOK
+    }
+
+    // MARK: - Gimbal
+
+    /// Rotate the gimbal to an absolute pitch angle (0 = level, -90 = straight down).
+    func pointGimbal(pitchDeg: Double, durationS: Double = 0.5) {
+        guard let gimbal = (DJISDKManager.product() as? DJIAircraft)?.gimbal else { return }
+        let clamped = max(-90.0, min(15.0, pitchDeg))
+        let rotation = DJIGimbalRotation(
+            pitchValue: NSNumber(value: clamped),
+            rollValue: nil,
+            yawValue: nil,
+            time: durationS,
+            mode: .absoluteAngle,
+            ignore: true
+        )
+        gimbal.rotate(with: rotation, completion: nil)
+    }
+
     // MARK: - Dead-Man's Switch (spec §8)
     // If no fresh command arrives within 300 ms, hover automatically.
 
     private func resetDeadMan() {
         deadManTimer?.invalidate()
-        deadManTimer = Timer.scheduledTimer(
-            withTimeInterval: safety.deadManIntervalSec,
+        // sendVelocity() can be called from any thread; always arm the
+        // dead-man timer on the main run loop so it reliably fires.
+        let timer = Timer(
+            timeInterval: safety.deadManIntervalSec,
             repeats: false
         ) { [weak self] _ in
             self?.sendHover()
         }
+        RunLoop.main.add(timer, forMode: .common)
+        deadManTimer = timer
     }
 
     private func stopDeadMan() {

@@ -49,6 +49,8 @@ final class FlightBehaviors {
     private var followTrackRequest: VNTrackObjectRequest?
     private let followTrackMinConfidence: Float = 0.30
     private let followYawFirstThresholdDeg = 5.0
+    /// Optional explicit tracker seed (Vision-normalized) set at follow start.
+    private var followSeedBox: CGRect?
 
     private var navTarget: GPSCoordinate?
     private var navToleranceM = 1.5
@@ -58,7 +60,27 @@ final class FlightBehaviors {
     private var pendingCompletionAfterHover = false
     private let hoverStabilizationDurationSec = 1.0
 
-    enum Mode { case none, approach, orbit, hover, followPerson, navigateToSpot }
+    // rotate-by-angle state
+    private var rotateTargetHeading = 0.0
+    private var rotateRemainingDeg = 0.0
+    private var rotateLastHeading = 0.0
+    private var rotateDirection = 1.0          // +1 CW, -1 CCW
+    private var rotateStart = Date.distantPast
+    private var rotateMaxSec = 30.0
+
+    // altitude-change state
+    private var altitudeTargetM = 0.0
+    private var altitudeStart = Date.distantPast
+    private var altitudeMaxSec = 20.0
+
+    // timed open-loop velocity state
+    private var timedPitch: Float = 0
+    private var timedRoll: Float = 0
+    private var timedThrottle: Float = 0
+    private var timedUntil = Date.distantPast
+
+    enum Mode { case none, approach, orbit, hover, followPerson, navigateToSpot,
+                     rotateBy, altitudeChange, timedVelocity }
 
     init(bridge: DJISDKBridge, safety: SafetySupervisor, headTracking: HeadTrackingManager) {
         self.bridge = bridge
@@ -89,8 +111,13 @@ final class FlightBehaviors {
     }
 
     /// Follow a generic tracked head-region box from the live camera frame.
+    /// - Parameter seedBox: optional Vision-normalized box (origin bottom-left)
+    ///   to seed the tracker with (e.g. a Gemini-grounded target or a detected
+    ///   person). When nil, the tracker auto-seeds from person detection, then
+    ///   falls back to the frame center.
     func followPerson(maxSeconds: Double = 60.0,
-                      overheadMode: Bool = true) {
+                      overheadMode: Bool = true,
+                      seedBox: CGRect? = nil) {
         followMaxSec = maxSeconds
         followStart = Date()
         followOverheadMode = overheadMode
@@ -102,8 +129,41 @@ final class FlightBehaviors {
         followFilteredLatErr = 0
         followFilteredFwdErr = 0
         followTrackRequest = nil
+        followSeedBox = seedBox
         Task { @MainActor [weak self] in self?.onFollowTargetBoxUpdated?(nil) }
         startTimer(mode: .followPerson)
+    }
+
+    /// Yaw in place by a signed angle (+ = clockwise). Closed loop on the
+    /// accumulated heading change from telemetry.
+    func rotateBy(yawDeg: Double, maxSeconds: Double = 30.0) {
+        let clamped = max(-720.0, min(720.0, yawDeg))
+        rotateRemainingDeg = abs(clamped)
+        rotateDirection = clamped >= 0 ? 1.0 : -1.0
+        rotateLastHeading = bridge.telemetry.headingDeg
+        rotateStart = Date()
+        rotateMaxSec = maxSeconds
+        startTimer(mode: .rotateBy)
+    }
+
+    /// Climb (+) or descend (−) by a relative altitude in meters.
+    func changeAltitude(deltaM: Double, maxSeconds: Double = 20.0) {
+        let ceiling = safety.maxAltitudeM - 1.0
+        altitudeTargetM = max(1.2, min(ceiling, bridge.telemetry.altitudeM + deltaM))
+        altitudeStart = Date()
+        altitudeMaxSec = maxSeconds
+        startTimer(mode: .altitudeChange)
+    }
+
+    /// Open-loop body-frame velocity for a fixed duration (e.g. "fly forward 3 s",
+    /// selfie back-away). All axes are safety-clamped in the bridge.
+    func timedVelocity(pitch: Float = 0, roll: Float = 0, throttle: Float = 0,
+                       duration: Double) {
+        timedPitch = pitch
+        timedRoll = roll
+        timedThrottle = throttle
+        timedUntil = Date().addingTimeInterval(max(0.1, duration))
+        startTimer(mode: .timedVelocity)
     }
 
     /// Fly to a GPS coordinate using the aircraft's current heading and GPS telemetry.
@@ -143,9 +203,14 @@ final class FlightBehaviors {
         stopBehavior()
         activeMode  = mode
         isExecuting = true
-        behaviorTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
+        // Always attach to the main run loop — behaviors may be started from
+        // background Tasks (voice pipeline) where a scheduled timer would
+        // otherwise never fire.
+        let timer = Timer(timeInterval: 0.1, repeats: true) { [weak self] _ in
             self?.tick()
         }
+        RunLoop.main.add(timer, forMode: .common)
+        behaviorTimer = timer
     }
 
     private func stopBehavior() {
@@ -167,9 +232,11 @@ final class FlightBehaviors {
         activeMode = .hover
         isExecuting = true
         bridge.sendHover()
-        behaviorTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
+        let timer = Timer(timeInterval: 0.1, repeats: true) { [weak self] _ in
             self?.tick()
         }
+        RunLoop.main.add(timer, forMode: .common)
+        behaviorTimer = timer
     }
 
     private func tick() {
@@ -179,8 +246,58 @@ final class FlightBehaviors {
         case .hover:         tickHoverHold()
         case .followPerson:  tickFollowPerson()
         case .navigateToSpot: tickNavigateToSpot()
+        case .rotateBy:      tickRotateBy()
+        case .altitudeChange: tickAltitudeChange()
+        case .timedVelocity: tickTimedVelocity()
         case .none:          break
         }
+    }
+
+    // MARK: - Rotate By Angle
+
+    private func tickRotateBy() {
+        if Date().timeIntervalSince(rotateStart) > rotateMaxSec {
+            startStabilizedHoverHold(notifyCompletion: true)
+            return
+        }
+        // Accumulate traversed angle from telemetry heading deltas.
+        let heading = bridge.telemetry.headingDeg
+        let delta = abs(shortestAngleDelta(target: heading, current: rotateLastHeading))
+        rotateLastHeading = heading
+        rotateRemainingDeg -= delta
+
+        if rotateRemainingDeg <= 2.0 {
+            startStabilizedHoverHold(notifyCompletion: true)
+            return
+        }
+        // Slow down near the end for a clean stop.
+        let rate = min(40.0, max(8.0, rotateRemainingDeg * 1.2))
+        bridge.sendVelocity(pitch: 0, roll: 0, yaw: Float(rate * rotateDirection), throttle: 0)
+    }
+
+    // MARK: - Altitude Change
+
+    private func tickAltitudeChange() {
+        if Date().timeIntervalSince(altitudeStart) > altitudeMaxSec {
+            startStabilizedHoverHold(notifyCompletion: true)
+            return
+        }
+        let err = altitudeTargetM - bridge.telemetry.altitudeM
+        if abs(err) < 0.3 {
+            startStabilizedHoverHold(notifyCompletion: true)
+            return
+        }
+        bridge.sendVelocity(pitch: 0, roll: 0, yaw: 0, throttle: Float(err * 0.8))
+    }
+
+    // MARK: - Timed Velocity
+
+    private func tickTimedVelocity() {
+        if Date() >= timedUntil {
+            startStabilizedHoverHold(notifyCompletion: true)
+            return
+        }
+        bridge.sendVelocity(pitch: timedPitch, roll: timedRoll, yaw: 0, throttle: timedThrottle)
     }
 
     private func tickHoverHold() {
@@ -308,8 +425,19 @@ final class FlightBehaviors {
     }
     private func trackedHeadBox(in cgImage: CGImage) -> CGRect? {
         if followTrackRequest == nil {
-            // Seed around the center where the operator can place their head at follow start.
-            let seed = CGRect(x: 0.42, y: 0.42, width: 0.16, height: 0.16)
+            // Seed priority:
+            //   1. explicit seed box (e.g. Gemini-grounded target / follow subject)
+            //   2. detected person nearest the frame center (the operator)
+            //   3. fixed center region (operator stands under the drone)
+            let seed: CGRect
+            if let explicit = followSeedBox {
+                seed = explicit
+                followSeedBox = nil
+            } else if let person = Self.detectPersonBox(in: cgImage) {
+                seed = person
+            } else {
+                seed = CGRect(x: 0.42, y: 0.42, width: 0.16, height: 0.16)
+            }
             let initial = VNDetectedObjectObservation(boundingBox: seed)
             let request = VNTrackObjectRequest(detectedObjectObservation: initial)
             request.trackingLevel = .accurate
@@ -325,6 +453,30 @@ final class FlightBehaviors {
         }
         request.inputObservation = tracked
         return tracked.boundingBox
+    }
+
+    /// Detect humans in the frame and pick the operator: the person whose box
+    /// is nearest the frame center, weighted by size (bigger = closer = more
+    /// likely the operator standing under/near the drone).
+    /// Returns a Vision-normalized box (origin bottom-left) or nil.
+    static func detectPersonBox(in cgImage: CGImage) -> CGRect? {
+        let request = VNDetectHumanRectanglesRequest()
+        if #available(iOS 15.0, *) {
+            request.upperBodyOnly = false
+        }
+        let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+        try? handler.perform([request])
+        let people = (request.results ?? []).filter { $0.confidence >= 0.3 }
+        guard !people.isEmpty else { return nil }
+
+        func score(_ box: CGRect) -> Double {
+            let dx = Double(box.midX - 0.5)
+            let dy = Double(box.midY - 0.5)
+            let centerDist = (dx * dx + dy * dy).squareRoot()   // 0 (center) … ~0.71
+            let area = Double(box.width * box.height)           // bigger = closer
+            return area - centerDist * 0.15
+        }
+        return people.max { score($0.boundingBox) < score($1.boundingBox) }?.boundingBox
     }
 
     private func recursiveNearestPoint(on rect: CGRect, toward center: CGPoint, depth: Int) -> CGPoint {

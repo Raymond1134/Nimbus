@@ -80,7 +80,7 @@ def call_freesolo(transcript: str) -> dict:
     )
     ms = (time.perf_counter() - t0) * 1000
     raw = resp.choices[0].message.content or ""
-    obj = parse_and_normalize(raw)
+    obj = parse_and_normalize(raw, lenient=True)
     print(f"[FreeSolo] {ms:.0f} ms raw={raw}")
     if obj is None:
         raise SystemExit(f"FreeSolo returned unparseable OBJECTIVE: {raw!r}")

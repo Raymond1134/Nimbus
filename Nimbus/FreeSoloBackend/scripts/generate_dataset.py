@@ -117,6 +117,9 @@ def gen_fly_to(rng: random.Random) -> tuple[str, str]:
         f"fly over to the {t}", f"find the {t}", f"go find the {t}",
         f"move toward the {t}", f"approach the {t}", f"get to the {t}",
         f"fly towards that {t}", f"go over to that {t}", f"head over to the {t}",
+        f"fly behind the {t}", f"go behind that {t}", f"get behind the {t}",
+        f"fly past the {t}", f"fly under the {t}", f"go through the {t}",
+        f"fly next to the {t}", f"get close to the {t}",
     ])
     return phrase, f"fly_to|{t}"
 

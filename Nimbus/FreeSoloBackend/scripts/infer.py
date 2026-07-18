@@ -87,7 +87,7 @@ def show(text: str) -> None:
     t0 = time.perf_counter()
     raw = infer(text)
     ms = (time.perf_counter() - t0) * 1000
-    obj = parse_and_normalize(raw)
+    obj = parse_and_normalize(raw, lenient=True)
     print(f"raw ({ms:.0f} ms): {raw}", file=sys.stderr)
     if obj is None:
         print("null")
