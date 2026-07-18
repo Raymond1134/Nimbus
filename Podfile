@@ -7,6 +7,7 @@ target 'Nimbus' do
 
   # Pods for Nimbus
   pod 'DJI-SDK-iOS', '~> 4.12'
+  pod 'DJIWidget', '~> 1.6'
 
 end
 

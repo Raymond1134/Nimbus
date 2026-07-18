@@ -8,3 +8,4 @@
 
 #import "ViewController.h"
 #import <DJISDK/DJISDK.h>
+#import <DJIWidget/DJIWidget.h>

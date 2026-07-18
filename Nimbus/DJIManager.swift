@@ -33,6 +33,8 @@ extension DJIManager: DJISDKManagerDelegate {
                 print("DJI Register App Succeeded!")
                 self.registrationMessage = "Register App Succeeded!"
                 self.isRegistered = true
+                // Automatically start connecting to the RC/product after registration
+                DJISDKManager.startConnectionToProduct()
             }
             self.showRegistrationAlert = true
         }
@@ -41,5 +43,21 @@ extension DJIManager: DJISDKManagerDelegate {
     func didUpdateDatabaseDownloadProgress(_ progress: Progress) {
         let percent = Int(progress.fractionCompleted * 100)
         print("DJI fly-safe database download: \(percent)%")
+    }
+
+    func productConnected(_ product: DJIBaseProduct?) {
+        DispatchQueue.main.async {
+            DroneState.shared.isConnected = true
+            DroneState.shared.productName = product?.model ?? "Unknown"
+            DroneState.shared.setupListeners()
+        }
+    }
+
+    func productDisconnected() {
+        DispatchQueue.main.async {
+            DroneState.shared.isConnected = false
+            DroneState.shared.productName = ""
+            DroneState.shared.teardownListeners()
+        }
     }
 }

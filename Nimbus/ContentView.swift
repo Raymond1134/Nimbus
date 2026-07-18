@@ -9,23 +9,41 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var djiManager = DJIManager.shared
+    @State private var openController = false
 
     var body: some View {
-        VStack(spacing: 24) {
-            Image(systemName: djiManager.isRegistered ? "checkmark.circle.fill" : "airplane")
-                .font(.system(size: 64))
-                .foregroundStyle(djiManager.isRegistered ? Color.green : Color.accentColor)
+        NavigationStack {
+            VStack(spacing: 32) {
+                Spacer()
 
-            Text("Nimbus")
-                .font(.largeTitle)
-                .bold()
+                Image(systemName: djiManager.isRegistered ? "checkmark.circle.fill" : "airplane")
+                    .font(.system(size: 72))
+                    .foregroundStyle(djiManager.isRegistered ? Color.green : Color.accentColor)
+                    .symbolEffect(.pulse, isActive: !djiManager.isRegistered)
 
-            Text(djiManager.isRegistered ? "DJI SDK Registered" : "Registering DJI SDK...")
-                .foregroundStyle(.secondary)
+                VStack(spacing: 8) {
+                    Text("Nimbus")
+                        .font(.largeTitle)
+                        .bold()
+                    Text(djiManager.isRegistered ? "SDK Registered" : "Registering DJI SDK…")
+                        .foregroundStyle(.secondary)
+                }
+
+                if djiManager.isRegistered {
+                    NavigationLink("Open Controller →", destination: DroneControlView())
+                        .buttonStyle(.borderedProminent)
+                        .font(.headline)
+                        .padding(.top, 8)
+                }
+
+                Spacer()
+            }
+            .padding()
+            .navigationTitle("")
         }
-        .padding()
         .onAppear {
             DJIManager.shared.registerApp()
+            WaypointManager.shared.setupListeners()
         }
         .alert("Register App", isPresented: $djiManager.showRegistrationAlert) {
             Button("OK") { }
