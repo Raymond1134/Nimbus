@@ -28,6 +28,7 @@ import json
 import logging
 import os
 import time
+from pathlib import Path
 from typing import Any
 
 from dotenv import load_dotenv
@@ -37,7 +38,7 @@ from pydantic import BaseModel, Field
 
 from grounding import ground_target, preprocess_image
 
-load_dotenv()
+load_dotenv(Path(__file__).resolve().parent / ".env")
 
 logger = logging.getLogger(__name__)
 
@@ -59,8 +60,13 @@ _OP_ALIASES: dict[str, str] = {
     "approach": "fly_to",
     "stick": "fly_to",
     "spin": "rotate",
+    "turn": "rotate",
     "gimbal": "look_at",
     "fly_over": "fly_above",
+    "fly_up": "fly_higher",
+    "fly_down": "fly_lower",
+    "ascend": "fly_higher",
+    "descend": "fly_lower",
     "fly_through": "fly_to",
     "fly_under": "fly_to",
     "hover_station": "hover",
@@ -68,6 +74,7 @@ _OP_ALIASES: dict[str, str] = {
     "return": "fly_to",  # app may special-case notes="return"
     "take_photo": "photo",
     "picture": "photo",
+    "pano": "panorama",
 }
 
 
@@ -143,13 +150,11 @@ Vision rules:
   usually no box unless a target is named.
 
 Expansion rules:
-- Preserve OBJECTIVE order. Expand compounds into multiple steps.
-- fly_rel up → fly_higher; down → fly_lower; horizontal → fly_to with direction + distance_m (no target).
-- spin / turn → rotate with yaw_deg (default 90 left/right if only direction given; 360 if unspecified spin).
-- fly_over → fly_above. gimbal → look_at.
-- "take a selfie" / selfie intent → single selfie step (app expands motion).
-- "panorama" / "360 photo" → panorama.
-- return/come back → fly_to target="operator" (needs_grounding likely) OR notes="return_home".
+- OBJECTIVE actions use the SAME op names as your steps (plus "return").
+  Mostly translate 1:1; preserve order; refine parameters using the frame.
+- rotate: keep the given direction/yaw_deg (right = +CW, left = −CCW).
+- "selfie" → single selfie step (app expands the motion).
+- "return" → fly_to target="operator" with notes="return_home" (needs_grounding likely).
 - Number steps id from 0.
 - blocked=true only if the first visual step's target is missing from the frame.
 - confidence ≈ OBJECTIVE confidence.
@@ -185,7 +190,12 @@ def _needs_box(op: str, target: str | None) -> bool:
 
 
 def expand_objective_skeleton(objective: dict[str, Any]) -> list[InstructionStep]:
-    """Deterministic OBJECTIVE → mid-level steps (no vision). Fallback path."""
+    """Deterministic OBJECTIVE → mid-level steps (no vision). Fallback path.
+
+    OBJECTIVE actions come from the FreeSolo intent model (see
+    objective.parse_step) and map ~1:1 onto InstructionSteps; this path
+    only runs when Gemini planning fails.
+    """
     steps: list[InstructionStep] = []
     idx = 0
 
@@ -198,14 +208,15 @@ def expand_objective_skeleton(objective: dict[str, Any]) -> list[InstructionStep
         idx += 1
 
     for action in _objective_actions(objective):
-        raw = str(action.get("op", ""))
+        raw = str(action.get("op", "")).lower().strip()
+        raw = _OP_ALIASES.get(raw, raw) if raw not in {"return"} else raw
         target = action.get("target")
         if isinstance(target, str):
             target = target.strip() or None
         else:
             target = None
         duration = _as_float(action.get("duration_s"))
-        distance = _as_float(action.get("distance_m"))
+        altitude = _as_float(action.get("altitude_delta_m")) or _as_float(action.get("distance_m"))
         yaw_deg = _as_float(action.get("yaw_deg"))
         pitch_deg = _as_float(action.get("pitch_deg"))
         revolutions = _as_float(action.get("revolutions"))
@@ -214,34 +225,20 @@ def expand_objective_skeleton(objective: dict[str, Any]) -> list[InstructionStep
         if raw == "fly_to":
             push(op="fly_to", target=target, standoff_m=3.0)
 
-        elif raw == "fly_over":
+        elif raw == "fly_above":
             push(op="fly_above", target=target, standoff_m=3.0)
 
-        elif raw in {"fly_through", "fly_under"}:
-            push(op="fly_to", target=target, standoff_m=2.0, notes=raw)
+        elif raw == "fly_higher":
+            push(op="fly_higher", altitude_delta_m=altitude or 2.0, duration_s=duration)
 
-        elif raw == "fly_rel":
-            if direction == "up":
-                push(
-                    op="fly_higher",
-                    altitude_delta_m=distance or 2.0,
-                    duration_s=duration,
-                )
-            elif direction == "down":
-                push(
-                    op="fly_lower",
-                    altitude_delta_m=distance or 2.0,
-                    duration_s=duration,
-                )
-            else:
-                push(
-                    op="fly_to",
-                    direction=direction,
-                    distance_m=distance or 3.0,
-                    duration_s=duration,
-                    needs_grounding=False,
-                    notes=f"relative {direction}",
-                )
+        elif raw == "fly_lower":
+            push(op="fly_lower", altitude_delta_m=altitude or 2.0, duration_s=duration)
+
+        elif raw == "rotate":
+            deg = yaw_deg
+            if deg is None:
+                deg = -90.0 if direction == "left" else 90.0
+            push(op="rotate", yaw_deg=deg, direction="left" if deg < 0 else "right")
 
         elif raw == "orbit":
             push(
@@ -252,28 +249,32 @@ def expand_objective_skeleton(objective: dict[str, Any]) -> list[InstructionStep
                 radius_m=5.0,
             )
 
-        elif raw == "spin":
-            deg = yaw_deg if yaw_deg is not None else 360.0
-            push(
-                op="rotate",
-                yaw_deg=deg,
-                direction="right" if deg >= 0 else "left",
-            )
+        elif raw == "hover":
+            push(op="hover", duration_s=duration or 5.0)
 
-        elif raw in {"hover", "wait", "hover_station"}:
-            push(op="hover", duration_s=duration or (1.5 if raw == "hover_station" else 2.0))
+        elif raw == "look_at":
+            if target:
+                push(op="look_at", target=target)
+            else:
+                push(op="look_at", gimbal_pitch_deg=pitch_deg if pitch_deg is not None else -30.0)
 
         elif raw == "photo":
             push(op="photo")
 
-        elif raw == "gimbal":
-            push(op="look_at", gimbal_pitch_deg=pitch_deg if pitch_deg is not None else -30.0)
-
-        elif raw == "follow":
-            push(op="follow", target=target, duration_s=duration or 10.0, standoff_m=3.0)
+        elif raw == "takeoff":
+            push(op="takeoff")
 
         elif raw == "land":
             push(op="land")
+
+        elif raw == "selfie":
+            push(op="selfie", target="operator", standoff_m=3.0)
+
+        elif raw == "panorama":
+            push(op="panorama")
+
+        elif raw == "follow":
+            push(op="follow", target=target, duration_s=duration or 10.0, standoff_m=3.0)
 
         elif raw == "abort":
             push(op="abort")
@@ -284,14 +285,6 @@ def expand_objective_skeleton(objective: dict[str, Any]) -> list[InstructionStep
         elif raw == "say":
             text = action.get("text") if isinstance(action.get("text"), str) else "Okay."
             push(op="say", text=text)
-
-        elif raw in {"selfie", "panorama", "takeoff", "look_at",
-                     "fly_higher", "fly_lower", "fly_above", "rotate"}:
-            # Already mid-level if FreeSolo ever emits them
-            kwargs = {"op": raw, "target": target, "duration_s": duration,
-                  "yaw_deg": yaw_deg, "gimbal_pitch_deg": pitch_deg,
-                  "altitude_delta_m": distance, "direction": direction}
-            push(**{k: v for k, v in kwargs.items() if v is not None or k == "op"})
 
         else:
             push(op="say", text=f"Unsupported objective op: {raw}")
@@ -401,6 +394,10 @@ def _plan_with_gemini(
     objective: dict[str, Any],
     image_bytes: bytes,
 ) -> MissionPlan | None:
+    if not os.environ.get("GEMINI_API_KEY", "").strip():
+        logger.info("GEMINI_API_KEY unset — skipping Gemini planner")
+        return None
+
     try:
         processed = preprocess_image(image_bytes)
     except ValueError as exc:
@@ -410,7 +407,11 @@ def _plan_with_gemini(
     prompt = _PLAN_PROMPT.format(
         objective_json=json.dumps(objective, ensure_ascii=False),
     )
-    client = _client()
+    try:
+        client = _client()
+    except KeyError:
+        logger.info("GEMINI_API_KEY missing — skipping Gemini planner")
+        return None
     last_exc: Exception | None = None
 
     for attempt in range(1, _MAX_ATTEMPTS + 1):

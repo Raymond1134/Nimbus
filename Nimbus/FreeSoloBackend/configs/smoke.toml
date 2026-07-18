@@ -10,7 +10,7 @@ split = "smoke"
 
 [train]
 epochs = 3
-max_examples = 112
+max_examples = 132
 lora_rank = 16
 lora_alpha = 32
 max_context_tokens = 1024

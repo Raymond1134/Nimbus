@@ -5,10 +5,12 @@ Pipeline:
   → mid-level InstructionStep[] (with box_2d) → app implements each op.
 
 Ops: fly_to, fly_higher, fly_lower, fly_above, rotate, orbit, hover,
-look_at, photo, takeoff, land, selfie, panorama, follow (+ abort/say).
+look_at, photo, takeoff, land, selfie, panorama, follow, return
+(+ abort/say).
 
-Gemini's main job is vision grounding + sequencing. The iOS app owns
-Virtual Stick execution for each op.
+FreeSolo (fine-tuned intent model, OpenAI-compatible endpoint) owns
+text → OBJECTIVE. Gemini owns vision grounding + sequencing. The iOS
+app owns Virtual Stick execution for each op.
 """
 
 import json
@@ -17,6 +19,7 @@ import os
 import re
 import time
 import traceback
+from pathlib import Path
 
 import httpx
 import uvicorn
@@ -26,9 +29,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from grounding import GroundingResult, ground_target
+from objective import (
+    SYSTEM_PROMPT,
+    make_objective,
+    normalize_objective,
+    parse_and_normalize,
+)
 from planner import InstructionStep, MissionPlan, plan_mission, resolve_step
 
-load_dotenv()
+_BACKEND_ROOT = Path(__file__).resolve().parent
+load_dotenv(_BACKEND_ROOT / ".env")
+load_dotenv(_BACKEND_ROOT.parent / "Nimbus" / "FreeSoloBackend" / ".env")
 
 logging.basicConfig(
     level=logging.INFO,
@@ -38,9 +49,11 @@ logger = logging.getLogger(__name__)
 
 _MAX_BYTES = 10 * 1024 * 1024  # 10 MB
 
-# FreeSolo integration config
-_FREESOLO_URL = os.getenv("FREESOLO_ENDPOINT_URL", "")
-_FREESOLO_TIMEOUT = 10.0
+# FreeSolo deployed adapter (OpenAI-compatible). From `flash deployments --json`.
+_FREESOLO_BASE_URL = os.getenv("FREESOLO_BASE_URL", "").rstrip("/")
+_FREESOLO_API_KEY = os.getenv("FREESOLO_API_KEY", "")
+_FREESOLO_MODEL = os.getenv("FREESOLO_MODEL", "")
+_FREESOLO_TIMEOUT = 15.0
 _USE_MOCK = os.getenv("USE_FREESOLO_MOCK", "true").lower() == "true"
 
 app = FastAPI(title="Nimbus Grounding API")
@@ -56,129 +69,157 @@ app.add_middleware(
 # FreeSolo helpers — returns OBJECTIVE {actions, confidence}
 # ---------------------------------------------------------------------------
 
-_TRIGGER_WORDS = (
-    "find", "locate", "photograph", "photo of", "picture of",
-    "look for", "search for", "go to", "fly to", "move to",
-    "towards", "toward", "at", "to", "the",
+_TARGET_TRIGGERS = (
+    "fly to", "go to", "head to", "find", "approach", "fly towards", "fly toward",
+    "orbit", "circle", "fly around", "look at", "point the camera at", "aim at",
+    "follow", "track", "fly above", "get above", "hover above",
+    "picture of", "photo of", "shot of", "photograph",
 )
-_FILLER = frozenset({
-    "a", "an", "the", "me", "please", "some", "that", "this",
-    "it", "them", "they", "him", "her", "us", "one",
+_FILLER = frozenset({"a", "an", "the", "that", "this", "me", "please", "some"})
+_STOP = frozenset({
+    "and", "or", "but", "then", "near", "by", "with", "of",
+    "once", "twice", "times", "for",
 })
 
 
 def _extract_target_phrase(transcript: str) -> str | None:
     text = transcript.lower().strip()
-    for trigger in sorted(_TRIGGER_WORDS, key=len, reverse=True):
-        pattern = rf"\b{re.escape(trigger)}\s+(.+)"
-        m = re.search(pattern, text)
-        if m:
-            remainder = m.group(1).split()
-            content = [w for w in remainder if w not in _FILLER]
-            if content:
-                stop = {"and", "or", "but", "near", "by", "with", "in", "on", "of", "then"}
-                phrase_words: list[str] = []
-                for w in content:
-                    if w in stop:
-                        break
-                    phrase_words.append(w)
-                if phrase_words:
-                    return " ".join(phrase_words[:4])
+    for trigger in sorted(_TARGET_TRIGGERS, key=len, reverse=True):
+        m = re.search(rf"\b{re.escape(trigger)}\s+(.+)", text)
+        if not m:
+            continue
+        words = [w for w in m.group(1).split() if w not in _FILLER]
+        phrase: list[str] = []
+        for w in words:
+            if w in _STOP:
+                break
+            phrase.append(w)
+        if phrase:
+            return " ".join(phrase[:4])
     return None
 
 
 def _mock_freesolo_objective(transcript: str) -> dict:
     """Best-effort OBJECTIVE from keyword rules (dev without FreeSolo).
 
-    Real FreeSolo returns the same shape — ordered actions + confidence.
+    Mirrors the deployed model's contract: pipe-string steps + confidence,
+    normalized to include structured actions.
     """
     text = transcript.lower().strip()
-
-    # Instant single-op commands
-    if re.search(r"\b(abort|stop|cancel)\b", text):
-        return {"actions": [{"op": "abort"}], "confidence": 0.95}
-    if re.search(r"\b(land|landing)\b", text) and "fly" not in text:
-        return {"actions": [{"op": "land"}], "confidence": 0.95}
-    if re.search(r"\b(return|come back|fly back|go home)\b", text) and not _extract_target_phrase(text):
-        return {"actions": [{"op": "return"}], "confidence": 0.9}
-    if re.search(r"\b(hover|hold station|stay)\b", text) and not _extract_target_phrase(text):
-        return {"actions": [{"op": "hover_station"}], "confidence": 0.9}
-
-    actions: list[dict] = []
     target = _extract_target_phrase(transcript)
 
-    # Compound: fly/find + photo
-    wants_photo = bool(re.search(r"\b(photo|picture|photograph|snap)\b", text))
+    def obj(steps: list[str], conf: float) -> dict:
+        normalized = normalize_objective(make_objective(steps, conf))
+        assert normalized is not None
+        return normalized
+
+    # Instant single-op commands
+    if re.search(r"\b(abort|stop|cancel|halt|never mind)\b", text):
+        return obj(["abort"], 0.95)
+    if re.search(r"\b(take ?off|lift off|launch)\b", text):
+        return obj(["takeoff"], 0.95)
+    if re.search(r"\bland\b", text) and "fly" not in text:
+        return obj(["land"], 0.95)
+    if re.search(r"\b(return|come back|fly back|come home|fly home)\b", text) and not target:
+        return obj(["return"], 0.9)
+    if re.search(r"\bselfie|picture of me|photo of me|dronie\b", text):
+        return obj(["selfie"], 0.9)
+    if re.search(r"\b(panorama|pano|360 photo)\b", text):
+        return obj(["panorama"], 0.9)
+    if re.search(r"\b(hover|hold position|stay put|hold station)\b", text) and not target:
+        return obj(["hover"], 0.9)
+    if re.search(r"\b(higher|go up|climb|fly up)\b", text) and not target:
+        return obj(["fly_higher"], 0.85)
+    if re.search(r"\b(lower|go down|descend|fly down)\b", text) and not target:
+        return obj(["fly_lower"], 0.85)
+
+    steps: list[str] = []
+    wants_photo = bool(re.search(r"\b(photo|picture|pic|photograph|snap|shot)\b", text))
     wants_return = bool(re.search(r"\b(return|come back|fly back)\b", text))
-    wants_spin = bool(re.search(r"\b(spin|twirl|rotate|turn around)\b", text))
+    wants_spin = bool(re.search(r"\b(spin|twirl|turn around|360)\b", text))
+    wants_orbit = bool(re.search(r"\b(orbit|circle|fly around|loop around)\b", text))
+    wants_follow = bool(re.search(r"\b(follow|track|tail)\b", text))
+    wants_look = bool(re.search(r"\b(look at|aim at|point)\b", text))
 
     if target:
-        actions.append({"op": "fly_to", "target": target})
+        if wants_follow:
+            steps.append(f"follow|{target}")
+        elif wants_orbit:
+            steps.append(f"orbit|{target}")
+        elif wants_look and not wants_photo:
+            steps.append(f"look_at|{target}")
+        else:
+            steps.append(f"fly_to|{target}")
         if wants_photo:
-            actions.append({"op": "photo"})
+            steps.append("photo")
         if wants_spin:
-            actions.append({"op": "spin", "yaw_deg": 360.0})
+            steps.append("rotate|right|360")
         if wants_return:
-            actions.append({"op": "return"})
+            steps.append("return")
     elif wants_photo:
-        actions.append({"op": "photo"})
+        steps.append("photo")
     elif wants_spin:
-        actions.append({"op": "spin", "yaw_deg": 360.0})
+        steps.append("rotate|right|360")
     else:
-        actions.append({
-            "op": "say",
-            "text": "I didn't catch a clear flight command.",
-        })
+        return normalize_objective(
+            {"steps": ["say|I didn't catch a clear flight command."], "confidence": 0.5}
+        )
 
-    return {"actions": actions, "confidence": 0.85 if target else 0.5}
+    return obj(steps, 0.85 if target else 0.6)
 
 
 def _normalize_freesolo_payload(data: dict) -> dict:
-    """Accept either new OBJECTIVE or legacy intent dict from FreeSolo."""
-    if isinstance(data.get("actions"), list):
-        conf = data.get("confidence", 0.8)
-        try:
-            conf = float(conf)
-        except (TypeError, ValueError):
-            conf = 0.8
-        return {"actions": data["actions"], "confidence": conf}
-
-    # Legacy: {intent, target, say_text, constraints, confidence}
-    intent = (data.get("intent") or "").strip()
-    target = data.get("target")
+    """Accept OBJECTIVE as steps-strings or pre-structured actions."""
     conf = data.get("confidence", 0.8)
     try:
         conf = float(conf)
     except (TypeError, ValueError):
         conf = 0.8
 
-    actions: list[dict]
-    if intent == "seek_and_photo":
-        actions = []
-        if target:
-            actions.append({"op": "fly_to", "target": str(target)})
-        actions.append({"op": "photo"})
-    elif intent == "hover_station":
-        actions = [{"op": "hover_station"}]
-    elif intent in {"return_to_station", "return"}:
-        actions = [{"op": "return"}]
-    elif intent == "land":
-        actions = [{"op": "land"}]
-    elif intent == "abort":
-        actions = [{"op": "abort"}]
-    elif intent == "say":
-        actions = [{"op": "say", "text": data.get("say_text") or "Okay."}]
-    else:
-        actions = [{"op": "fly_to", "target": str(target or "object")}]
+    # Canonical: {"steps": ["op|arg", ...]}
+    if isinstance(data.get("steps"), list):
+        normalized = normalize_objective(data)
+        if normalized is not None:
+            return normalized
+        logger.warning("Invalid steps in OBJECTIVE payload: %s", data.get("steps"))
 
-    return {"actions": actions, "confidence": conf}
+    # Already-structured actions (e.g. from plan_mission callers)
+    if isinstance(data.get("actions"), list):
+        return {"actions": data["actions"], "confidence": conf}
+
+    return {
+        "actions": [{"op": "say", "text": "I couldn't parse that command."}],
+        "confidence": 0.0,
+    }
 
 
-async def _call_freesolo_real(transcript: str) -> dict:
+async def _call_freesolo_real(transcript: str) -> str:
+    """Chat-completions call to the deployed FreeSolo adapter; returns raw text."""
+    if not (_FREESOLO_BASE_URL and _FREESOLO_API_KEY and _FREESOLO_MODEL):
+        raise HTTPException(
+            status_code=503,
+            detail={"error": "FreeSolo not configured",
+                    "detail": "Set FREESOLO_BASE_URL, FREESOLO_API_KEY, FREESOLO_MODEL"},
+        )
+    payload = {
+        "model": _FREESOLO_MODEL,
+        "temperature": 0.0,
+        "max_tokens": 256,
+        "messages": [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": transcript},
+        ],
+        "response_format": {"type": "json_object"},
+    }
     async with httpx.AsyncClient(timeout=_FREESOLO_TIMEOUT) as client:
-        resp = await client.post(_FREESOLO_URL, json={"transcript": transcript})
+        resp = await client.post(
+            f"{_FREESOLO_BASE_URL}/chat/completions",
+            json=payload,
+            headers={"Authorization": f"Bearer {_FREESOLO_API_KEY}"},
+        )
         resp.raise_for_status()
-        return resp.json()
+        body = resp.json()
+    return (body.get("choices") or [{}])[0].get("message", {}).get("content") or ""
 
 
 async def _get_objective(transcript: str) -> dict:
@@ -188,7 +229,7 @@ async def _get_objective(transcript: str) -> dict:
         return objective
 
     try:
-        raw = await _call_freesolo_real(transcript)
+        raw_text = await _call_freesolo_real(transcript)
     except (httpx.ConnectError, httpx.TimeoutException) as exc:
         raise HTTPException(
             status_code=502,
@@ -204,7 +245,13 @@ async def _get_objective(transcript: str) -> dict:
             },
         ) from exc
 
-    objective = _normalize_freesolo_payload(raw)
+    objective = parse_and_normalize(raw_text)
+    if objective is None:
+        logger.warning("FreeSolo returned unparseable OBJECTIVE: %r", raw_text[:200])
+        objective = {
+            "actions": [{"op": "say", "text": "Sorry, I didn't catch that. Try again."}],
+            "confidence": 0.0,
+        }
     logger.info("FreeSolo OBJECTIVE: %s", objective)
     return objective
 
@@ -225,11 +272,11 @@ def _legacy_intent_fields(objective: dict, plan: MissionPlan) -> dict:
 
     if "abort" in ops:
         intent = "abort"
-    elif ops == ["land"] or (len(ops) == 1 and ops[0] == "land"):
+    elif len(ops) == 1 and ops[0] == "land":
         intent = "land"
-    elif ops == ["return"] or (len(ops) == 1 and ops[0] == "return"):
+    elif len(ops) == 1 and ops[0] == "return":
         intent = "return_to_station"
-    elif ops == ["hover_station"] or (len(ops) == 1 and ops[0] == "hover_station"):
+    elif len(ops) == 1 and ops[0] == "hover":
         intent = "hover_station"
     elif ops and ops[0] == "say":
         intent = "say"

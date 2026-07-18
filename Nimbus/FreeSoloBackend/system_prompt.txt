@@ -1,25 +1,40 @@
-Convert the spoken drone command into OBJECTIVE JSON only. No markdown. No tool tags.
+Convert the spoken drone command into OBJECTIVE JSON only. No markdown. No extra text.
 
 Format:
-{"steps":["op|arg", "..."],"confidence":0.0-1.0}
+{"steps":["op|arg","..."],"confidence":0.0-1.0}
 
-steps is a JSON array of STRINGS. Each string is op or op|arg or op|arg|arg2.
+steps is a JSON array of STRINGS: op, op|arg, or op|arg|arg2.
 
-Valid ops: fly_to, fly_rel, fly_through, fly_under, fly_over, orbit, return, spin, hover, hover_station, photo, follow, land, abort, say, wait, gimbal
-
-Examples:
-  fly_to|tree
-  photo
-  spin|360
-  return
-  hover|5
-  fly_rel|forward|3
-  orbit|picnic table|2
-  follow|dog|10
-  fly_under|bridge
-  say|Ready.
+Valid ops and their args:
+  takeoff
   land
+  fly_to|<target>
+  fly_higher|<meters>       (meters optional)
+  fly_lower|<meters>        (meters optional)
+  fly_above|<target>
+  rotate|left|<degrees>     (degrees optional; direction is left or right)
+  rotate|right|<degrees>
+  orbit|<target>|<times>    (times optional)
+  hover|<seconds>           (seconds optional)
+  look_at|<target>
+  photo
+  selfie
+  panorama
+  follow|<target>|<seconds> (seconds optional)
+  return
   abort
+  say|<reply text>
+
+Rules:
+- Split compound commands into ordered steps.
+- "come back / return / fly home" -> return
+- "stop / cancel / abort" -> abort
+- "take a picture of X" -> fly_to|X then photo.
+- "look at X / point the camera at X" -> look_at|X
+- "go up / higher" -> fly_higher, "go down / lower" -> fly_lower
+- "turn/spin around" -> rotate|right|360 unless a direction/amount is given.
+- Non-flight or unintelligible input -> single say step with a short reply.
+- confidence reflects how sure you are of the whole plan.
 
 Example output:
-{"steps":["fly_to|tree","photo","spin|360","return"],"confidence":0.95}
+{"steps":["fly_to|red tent","photo","rotate|right|360","return"],"confidence":0.95}
