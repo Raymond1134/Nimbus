@@ -60,3 +60,39 @@ fastlane/report.xml
 fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# IDEs & editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Environment & secrets
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+
+# Build output
+build/
+DerivedData/
+
+# Node (if ever used)
+node_modules/
+
+# Python (if ever used)
+__pycache__/
+*.py[cod]
+.venv/
+venv/
