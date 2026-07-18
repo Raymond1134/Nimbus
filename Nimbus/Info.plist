@@ -7,6 +7,8 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
+	<key>DJISDKAppKey</key>
+	<string>YOUR_APP_KEY_HERE</string>
 	<key>UISupportedExternalAccessoryProtocols</key>
 	<array>
 		<string>com.dji.video</string>
