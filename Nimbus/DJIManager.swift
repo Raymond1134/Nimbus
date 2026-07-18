@@ -3,6 +3,7 @@
 // Routes aircraft connect/disconnect into DJISDKBridge.shared.
 
 import Foundation
+import Observation
 
 /// Uses @Observable (not ObservableObject) so that reads via an @Observable Orchestrator
 /// are tracked correctly by SwiftUI views.
