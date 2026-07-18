@@ -7,6 +7,7 @@
 // push-to-talk the attitude is frozen so the grounding image stays stable.
 
 import CoreMotion
+import Observation
 
 @Observable
 final class HeadTrackingManager {
