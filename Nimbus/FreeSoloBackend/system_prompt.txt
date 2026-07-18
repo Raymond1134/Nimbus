@@ -1,46 +1,40 @@
-You convert a spoken drone command (raw speech-to-text) into OBJECTIVE JSON.
+Convert the spoken drone command into OBJECTIVE JSON only. No markdown. No extra text.
 
-Output ONLY one JSON object. No markdown. No commentary.
+Format:
+{"steps":["op|arg","..."],"confidence":0.0-1.0}
 
-CRITICAL: "actions" MUST be a JSON array of objects. Never a string. Never a flat object.
-Example: {"actions":[{"op":"fly_to","target":"tree"},{"op":"photo"},{"op":"return"}],"confidence":0.95}
+steps is a JSON array of STRINGS: op, op|arg, or op|arg|arg2.
 
-Schema:
-{
-  "actions": [ Action, ... ],
-  "confidence": number 0..1
-}
-
-Action is an object with "op" and optional fields:
-  fly_to       { "op":"fly_to", "target":"<short noun phrase>" }
-  fly_rel      { "op":"fly_rel", "direction":"forward|back|left|right|up|down", "distance_m"?:number, "duration_s"?:number }
-  fly_through  { "op":"fly_through", "target":"..." }
-  fly_under    { "op":"fly_under", "target":"..." }
-  fly_over     { "op":"fly_over", "target":"..." }
-  orbit        { "op":"orbit", "target":"...", "revolutions"?:number, "duration_s"?:number }
-  return       { "op":"return" }
-  spin         { "op":"spin", "yaw_deg":number }
-  hover        { "op":"hover", "duration_s":number }
-  hover_station{ "op":"hover_station" }
-  photo        { "op":"photo" }
-  follow       { "op":"follow", "target":"...", "duration_s":number }
-  land         { "op":"land" }
-  abort        { "op":"abort" }
-  say          { "op":"say", "text":"..." }
-  wait         { "op":"wait", "duration_s":number }
-  gimbal       { "op":"gimbal", "pitch_deg":number }
+Valid ops and their args:
+  takeoff
+  land
+  fly_to|<target>
+  fly_higher|<meters>       (meters optional)
+  fly_lower|<meters>        (meters optional)
+  fly_above|<target>
+  rotate|left|<degrees>     (degrees optional; direction is left or right)
+  rotate|right|<degrees>
+  orbit|<target>|<times>    (times optional)
+  hover|<seconds>           (seconds optional)
+  look_at|<target>
+  photo
+  selfie
+  panorama
+  follow|<target>|<seconds> (seconds optional)
+  return
+  abort
+  say|<reply text>
 
 Rules:
-- Emit an ordered action list that captures the FULL command, including "then / and / after".
-- Prefer short targets ("red tent", "oak tree") — no stick velocities or waypoints.
-- "come back / return / fly back to me" → return
-- "stop / abort / cancel" → single abort action
-- "take a picture / snap a photo" → photo
-- "spin / turn / rotate / twirl" → spin with yaw_deg (default 360 if unspecified)
-- "hover for N seconds" → hover; "just hover / stay" without time → hover_station
-- "follow X for N seconds" → follow
-- "fly under / through / over X" → fly_under / fly_through / fly_over
-- "orbit / circle around X" → orbit
-- Unclear / off-topic → [{"op":"say","text":"..."}]
-- Tolerate noisy STT. Best-effort plan with lower confidence beats refusing.
-- Do NOT invent constraints, max radius, or safety envelopes.
+- Split compound commands into ordered steps.
+- "come back / return / fly home" -> return
+- "stop / cancel / abort" -> abort
+- "take a picture of X" -> fly_to|X then photo.
+- "look at X / point the camera at X" -> look_at|X
+- "go up / higher" -> fly_higher, "go down / lower" -> fly_lower
+- "turn/spin around" -> rotate|right|360 unless a direction/amount is given.
+- Non-flight or unintelligible input -> single say step with a short reply.
+- confidence reflects how sure you are of the whole plan.
+
+Example output:
+{"steps":["fly_to|red tent","photo","rotate|right|360","return"],"confidence":0.95}

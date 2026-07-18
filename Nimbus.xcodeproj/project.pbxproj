@@ -352,7 +352,10 @@
 				DEVELOPMENT_TEAM = FG5PAGCHB8;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				HEADER_SEARCH_PATHS = "$(PODS_ROOT)/Headers/Public";
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PODS_ROOT)/Headers/Public",
+				);
 				INFOPLIST_FILE = Nimbus/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Nimbus;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Transcript speech to instructions to the drone";
@@ -400,7 +403,10 @@
 				DEVELOPMENT_TEAM = FG5PAGCHB8;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				HEADER_SEARCH_PATHS = "$(PODS_ROOT)/Headers/Public";
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PODS_ROOT)/Headers/Public",
+				);
 				INFOPLIST_FILE = Nimbus/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Nimbus;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Transcript speech to instructions to the drone";

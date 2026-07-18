@@ -1,15 +1,18 @@
-model = "Qwen/Qwen3.5-9B"
+# Optional GRPO polish pass AFTER SFT works.
+# Set init_from_adapter to the finished SFT run id, then check --cost first.
+model = "Qwen/Qwen3.5-4B"
 algorithm = "grpo"
 seed = 42
 
-# init_from_adapter = "<sft-run-id>"
+# init_from_adapter = "<sft-run-id>"   # rank/alpha inherited; leave them unset
 
 [environment]
 id = "nimbus/voice-drone-objective"
 
 [train]
-epochs = 1
-max_examples = 4000
+steps = 100
 group_size = 4
-max_completion_tokens = 512
+temperature = 0.7
+max_completion_tokens = 256
+max_context_tokens = 1024
 structured_outputs = { json_object = true }

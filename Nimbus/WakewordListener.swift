@@ -9,7 +9,6 @@ import Foundation
 import Speech
 import Observation
 
-@MainActor
 @Observable
 final class WakewordListener {
     private let speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
@@ -26,7 +25,7 @@ final class WakewordListener {
         
         // Request authorization from the user
         SFSpeechRecognizer.requestAuthorization { authStatus in
-            Task { @MainActor in
+            DispatchQueue.main.async {
                 guard authStatus == .authorized else {
                     print("❌ Speech recognition authorization denied")
                     return
@@ -81,10 +80,11 @@ final class WakewordListener {
             
             if latestTranscription.contains("nimbus") || latestTranscription.contains("hey numbers") {
                 print("🎯 Wakeword 'Nimbus' Detected locally!")
-                self.stopListening()
-                
-                // Fire off the callback to start recording for ElevenLabs!
-                self.onWakewordDetected?()
+                DispatchQueue.main.async {
+                    self.stopListening()
+                    // Fire off the callback to start recording for ElevenLabs!
+                    self.onWakewordDetected?()
+                }
             }
         }
     }

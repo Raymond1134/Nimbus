@@ -1,0 +1,132 @@
+{"input": "take off", "output": "{\"steps\":[\"takeoff\"],\"confidence\":0.95}"}
+{"input": "take off", "output": "{\"steps\":[\"takeoff\"],\"confidence\":0.95}"}
+{"input": "take off", "output": "{\"steps\":[\"takeoff\"],\"confidence\":0.95}"}
+{"input": "take off", "output": "{\"steps\":[\"takeoff\"],\"confidence\":0.95}"}
+{"input": "take off", "output": "{\"steps\":[\"takeoff\"],\"confidence\":0.95}"}
+{"input": "take off", "output": "{\"steps\":[\"takeoff\"],\"confidence\":0.95}"}
+{"input": "land", "output": "{\"steps\":[\"land\"],\"confidence\":0.95}"}
+{"input": "land", "output": "{\"steps\":[\"land\"],\"confidence\":0.95}"}
+{"input": "land", "output": "{\"steps\":[\"land\"],\"confidence\":0.95}"}
+{"input": "land", "output": "{\"steps\":[\"land\"],\"confidence\":0.95}"}
+{"input": "land", "output": "{\"steps\":[\"land\"],\"confidence\":0.95}"}
+{"input": "land", "output": "{\"steps\":[\"land\"],\"confidence\":0.95}"}
+{"input": "stop", "output": "{\"steps\":[\"abort\"],\"confidence\":0.95}"}
+{"input": "stop", "output": "{\"steps\":[\"abort\"],\"confidence\":0.95}"}
+{"input": "stop", "output": "{\"steps\":[\"abort\"],\"confidence\":0.95}"}
+{"input": "stop", "output": "{\"steps\":[\"abort\"],\"confidence\":0.95}"}
+{"input": "stop", "output": "{\"steps\":[\"abort\"],\"confidence\":0.95}"}
+{"input": "stop", "output": "{\"steps\":[\"abort\"],\"confidence\":0.95}"}
+{"input": "come back", "output": "{\"steps\":[\"return\"],\"confidence\":0.95}"}
+{"input": "come back", "output": "{\"steps\":[\"return\"],\"confidence\":0.95}"}
+{"input": "come back", "output": "{\"steps\":[\"return\"],\"confidence\":0.95}"}
+{"input": "come back", "output": "{\"steps\":[\"return\"],\"confidence\":0.95}"}
+{"input": "come back", "output": "{\"steps\":[\"return\"],\"confidence\":0.95}"}
+{"input": "come back", "output": "{\"steps\":[\"return\"],\"confidence\":0.95}"}
+{"input": "take a picture", "output": "{\"steps\":[\"photo\"],\"confidence\":0.95}"}
+{"input": "take a picture", "output": "{\"steps\":[\"photo\"],\"confidence\":0.95}"}
+{"input": "take a picture", "output": "{\"steps\":[\"photo\"],\"confidence\":0.95}"}
+{"input": "take a picture", "output": "{\"steps\":[\"photo\"],\"confidence\":0.95}"}
+{"input": "take a picture", "output": "{\"steps\":[\"photo\"],\"confidence\":0.95}"}
+{"input": "take a picture", "output": "{\"steps\":[\"photo\"],\"confidence\":0.95}"}
+{"input": "take a selfie", "output": "{\"steps\":[\"selfie\"],\"confidence\":0.95}"}
+{"input": "take a selfie", "output": "{\"steps\":[\"selfie\"],\"confidence\":0.95}"}
+{"input": "take a selfie", "output": "{\"steps\":[\"selfie\"],\"confidence\":0.95}"}
+{"input": "take a selfie", "output": "{\"steps\":[\"selfie\"],\"confidence\":0.95}"}
+{"input": "take a selfie", "output": "{\"steps\":[\"selfie\"],\"confidence\":0.95}"}
+{"input": "take a selfie", "output": "{\"steps\":[\"selfie\"],\"confidence\":0.95}"}
+{"input": "do a 360 panorama", "output": "{\"steps\":[\"panorama\"],\"confidence\":0.95}"}
+{"input": "do a 360 panorama", "output": "{\"steps\":[\"panorama\"],\"confidence\":0.95}"}
+{"input": "do a 360 panorama", "output": "{\"steps\":[\"panorama\"],\"confidence\":0.95}"}
+{"input": "do a 360 panorama", "output": "{\"steps\":[\"panorama\"],\"confidence\":0.95}"}
+{"input": "do a 360 panorama", "output": "{\"steps\":[\"panorama\"],\"confidence\":0.95}"}
+{"input": "do a 360 panorama", "output": "{\"steps\":[\"panorama\"],\"confidence\":0.95}"}
+{"input": "just hover", "output": "{\"steps\":[\"hover\"],\"confidence\":0.95}"}
+{"input": "just hover", "output": "{\"steps\":[\"hover\"],\"confidence\":0.95}"}
+{"input": "just hover", "output": "{\"steps\":[\"hover\"],\"confidence\":0.95}"}
+{"input": "just hover", "output": "{\"steps\":[\"hover\"],\"confidence\":0.95}"}
+{"input": "just hover", "output": "{\"steps\":[\"hover\"],\"confidence\":0.95}"}
+{"input": "just hover", "output": "{\"steps\":[\"hover\"],\"confidence\":0.95}"}
+{"input": "hover for 5 seconds", "output": "{\"steps\":[\"hover|5\"],\"confidence\":0.95}"}
+{"input": "hover for 5 seconds", "output": "{\"steps\":[\"hover|5\"],\"confidence\":0.95}"}
+{"input": "hover for 5 seconds", "output": "{\"steps\":[\"hover|5\"],\"confidence\":0.95}"}
+{"input": "hover for 5 seconds", "output": "{\"steps\":[\"hover|5\"],\"confidence\":0.95}"}
+{"input": "hover for 5 seconds", "output": "{\"steps\":[\"hover|5\"],\"confidence\":0.95}"}
+{"input": "hover for 5 seconds", "output": "{\"steps\":[\"hover|5\"],\"confidence\":0.95}"}
+{"input": "fly to the tree", "output": "{\"steps\":[\"fly_to|tree\"],\"confidence\":0.95}"}
+{"input": "fly to the tree", "output": "{\"steps\":[\"fly_to|tree\"],\"confidence\":0.95}"}
+{"input": "fly to the tree", "output": "{\"steps\":[\"fly_to|tree\"],\"confidence\":0.95}"}
+{"input": "fly to the tree", "output": "{\"steps\":[\"fly_to|tree\"],\"confidence\":0.95}"}
+{"input": "fly to the tree", "output": "{\"steps\":[\"fly_to|tree\"],\"confidence\":0.95}"}
+{"input": "fly to the tree", "output": "{\"steps\":[\"fly_to|tree\"],\"confidence\":0.95}"}
+{"input": "fly higher", "output": "{\"steps\":[\"fly_higher\"],\"confidence\":0.95}"}
+{"input": "fly higher", "output": "{\"steps\":[\"fly_higher\"],\"confidence\":0.95}"}
+{"input": "fly higher", "output": "{\"steps\":[\"fly_higher\"],\"confidence\":0.95}"}
+{"input": "fly higher", "output": "{\"steps\":[\"fly_higher\"],\"confidence\":0.95}"}
+{"input": "fly higher", "output": "{\"steps\":[\"fly_higher\"],\"confidence\":0.95}"}
+{"input": "fly higher", "output": "{\"steps\":[\"fly_higher\"],\"confidence\":0.95}"}
+{"input": "go down 3 meters", "output": "{\"steps\":[\"fly_lower|3\"],\"confidence\":0.95}"}
+{"input": "go down 3 meters", "output": "{\"steps\":[\"fly_lower|3\"],\"confidence\":0.95}"}
+{"input": "go down 3 meters", "output": "{\"steps\":[\"fly_lower|3\"],\"confidence\":0.95}"}
+{"input": "go down 3 meters", "output": "{\"steps\":[\"fly_lower|3\"],\"confidence\":0.95}"}
+{"input": "go down 3 meters", "output": "{\"steps\":[\"fly_lower|3\"],\"confidence\":0.95}"}
+{"input": "go down 3 meters", "output": "{\"steps\":[\"fly_lower|3\"],\"confidence\":0.95}"}
+{"input": "fly above the picnic table", "output": "{\"steps\":[\"fly_above|picnic table\"],\"confidence\":0.95}"}
+{"input": "fly above the picnic table", "output": "{\"steps\":[\"fly_above|picnic table\"],\"confidence\":0.95}"}
+{"input": "fly above the picnic table", "output": "{\"steps\":[\"fly_above|picnic table\"],\"confidence\":0.95}"}
+{"input": "fly above the picnic table", "output": "{\"steps\":[\"fly_above|picnic table\"],\"confidence\":0.95}"}
+{"input": "fly above the picnic table", "output": "{\"steps\":[\"fly_above|picnic table\"],\"confidence\":0.95}"}
+{"input": "fly above the picnic table", "output": "{\"steps\":[\"fly_above|picnic table\"],\"confidence\":0.95}"}
+{"input": "rotate left", "output": "{\"steps\":[\"rotate|left\"],\"confidence\":0.95}"}
+{"input": "rotate left", "output": "{\"steps\":[\"rotate|left\"],\"confidence\":0.95}"}
+{"input": "rotate left", "output": "{\"steps\":[\"rotate|left\"],\"confidence\":0.95}"}
+{"input": "rotate left", "output": "{\"steps\":[\"rotate|left\"],\"confidence\":0.95}"}
+{"input": "rotate left", "output": "{\"steps\":[\"rotate|left\"],\"confidence\":0.95}"}
+{"input": "rotate left", "output": "{\"steps\":[\"rotate|left\"],\"confidence\":0.95}"}
+{"input": "turn right 90 degrees", "output": "{\"steps\":[\"rotate|right|90\"],\"confidence\":0.95}"}
+{"input": "turn right 90 degrees", "output": "{\"steps\":[\"rotate|right|90\"],\"confidence\":0.95}"}
+{"input": "turn right 90 degrees", "output": "{\"steps\":[\"rotate|right|90\"],\"confidence\":0.95}"}
+{"input": "turn right 90 degrees", "output": "{\"steps\":[\"rotate|right|90\"],\"confidence\":0.95}"}
+{"input": "turn right 90 degrees", "output": "{\"steps\":[\"rotate|right|90\"],\"confidence\":0.95}"}
+{"input": "turn right 90 degrees", "output": "{\"steps\":[\"rotate|right|90\"],\"confidence\":0.95}"}
+{"input": "spin around", "output": "{\"steps\":[\"rotate|right|360\"],\"confidence\":0.95}"}
+{"input": "spin around", "output": "{\"steps\":[\"rotate|right|360\"],\"confidence\":0.95}"}
+{"input": "spin around", "output": "{\"steps\":[\"rotate|right|360\"],\"confidence\":0.95}"}
+{"input": "spin around", "output": "{\"steps\":[\"rotate|right|360\"],\"confidence\":0.95}"}
+{"input": "spin around", "output": "{\"steps\":[\"rotate|right|360\"],\"confidence\":0.95}"}
+{"input": "spin around", "output": "{\"steps\":[\"rotate|right|360\"],\"confidence\":0.95}"}
+{"input": "look at the fountain", "output": "{\"steps\":[\"look_at|fountain\"],\"confidence\":0.95}"}
+{"input": "look at the fountain", "output": "{\"steps\":[\"look_at|fountain\"],\"confidence\":0.95}"}
+{"input": "look at the fountain", "output": "{\"steps\":[\"look_at|fountain\"],\"confidence\":0.95}"}
+{"input": "look at the fountain", "output": "{\"steps\":[\"look_at|fountain\"],\"confidence\":0.95}"}
+{"input": "look at the fountain", "output": "{\"steps\":[\"look_at|fountain\"],\"confidence\":0.95}"}
+{"input": "look at the fountain", "output": "{\"steps\":[\"look_at|fountain\"],\"confidence\":0.95}"}
+{"input": "orbit the picnic table twice", "output": "{\"steps\":[\"orbit|picnic table|2\"],\"confidence\":0.95}"}
+{"input": "orbit the picnic table twice", "output": "{\"steps\":[\"orbit|picnic table|2\"],\"confidence\":0.95}"}
+{"input": "orbit the picnic table twice", "output": "{\"steps\":[\"orbit|picnic table|2\"],\"confidence\":0.95}"}
+{"input": "orbit the picnic table twice", "output": "{\"steps\":[\"orbit|picnic table|2\"],\"confidence\":0.95}"}
+{"input": "orbit the picnic table twice", "output": "{\"steps\":[\"orbit|picnic table|2\"],\"confidence\":0.95}"}
+{"input": "orbit the picnic table twice", "output": "{\"steps\":[\"orbit|picnic table|2\"],\"confidence\":0.95}"}
+{"input": "follow the dog for 10 seconds", "output": "{\"steps\":[\"follow|dog|10\"],\"confidence\":0.95}"}
+{"input": "follow the dog for 10 seconds", "output": "{\"steps\":[\"follow|dog|10\"],\"confidence\":0.95}"}
+{"input": "follow the dog for 10 seconds", "output": "{\"steps\":[\"follow|dog|10\"],\"confidence\":0.95}"}
+{"input": "follow the dog for 10 seconds", "output": "{\"steps\":[\"follow|dog|10\"],\"confidence\":0.95}"}
+{"input": "follow the dog for 10 seconds", "output": "{\"steps\":[\"follow|dog|10\"],\"confidence\":0.95}"}
+{"input": "follow the dog for 10 seconds", "output": "{\"steps\":[\"follow|dog|10\"],\"confidence\":0.95}"}
+{"input": "fly to the red tent and take a picture", "output": "{\"steps\":[\"fly_to|red tent\",\"photo\"],\"confidence\":0.95}"}
+{"input": "fly to the red tent and take a picture", "output": "{\"steps\":[\"fly_to|red tent\",\"photo\"],\"confidence\":0.95}"}
+{"input": "fly to the red tent and take a picture", "output": "{\"steps\":[\"fly_to|red tent\",\"photo\"],\"confidence\":0.95}"}
+{"input": "fly to the red tent and take a picture", "output": "{\"steps\":[\"fly_to|red tent\",\"photo\"],\"confidence\":0.95}"}
+{"input": "fly to the red tent and take a picture", "output": "{\"steps\":[\"fly_to|red tent\",\"photo\"],\"confidence\":0.95}"}
+{"input": "fly to the red tent and take a picture", "output": "{\"steps\":[\"fly_to|red tent\",\"photo\"],\"confidence\":0.95}"}
+{"input": "fly to that tree, take a picture, then spin around and come back", "output": "{\"steps\":[\"fly_to|tree\",\"photo\",\"rotate|right|360\",\"return\"],\"confidence\":0.95}"}
+{"input": "fly to that tree, take a picture, then spin around and come back", "output": "{\"steps\":[\"fly_to|tree\",\"photo\",\"rotate|right|360\",\"return\"],\"confidence\":0.95}"}
+{"input": "fly to that tree, take a picture, then spin around and come back", "output": "{\"steps\":[\"fly_to|tree\",\"photo\",\"rotate|right|360\",\"return\"],\"confidence\":0.95}"}
+{"input": "fly to that tree, take a picture, then spin around and come back", "output": "{\"steps\":[\"fly_to|tree\",\"photo\",\"rotate|right|360\",\"return\"],\"confidence\":0.95}"}
+{"input": "fly to that tree, take a picture, then spin around and come back", "output": "{\"steps\":[\"fly_to|tree\",\"photo\",\"rotate|right|360\",\"return\"],\"confidence\":0.95}"}
+{"input": "fly to that tree, take a picture, then spin around and come back", "output": "{\"steps\":[\"fly_to|tree\",\"photo\",\"rotate|right|360\",\"return\"],\"confidence\":0.95}"}
+{"input": "hello", "output": "{\"steps\":[\"say|Ready. Say a flight command.\"],\"confidence\":0.95}"}
+{"input": "hello", "output": "{\"steps\":[\"say|Ready. Say a flight command.\"],\"confidence\":0.95}"}
+{"input": "hello", "output": "{\"steps\":[\"say|Ready. Say a flight command.\"],\"confidence\":0.95}"}
+{"input": "hello", "output": "{\"steps\":[\"say|Ready. Say a flight command.\"],\"confidence\":0.95}"}
+{"input": "hello", "output": "{\"steps\":[\"say|Ready. Say a flight command.\"],\"confidence\":0.95}"}
+{"input": "hello", "output": "{\"steps\":[\"say|Ready. Say a flight command.\"],\"confidence\":0.95}"}

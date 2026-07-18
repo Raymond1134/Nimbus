@@ -17,9 +17,15 @@
 	<key>UILaunchScreen</key>
 	<dict/>
 	<key>DJISDKAppKey</key>
-	<string>DJISDKAppKey</string>
+	<string>dd41f343bf432b0adcc41965</string>
 	<key>ELEVENLABS_API_KEY</key>
+<<<<<<< HEAD
 	<string>ELEVENLABS_API_KEY</string>
+=======
+	<string>a565fc97fe1f3cc5570bd0c7f822d9882b10588e1a9016386079984967aa2ad4</string>
+	<key>BACKEND_BASE_URL</key>
+	<string>$(BACKEND_BASE_URL)</string>
+>>>>>>> 1e429ef368f1e7032c5f1250205be4bedc6cd225
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>

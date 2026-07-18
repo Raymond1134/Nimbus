@@ -5,6 +5,7 @@
 import SwiftUI
 
 struct ContentView: View {
+<<<<<<< HEAD
     // 🚀 FIXED: Changed from @StateObject to a standard variable since DJIManager now uses @Observable!
     private var djiManager = DJIManager.shared
     
@@ -58,9 +59,23 @@ struct ContentView: View {
             .frame(height: 200)
             .background(Color(.systemGray6))
             .cornerRadius(16)
+=======
+
+    @Environment(Orchestrator.self) private var orc
+
+    var body: some View {
+        TabView {
+            Tab("Fly", systemImage: "airplane") {
+                OperationalView()
+            }
+            Tab("Debug", systemImage: "wrench.and.screwdriver") {
+                DebugView()
+            }
+>>>>>>> 1e429ef368f1e7032c5f1250205be4bedc6cd225
         }
         .padding()
         .onAppear {
+<<<<<<< HEAD
             DJIManager.shared.registerApp()
             setupHandsFreeLoop()
         }
@@ -134,10 +149,27 @@ struct ContentView: View {
                     self.wakewordListener.startListening() // Restart listener on fail
                 }
             }
+=======
+            orc.djiManager.registerApp()
+        }
+        .alert("DJI SDK",
+               isPresented: Binding(
+                get: { orc.djiManager.showRegistrationAlert },
+                set: { orc.djiManager.showRegistrationAlert = $0 }
+               )
+        ) {
+            Button("OK") { }
+        } message: {
+            Text(orc.djiManager.registrationMessage)
+>>>>>>> 1e429ef368f1e7032c5f1250205be4bedc6cd225
         }
     }
 }
 
 #Preview {
     ContentView()
+<<<<<<< HEAD
+=======
+        .environment(Orchestrator())
+>>>>>>> 1e429ef368f1e7032c5f1250205be4bedc6cd225
 }

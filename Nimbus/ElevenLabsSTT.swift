@@ -110,6 +110,7 @@ enum ElevenLabsSTT {
 }
 // MARK: - 3. Forward to freesolo
 
+<<<<<<< HEAD
 // MARK: - 3. Forward to freesolo
 
 // MARK: - 3. Forward to freesolo
@@ -142,6 +143,8 @@ enum FreeSoloClient {
 
 
 // MARK: - 4. Voice Pipeline Setup
+=======
+>>>>>>> 1e429ef368f1e7032c5f1250205be4bedc6cd225
 private extension Data {
     mutating func appendStr(_ s: String) {
         if let d = s.data(using: .utf8) { append(d) }

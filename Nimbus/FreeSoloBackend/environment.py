@@ -9,10 +9,15 @@ ROOT = Path(__file__).parent
 
 
 class VoiceDroneObjectiveEnv(EnvironmentSingleTurn):
-    def __init__(self, *, split: str = "train") -> None:
-        path = ROOT / "dataset" / f"{split}.jsonl"
-        if not path.exists():
-            path = ROOT / "dataset" / "train.jsonl"
+    def __init__(self, *, split: str = "train", dataset_path: str | None = None) -> None:
+        if dataset_path:
+            path = Path(dataset_path)
+            if not path.is_absolute():
+                path = ROOT / path
+        else:
+            path = ROOT / "dataset" / f"{split}.jsonl"
+            if not path.exists():
+                path = ROOT / "dataset" / "train.jsonl"
         self.dataset = load_task_examples(path)
 
     def build_prompt_messages(self, example: TaskExample, prompt_text: str):
@@ -24,18 +29,12 @@ class VoiceDroneObjectiveEnv(EnvironmentSingleTurn):
 
     def score_response(self, example: TaskExample, response_text: str) -> RewardResult:
         predicted = parse_and_normalize(str(response_text))
-        expected_raw = example.output
-        if isinstance(expected_raw, dict) and "messages" in expected_raw:
-            msgs = expected_raw["messages"]
-            content = ""
-            if msgs:
-                content = str(msgs[-1].get("content") or "")
-            expected = parse_and_normalize(content)
-        else:
-            expected = parse_and_normalize(str(expected_raw or ""))
+        expected = parse_and_normalize(str(example.output or ""))
         score = score_objectives(predicted, expected)
         return RewardResult(score=score, threshold=1.0)
 
 
-def load_environment(split: str = "train", **kwargs) -> VoiceDroneObjectiveEnv:
-    return VoiceDroneObjectiveEnv(split=split)
+def load_environment(
+    split: str = "train", dataset_path: str | None = None, **kwargs
+) -> VoiceDroneObjectiveEnv:
+    return VoiceDroneObjectiveEnv(split=split, dataset_path=dataset_path)
