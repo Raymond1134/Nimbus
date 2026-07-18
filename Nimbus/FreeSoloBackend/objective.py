@@ -1,47 +1,78 @@
-"""OBJECTIVE JSON schema helpers shared by the FreeSolo env and dataset scripts."""
-
 from __future__ import annotations
-
 import json
 import re
 from typing import Any
 
-INTENTS = (
-    "seek_and_photo",
-    "hover_station",
-    "return_to_station",
-    "land",
-    "abort",
-    "say",
+OPS = frozenset(
+    {
+        "fly_to",
+        "fly_rel",
+        "fly_through",
+        "fly_under",
+        "fly_over",
+        "orbit",
+        "return",
+        "spin",
+        "hover",
+        "hover_station",
+        "photo",
+        "follow",
+        "land",
+        "abort",
+        "say",
+        "wait",
+        "gimbal",
+    }
 )
 
-SEEK_INTENTS = frozenset({"seek_and_photo"})
-REQUIRED_KEYS = ("intent", "target", "say_text", "constraints", "confidence")
+DIRECTIONS = frozenset({"forward", "back", "left", "right", "up", "down"})
 
 SYSTEM_PROMPT = """You convert a spoken drone command (raw speech-to-text) into OBJECTIVE JSON.
 
-Output ONLY a single JSON object. No markdown. No commentary.
+Output ONLY one JSON object. No markdown. No commentary.
+
+CRITICAL: "actions" MUST be a JSON array of objects. Never a string. Never a flat object.
+Example: {"actions":[{"op":"fly_to","target":"tree"},{"op":"photo"},{"op":"return"}],"confidence":0.95}
 
 Schema:
 {
-  "intent": "seek_and_photo" | "hover_station" | "return_to_station" | "land" | "abort" | "say",
-  "target": string | null,
-  "say_text": string | null,
-  "constraints": {
-    "max_seconds": number (optional),
-    "max_radius_m": number (optional)
-  },
-  "confidence": number between 0 and 1
+  "actions": [ Action, ... ],
+  "confidence": number 0..1
 }
 
+Action is an object with "op" and optional fields:
+  fly_to       { "op":"fly_to", "target":"<short noun phrase>" }
+  fly_rel      { "op":"fly_rel", "direction":"forward|back|left|right|up|down", "distance_m"?:number, "duration_s"?:number }
+  fly_through  { "op":"fly_through", "target":"..." }
+  fly_under    { "op":"fly_under", "target":"..." }
+  fly_over     { "op":"fly_over", "target":"..." }
+  orbit        { "op":"orbit", "target":"...", "revolutions"?:number, "duration_s"?:number }
+  return       { "op":"return" }                    // back to operator station
+  spin         { "op":"spin", "yaw_deg":number }    // signed degrees (+ = CW looking down)
+  hover        { "op":"hover", "duration_s":number } // hover in place
+  hover_station{ "op":"hover_station" }             // hold over operator
+  photo        { "op":"photo" }
+  follow       { "op":"follow", "target":"...", "duration_s":number }
+  land         { "op":"land" }
+  abort        { "op":"abort" }                     // stop / cancel
+  say          { "op":"say", "text":"..." }         // spoken reply
+  wait         { "op":"wait", "duration_s":number }
+  gimbal       { "op":"gimbal", "pitch_deg":number }
+
 Rules:
-- Emit exactly one intent.
-- seek_and_photo: set target to a short noun phrase (what to find/photograph). Use max_seconds=45 and max_radius_m=30 unless the user specifies otherwise.
-- hover_station / return_to_station / land / abort: target=null, say_text=null, constraints={} unless needed.
-- say: use when the utterance is unclear, off-topic, or needs a spoken reply. Put the reply in say_text. target=null.
-- Do not invent stick velocities, waypoints, or camera servo steps. That is a later planner's job.
-- Tolerate noisy STT (typos, missing words). Prefer a best-effort intent with lower confidence over refusing.
-- If truly impossible to interpret, intent=say with a short clarifying question in say_text.
+- Emit an ordered action list that captures the FULL command, including "then / and / after".
+- Prefer short targets ("red tent", "oak tree") — no stick velocities or waypoints.
+- "come back / return / fly back to me" → return
+- "stop / abort / cancel" → single abort action
+- "take a picture / snap a photo" → photo
+- "spin / turn / rotate / twirl" → spin with yaw_deg (default 360 if unspecified)
+- "hover for N seconds" → hover; "just hover / stay" without time → hover_station
+- "follow X for N seconds" → follow
+- "fly under / through / over X" → fly_under / fly_through / fly_over
+- "orbit / circle around X" → orbit
+- Unclear / off-topic → [{"op":"say","text":"..."}]
+- Tolerate noisy STT. Best-effort plan with lower confidence beats refusing.
+- Do NOT invent constraints, max radius, or safety envelopes.
 """
 
 
@@ -50,88 +81,119 @@ def dumps_objective(obj: dict[str, Any]) -> str:
 
 
 def loads_objective(text: str) -> dict[str, Any] | None:
-    """Parse OBJECTIVE JSON from model output; tolerate optional markdown fences."""
     if text is None:
         return None
     raw = text.strip()
     if not raw:
         return None
-
     fence = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", raw, flags=re.DOTALL)
     if fence:
         raw = fence.group(1)
     else:
-        start = raw.find("{")
-        end = raw.rfind("}")
+        start, end = raw.find("{"), raw.rfind("}")
         if start >= 0 and end > start:
             raw = raw[start : end + 1]
-
     try:
         data = json.loads(raw)
     except json.JSONDecodeError:
         return None
-    if not isinstance(data, dict):
+    return data if isinstance(data, dict) else None
+
+
+def _num(v: Any) -> float | None:
+    if v is None:
         return None
-    return data
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return None
+
+
+def normalize_action(raw: Any) -> dict[str, Any] | None:
+    if not isinstance(raw, dict):
+        return None
+    op = raw.get("op")
+    if op not in OPS:
+        return None
+
+    out: dict[str, Any] = {"op": op}
+
+    if op in {"fly_to", "fly_through", "fly_under", "fly_over", "orbit", "follow"}:
+        target = raw.get("target")
+        if not isinstance(target, str) or not target.strip():
+            return None
+        out["target"] = target.strip()
+
+    if op == "fly_rel":
+        direction = raw.get("direction")
+        if direction not in DIRECTIONS:
+            return None
+        out["direction"] = direction
+        dm = _num(raw.get("distance_m"))
+        ds = _num(raw.get("duration_s"))
+        if dm is not None:
+            out["distance_m"] = dm
+        if ds is not None:
+            out["duration_s"] = ds
+        if dm is None and ds is None:
+            out["distance_m"] = 3.0
+
+    if op == "spin":
+        yaw = _num(raw.get("yaw_deg"))
+        if yaw is None:
+            yaw = 360.0
+        out["yaw_deg"] = yaw
+
+    if op in {"hover", "wait", "follow"}:
+        ds = _num(raw.get("duration_s"))
+        if op == "follow":
+            if ds is None:
+                ds = 10.0
+            out["duration_s"] = ds
+        elif op in {"hover", "wait"}:
+            if ds is None:
+                return None
+            out["duration_s"] = ds
+
+    if op == "orbit":
+        rev = _num(raw.get("revolutions"))
+        ds = _num(raw.get("duration_s"))
+        if rev is not None:
+            out["revolutions"] = rev
+        if ds is not None:
+            out["duration_s"] = ds
+
+    if op == "say":
+        text = raw.get("text")
+        if not isinstance(text, str) or not text.strip():
+            return None
+        out["text"] = text.strip()
+
+    if op == "gimbal":
+        pitch = _num(raw.get("pitch_deg"))
+        if pitch is None:
+            return None
+        out["pitch_deg"] = pitch
+
+    return out
 
 
 def normalize_objective(data: dict[str, Any]) -> dict[str, Any] | None:
-    """Coerce a dict into the canonical OBJECTIVE shape, or None if invalid."""
-    intent = data.get("intent")
-    if intent not in INTENTS:
+    actions_raw = data.get("actions")
+    if not isinstance(actions_raw, list) or not actions_raw:
         return None
+    actions: list[dict[str, Any]] = []
+    for item in actions_raw:
+        act = normalize_action(item)
+        if act is None:
+            return None
+        actions.append(act)
 
-    target = data.get("target", None)
-    if target is not None and not isinstance(target, str):
-        return None
-    if isinstance(target, str):
-        target = target.strip() or None
-
-    say_text = data.get("say_text", None)
-    if say_text is not None and not isinstance(say_text, str):
-        return None
-    if isinstance(say_text, str):
-        say_text = say_text.strip() or None
-
-    constraints = data.get("constraints", {})
-    if constraints is None:
-        constraints = {}
-    if not isinstance(constraints, dict):
-        return None
-    clean_constraints: dict[str, float] = {}
-    for key in ("max_seconds", "max_radius_m"):
-        if key in constraints and constraints[key] is not None:
-            try:
-                clean_constraints[key] = float(constraints[key])
-            except (TypeError, ValueError):
-                return None
-
-    confidence = data.get("confidence", 0.5)
-    try:
-        confidence = float(confidence)
-    except (TypeError, ValueError):
-        return None
-    confidence = max(0.0, min(1.0, confidence))
-
-    if intent in SEEK_INTENTS and not target:
-        return None
-    if intent == "say" and not say_text:
-        return None
-    if intent not in SEEK_INTENTS:
-        target = None
-    if intent != "say":
-        say_text = None
-    if intent == "seek_and_photo":
-        clean_constraints.setdefault("max_seconds", 45.0)
-        clean_constraints.setdefault("max_radius_m", 30.0)
-
-    return {
-        "intent": intent,
-        "target": target,
-        "say_text": say_text,
-        "constraints": clean_constraints,
-        "confidence": confidence,
-    }
+    conf = _num(data.get("confidence"))
+    if conf is None:
+        conf = 0.8
+    conf = max(0.0, min(1.0, conf))
+    return {"actions": actions, "confidence": conf}
 
 
 def parse_and_normalize(text: str) -> dict[str, Any] | None:
@@ -141,67 +203,63 @@ def parse_and_normalize(text: str) -> dict[str, Any] | None:
     return normalize_objective(parsed)
 
 
+def _action_key(a: dict[str, Any]) -> tuple:
+    return (
+        a.get("op"),
+        (a.get("target") or "").lower(),
+        a.get("direction"),
+        round(float(a["yaw_deg"]), 1) if "yaw_deg" in a else None,
+        round(float(a["duration_s"]), 1) if "duration_s" in a else None,
+        round(float(a["distance_m"]), 1) if "distance_m" in a else None,
+        round(float(a["pitch_deg"]), 1) if "pitch_deg" in a else None,
+        round(float(a["revolutions"]), 1) if "revolutions" in a else None,
+        (a.get("text") or "").lower(),
+    )
+
+
 def score_objectives(predicted: dict[str, Any] | None, expected: dict[str, Any] | None) -> float:
-    """Reward in [0, 1] for FreeSolo GRPO / local eval."""
     if predicted is None or expected is None:
         return 0.0
-
-    score = 0.0
-    if predicted["intent"] == expected["intent"]:
-        score += 0.6
-    else:
+    pa, ea = predicted["actions"], expected["actions"]
+    if not ea:
         return 0.0
 
-    if expected["intent"] in SEEK_INTENTS:
-        pred_t = (predicted.get("target") or "").strip().lower()
-        exp_t = (expected.get("target") or "").strip().lower()
-        if pred_t == exp_t:
-            score += 0.3
-        elif exp_t and (exp_t in pred_t or pred_t in exp_t):
-            score += 0.15
-    elif expected["intent"] == "say":
-        pred_s = (predicted.get("say_text") or "").strip().lower()
-        exp_s = (expected.get("say_text") or "").strip().lower()
-        if pred_s and exp_s and (exp_s in pred_s or pred_s in exp_s):
-            score += 0.3
-        elif pred_s:
-            score += 0.1
-    else:
-        score += 0.3
+    # Length similarity
+    len_score = 1.0 - min(1.0, abs(len(pa) - len(ea)) / max(len(ea), 1))
+    n = min(len(pa), len(ea))
+    if n == 0:
+        return 0.1 * len_score
 
-    # Small bonus for being valid JSON with confidence present
-    if "confidence" in predicted:
-        score += 0.1
+    op_hits = 0.0
+    detail_hits = 0.0
+    for i in range(n):
+        p, e = pa[i], ea[i]
+        if p.get("op") == e.get("op"):
+            op_hits += 1.0
+            pk, ek = _action_key(p), _action_key(e)
+            if pk == ek:
+                detail_hits += 1.0
+            else:
+                # Soft target match
+                pt = (p.get("target") or "").lower()
+                et = (e.get("target") or "").lower()
+                if et and pt and (et in pt or pt in et):
+                    detail_hits += 0.6
+                elif p.get("direction") == e.get("direction") and e.get("op") == "fly_rel":
+                    detail_hits += 0.5
+                else:
+                    detail_hits += 0.25
+        else:
+            break  # prefix must align
 
-    return min(1.0, score)
+    op_frac = op_hits / len(ea)
+    detail_frac = detail_hits / len(ea)
+    score = 0.55 * op_frac + 0.35 * detail_frac + 0.10 * len_score
+    return max(0.0, min(1.0, score))
 
 
-def make_objective(
-    intent: str,
-    *,
-    target: str | None = None,
-    say_text: str | None = None,
-    max_seconds: float | None = None,
-    max_radius_m: float | None = None,
-    confidence: float = 0.95,
-) -> dict[str, Any]:
-    constraints: dict[str, float] = {}
-    if intent == "seek_and_photo":
-        constraints["max_seconds"] = float(max_seconds if max_seconds is not None else 45)
-        constraints["max_radius_m"] = float(max_radius_m if max_radius_m is not None else 30)
-    elif max_seconds is not None:
-        constraints["max_seconds"] = float(max_seconds)
-    elif max_radius_m is not None:
-        constraints["max_radius_m"] = float(max_radius_m)
-
-    obj = {
-        "intent": intent,
-        "target": target,
-        "say_text": say_text,
-        "constraints": constraints,
-        "confidence": float(confidence),
-    }
-    normalized = normalize_objective(obj)
-    if normalized is None:
-        raise ValueError(f"Invalid OBJECTIVE: {obj}")
-    return normalized
+def make_objective(actions: list[dict[str, Any]], confidence: float = 0.95) -> dict[str, Any]:
+    obj = normalize_objective({"actions": actions, "confidence": confidence})
+    if obj is None:
+        raise ValueError(f"Invalid OBJECTIVE actions: {actions}")
+    return obj

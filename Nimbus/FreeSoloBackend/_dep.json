@@ -1,0 +1,553 @@
+[
+  {
+    "run_id": "flash-1784352366-5ea3d30e",
+    "state": "deployed",
+    "spec": {
+      "model": "Qwen/Qwen3.5-4B",
+      "algorithm": "sft",
+      "environment": {
+        "id": "nimbus/voice-drone-objective",
+        "params": {},
+        "pip": [
+          "freesolo>=0.2.54"
+        ],
+        "secrets": [],
+        "resolved_sha": ""
+      },
+      "train": {
+        "epochs": 3,
+        "lora_rank": 32,
+        "lora_alpha": 64,
+        "init_from_adapter": "",
+        "hf_repo": "Freesolo-Co/flashrun-nimbus-voice-drone-objective-ee50b6e0b8cc780b",
+        "learning_rate": null,
+        "batch_size": null,
+        "max_context_tokens": 2048,
+        "save_every": null,
+        "max_steps": null,
+        "save_at_steps": [],
+        "max_examples": 1500,
+        "group_size": null,
+        "temperature": null,
+        "max_completion_tokens": null,
+        "kl_penalty_coef": null,
+        "advantage_clip": null,
+        "thinking_length_penalty_coef": null,
+        "teacher_model": "",
+        "stop_sequences": [],
+        "structured_outputs": ""
+      },
+      "gpu": {
+        "type": "RTX 5090",
+        "disk_gb": 60,
+        "max_wall_seconds": 86400,
+        "max_retries": 5,
+        "network_volume": "flash-weights",
+        "network_volume_gb": 100,
+        "provider": "",
+        "exact_type": ""
+      },
+      "run_id": "flash-1784352366-5ea3d30e",
+      "seed": 42,
+      "worker_env": {},
+      "model_policy": "catalog",
+      "thinking": false,
+      "wandb": {
+        "project": null,
+        "run_name": null
+      },
+      "model_revision": ""
+    },
+    "created_at": 1784352366.1517746,
+    "updated_at": 1784358770.9629745,
+    "cost_usd": 1.3649650834285714,
+    "estimated_cost_usd": 1.3649650834285714,
+    "error": null,
+    "artifacts_dir": "/root/.flash/results/runpod/sft/flash-1784352366-5ea3d30e",
+    "adapter_ref": "flash-1784352366-5ea3d30e",
+    "deployment": {
+      "adapter_hf_prefix": "sft/flash-1784352366-5ea3d30e/adapter",
+      "adapter_revision": "flash-1784352366-5ea3d30e@final.8422be45de4f2bebd9e8a3e6c8003b083639ae8f",
+      "checkpoint_step": null,
+      "detail": "immutable revision verified and alias activated",
+      "endpoint_name": "https://clado-ai--freesolo-lora-serving.modal.run",
+      "model": "Qwen/Qwen3.5-4B",
+      "openai_base_url": "https://clado-ai--freesolo-lora-serving.modal.run/v1",
+      "openai_model": "flash-1784352366-5ea3d30e",
+      "requested_at": 1784356111.1147447,
+      "run_id": "flash-1784352366-5ea3d30e",
+      "state": "ready",
+      "thinking_tag": false,
+      "updated_at": 1784356121.1247587,
+      "verified_at": 1784356120.0156806,
+      "verify": true,
+      "verify_finish_reason": "stop",
+      "verify_kind": "fixed_prompt",
+      "verify_latency_s": 1.3768675616011024,
+      "verify_sample": "{\"deployment\":\"smoke\",\"question\":\"2+2\",\"answer\":\"4.0\",\"confidence\":0.9}",
+      "verify_turns": 1
+    },
+    "remote": {
+      "allocated_gpu": "RTX 5090",
+      "attempt": 0,
+      "code_prefix": "code/d217e5f746890f11bda0af2912a87f3d/flash",
+      "gpu": "RTX 5090",
+      "hourly_usd": 0.4703703703703703,
+      "instance_id": 45216438,
+      "label": "flash-1784352366-5ea3d30e-s42-a0",
+      "machine_id": 100720,
+      "offer_id": 39555567,
+      "on_last_gpu": false,
+      "provider": "vast",
+      "seed": 42,
+      "started_ts": 1784352375.2786906
+    },
+    "submitted_instance_providers": [
+      "lambda",
+      "vast"
+    ],
+    "realized_cost_usd": 0.111887,
+    "reconciled_at": 1784358748.5653224,
+    "finished_at": 1784353231.610532,
+    "billing_context": {
+      "org_id": "e8a76013-acbf-4a32-b888-a455c5db42c5"
+    },
+    "billing_state": "charged",
+    "billing_error": null,
+    "billing_charge": {
+      "amountCents": 136,
+      "balanceCents": 9864,
+      "ledgerId": "bd2abed0-0171-48f6-aaca-91514331ca61",
+      "replay": false,
+      "runId": "flash-1784352366-5ea3d30e"
+    },
+    "platform_context": {
+      "api_key_id": "0a7faca1-9cff-42f1-9d6f-cd0c797aebd2",
+      "org_id": "e8a76013-acbf-4a32-b888-a455c5db42c5",
+      "user_id": "e48e2514-1ffa-4ee4-a150-ba70735c5056"
+    },
+    "last_heartbeat": {
+      "attempt": 0,
+      "mode": "sft",
+      "run_id": "flash-1784352366-5ea3d30e",
+      "seed": 42,
+      "stage": "checkpoint_deployable",
+      "step": 129,
+      "subfolder": "sft/flash-1784352366-5ea3d30e/checkpoints/step-129/adapter",
+      "ts": 1784353189.1653025
+    },
+    "gpu_status": null
+  },
+  {
+    "run_id": "flash-1784360718-cb1c2989",
+    "state": "deployed",
+    "spec": {
+      "model": "Qwen/Qwen3.5-9B",
+      "algorithm": "sft",
+      "environment": {
+        "id": "nimbus/voice-drone-objective",
+        "params": {},
+        "pip": [
+          "freesolo>=0.2.54"
+        ],
+        "secrets": [],
+        "resolved_sha": ""
+      },
+      "train": {
+        "epochs": 1,
+        "lora_rank": 64,
+        "lora_alpha": 128,
+        "init_from_adapter": "",
+        "hf_repo": "Freesolo-Co/flashrun-nimbus-voice-drone-objective-ee50b6e0b8cc780b",
+        "learning_rate": null,
+        "batch_size": null,
+        "max_context_tokens": 3072,
+        "save_every": null,
+        "max_steps": null,
+        "save_at_steps": [],
+        "max_examples": 10000,
+        "group_size": null,
+        "temperature": null,
+        "max_completion_tokens": null,
+        "kl_penalty_coef": null,
+        "advantage_clip": null,
+        "thinking_length_penalty_coef": null,
+        "teacher_model": "",
+        "stop_sequences": [],
+        "structured_outputs": ""
+      },
+      "gpu": {
+        "type": "A100 PCIe",
+        "disk_gb": 60,
+        "max_wall_seconds": 86400,
+        "max_retries": 5,
+        "network_volume": "flash-weights",
+        "network_volume_gb": 100,
+        "provider": "",
+        "exact_type": ""
+      },
+      "run_id": "flash-1784360718-cb1c2989",
+      "seed": 42,
+      "worker_env": {},
+      "model_policy": "catalog",
+      "thinking": false,
+      "wandb": {
+        "project": null,
+        "run_name": null
+      },
+      "model_revision": ""
+    },
+    "created_at": 1784360718.1732576,
+    "updated_at": 1784369622.8877158,
+    "cost_usd": 8.864540094358974,
+    "estimated_cost_usd": 8.864540094358974,
+    "error": null,
+    "artifacts_dir": "/root/.flash/results/runpod/sft/flash-1784360718-cb1c2989",
+    "adapter_ref": "flash-1784360718-cb1c2989",
+    "deployment": {
+      "adapter_hf_prefix": "sft/flash-1784360718-cb1c2989/adapter",
+      "adapter_revision": "flash-1784360718-cb1c2989@final.793d581a534d37bc7643d5408a9dabf4818900ea",
+      "checkpoint_step": null,
+      "detail": "immutable revision verified and alias activated",
+      "endpoint_name": "https://clado-ai--freesolo-lora-serving.modal.run",
+      "model": "Qwen/Qwen3.5-9B",
+      "openai_base_url": "https://clado-ai--freesolo-lora-serving.modal.run/v1",
+      "openai_model": "flash-1784360718-cb1c2989",
+      "requested_at": 1784364166.0575273,
+      "run_id": "flash-1784360718-cb1c2989",
+      "state": "ready",
+      "thinking_tag": false,
+      "updated_at": 1784364190.3815227,
+      "verified_at": 1784364189.343532,
+      "verify": true,
+      "verify_finish_reason": "stop",
+      "verify_kind": "fixed_prompt",
+      "verify_latency_s": 13.21647818107158,
+      "verify_sample": "{\"actions\":[{\"op\":\"answer\",\"text\":\"2+2=4.0}],\"deployment_smoke_test\":true}",
+      "verify_turns": 1
+    },
+    "remote": {
+      "allocated_gpu": "A100 SXM",
+      "attempt": 0,
+      "code_prefix": "code/b7e81e55271afc9be30afc610a232d7c/flash",
+      "gpu": "A100 SXM",
+      "hourly_usd": 1.0426666666666666,
+      "instance_id": 45222761,
+      "label": "flash-1784360718-cb1c2989-s42-a0",
+      "machine_id": 38441,
+      "offer_id": 29019297,
+      "on_last_gpu": false,
+      "provider": "vast",
+      "seed": 42,
+      "started_ts": 1784360722.1956565
+    },
+    "submitted_instance_providers": [
+      "lambda",
+      "vast"
+    ],
+    "realized_cost_usd": 0.987883,
+    "reconciled_at": 1784369609.1632297,
+    "finished_at": 1784364133.0462918,
+    "billing_context": {
+      "org_id": "e8a76013-acbf-4a32-b888-a455c5db42c5"
+    },
+    "billing_state": "charged",
+    "billing_error": null,
+    "billing_charge": {
+      "amountCents": 886,
+      "balanceCents": 8836,
+      "ledgerId": "43026bb9-4f48-4023-826c-9f8516e0048a",
+      "replay": false,
+      "runId": "flash-1784360718-cb1c2989"
+    },
+    "platform_context": {
+      "api_key_id": "0a7faca1-9cff-42f1-9d6f-cd0c797aebd2",
+      "org_id": "e8a76013-acbf-4a32-b888-a455c5db42c5",
+      "user_id": "e48e2514-1ffa-4ee4-a150-ba70735c5056"
+    },
+    "last_heartbeat": {
+      "attempt": 0,
+      "gpu": {
+        "cuda_available": true,
+        "device_count": 1,
+        "device_name": "NVIDIA A100-SXM4-80GB",
+        "driver_version": "580.159.03",
+        "gpu_util_pct": 0,
+        "index": 0,
+        "mem_clock_mhz": 1593,
+        "mem_util_pct": 0,
+        "memory_free_gb": 45.947,
+        "memory_total_gb": 80.0,
+        "memory_used_gb": 33.304,
+        "nvidia_smi": "0, GPU-3bdc4997-4acc-53b0-c86d-15427ddcf89d, 580.159.03, NVIDIA A100-SXM4-80GB, 0, 0, 81920, 34103, 47050, 36, 77.02, 400.00, P0, 1275, 1593, 4, 16",
+        "pcie_gen": 4,
+        "pcie_width": 16,
+        "power_limit_w": 400.0,
+        "power_w": 77.02,
+        "processes": [
+          {
+            "pid": 2210109,
+            "process_name": "[Not Found]",
+            "used_memory_gb": 32.918
+          }
+        ],
+        "pstate": "P0",
+        "sm_clock_mhz": 1275,
+        "temperature_c": 36,
+        "torch": "2.10.0+cu128",
+        "torch_cuda": "12.8",
+        "torch_memory_allocated_gb": 18.315,
+        "torch_memory_free_gb": 45.947,
+        "torch_memory_reserved_gb": 30.309,
+        "torch_memory_total_gb": 79.25,
+        "uuid": "GPU-3bdc4997-4acc-53b0-c86d-15427ddcf89d"
+      },
+      "mode": "sft",
+      "run_id": "flash-1784360718-cb1c2989",
+      "seed": 42,
+      "stage": "done",
+      "ts": 1784364099.3974962
+    },
+    "gpu_status": {
+      "cuda_available": true,
+      "device_count": 1,
+      "device_name": "NVIDIA A100-SXM4-80GB",
+      "driver_version": "580.159.03",
+      "gpu_util_pct": 0,
+      "index": 0,
+      "mem_clock_mhz": 1593,
+      "mem_util_pct": 0,
+      "memory_free_gb": 45.947,
+      "memory_total_gb": 80.0,
+      "memory_used_gb": 33.304,
+      "nvidia_smi": "0, GPU-3bdc4997-4acc-53b0-c86d-15427ddcf89d, 580.159.03, NVIDIA A100-SXM4-80GB, 0, 0, 81920, 34103, 47050, 36, 77.02, 400.00, P0, 1275, 1593, 4, 16",
+      "pcie_gen": 4,
+      "pcie_width": 16,
+      "power_limit_w": 400.0,
+      "power_w": 77.02,
+      "processes": [
+        {
+          "pid": 2210109,
+          "process_name": "[Not Found]",
+          "used_memory_gb": 32.918
+        }
+      ],
+      "pstate": "P0",
+      "sm_clock_mhz": 1275,
+      "temperature_c": 36,
+      "torch": "2.10.0+cu128",
+      "torch_cuda": "12.8",
+      "torch_memory_allocated_gb": 18.315,
+      "torch_memory_free_gb": 45.947,
+      "torch_memory_reserved_gb": 30.309,
+      "torch_memory_total_gb": 79.25,
+      "uuid": "GPU-3bdc4997-4acc-53b0-c86d-15427ddcf89d"
+    }
+  },
+  {
+    "run_id": "flash-1784364634-2d4cb643",
+    "state": "deployed",
+    "spec": {
+      "model": "Qwen/Qwen3.5-9B",
+      "algorithm": "sft",
+      "environment": {
+        "id": "nimbus/voice-drone-objective",
+        "params": {},
+        "pip": [
+          "freesolo>=0.2.54"
+        ],
+        "secrets": [],
+        "resolved_sha": ""
+      },
+      "train": {
+        "epochs": 2,
+        "lora_rank": 64,
+        "lora_alpha": 128,
+        "init_from_adapter": "",
+        "hf_repo": "Freesolo-Co/flashrun-nimbus-voice-drone-objective-ee50b6e0b8cc780b",
+        "learning_rate": null,
+        "batch_size": null,
+        "max_context_tokens": 3072,
+        "save_every": null,
+        "max_steps": null,
+        "save_at_steps": [],
+        "max_examples": 10000,
+        "group_size": null,
+        "temperature": null,
+        "max_completion_tokens": null,
+        "kl_penalty_coef": null,
+        "advantage_clip": null,
+        "thinking_length_penalty_coef": null,
+        "teacher_model": "",
+        "stop_sequences": [],
+        "structured_outputs": ""
+      },
+      "gpu": {
+        "type": "A100 PCIe",
+        "disk_gb": 60,
+        "max_wall_seconds": 86400,
+        "max_retries": 5,
+        "network_volume": "flash-weights",
+        "network_volume_gb": 100,
+        "provider": "",
+        "exact_type": ""
+      },
+      "run_id": "flash-1784364634-2d4cb643",
+      "seed": 42,
+      "worker_env": {},
+      "model_policy": "catalog",
+      "thinking": false,
+      "wandb": {
+        "project": null,
+        "run_name": null
+      },
+      "model_revision": ""
+    },
+    "created_at": 1784364634.452678,
+    "updated_at": 1784378744.387737,
+    "cost_usd": 17.729080188717948,
+    "estimated_cost_usd": 17.729080188717948,
+    "error": null,
+    "artifacts_dir": "/root/.flash/results/runpod/sft/flash-1784364634-2d4cb643",
+    "adapter_ref": "flash-1784364634-2d4cb643",
+    "deployment": {
+      "adapter_hf_prefix": "sft/flash-1784364634-2d4cb643/adapter",
+      "adapter_revision": "flash-1784364634-2d4cb643@final.5a99c5548d9415d6edca87935e245335241fbf99",
+      "checkpoint_step": null,
+      "detail": "immutable revision verified and alias activated",
+      "endpoint_name": "https://clado-ai--freesolo-lora-serving.modal.run",
+      "model": "Qwen/Qwen3.5-9B",
+      "openai_base_url": "https://clado-ai--freesolo-lora-serving.modal.run/v1",
+      "openai_model": "flash-1784364634-2d4cb643",
+      "requested_at": 1784378716.4898431,
+      "run_id": "flash-1784364634-2d4cb643",
+      "state": "ready",
+      "thinking_tag": false,
+      "updated_at": 1784378744.3860507,
+      "verified_at": 1784378742.3972855,
+      "verify": true,
+      "verify_finish_reason": "length",
+      "verify_kind": "fixed_prompt",
+      "verify_latency_s": 16.7157215019688,
+      "verify_sample": "{\"actions\":[{\"actions\":[{\"actions\":[{\"actions\":[{\"actions\":[{\"actions\":[{\"actions\":[{\"actions\":[{\"actions\":[{\"actions\":[{\"actions\":[{\"actions\":[{\"actions\":[{\"ac",
+      "verify_turns": 1
+    },
+    "remote": {
+      "allocated_gpu": "A100 SXM",
+      "attempt": 0,
+      "code_prefix": "code/b7e81e55271afc9be30afc610a232d7c/flash",
+      "gpu": "A100 SXM",
+      "hourly_usd": 1.0426666666666666,
+      "instance_id": 45225579,
+      "label": "flash-1784364634-2d4cb643-s42-a0",
+      "machine_id": 38441,
+      "offer_id": 29019297,
+      "on_last_gpu": false,
+      "provider": "vast",
+      "seed": 42,
+      "started_ts": 1784364638.425384
+    },
+    "submitted_instance_providers": [
+      "lambda",
+      "vast"
+    ],
+    "realized_cost_usd": 1.991614,
+    "reconciled_at": 1784376836.5561066,
+    "finished_at": 1784371514.8410718,
+    "billing_context": {
+      "org_id": "e8a76013-acbf-4a32-b888-a455c5db42c5"
+    },
+    "billing_state": "charged",
+    "billing_error": null,
+    "billing_charge": {
+      "amountCents": 1773,
+      "balanceCents": 7063,
+      "ledgerId": "ebba336c-61d8-4de2-a1e4-0aede047f0d2",
+      "replay": false,
+      "runId": "flash-1784364634-2d4cb643"
+    },
+    "platform_context": {
+      "api_key_id": "0a7faca1-9cff-42f1-9d6f-cd0c797aebd2",
+      "org_id": "e8a76013-acbf-4a32-b888-a455c5db42c5",
+      "user_id": "e48e2514-1ffa-4ee4-a150-ba70735c5056"
+    },
+    "last_heartbeat": {
+      "attempt": 0,
+      "gpu": {
+        "cuda_available": true,
+        "device_count": 1,
+        "device_name": "NVIDIA A100-SXM4-80GB",
+        "driver_version": "580.159.03",
+        "gpu_util_pct": 0,
+        "index": 0,
+        "mem_clock_mhz": 1593,
+        "mem_util_pct": 0,
+        "memory_free_gb": 45.811,
+        "memory_total_gb": 80.0,
+        "memory_used_gb": 33.44,
+        "nvidia_smi": "0, GPU-3bdc4997-4acc-53b0-c86d-15427ddcf89d, 580.159.03, NVIDIA A100-SXM4-80GB, 0, 0, 81920, 34243, 46910, 38, 78.09, 400.00, P0, 1275, 1593, 4, 16",
+        "pcie_gen": 4,
+        "pcie_width": 16,
+        "power_limit_w": 400.0,
+        "power_w": 78.09,
+        "processes": [
+          {
+            "pid": 2307485,
+            "process_name": "[Not Found]",
+            "used_memory_gb": 33.055
+          }
+        ],
+        "pstate": "P0",
+        "sm_clock_mhz": 1275,
+        "temperature_c": 38,
+        "torch": "2.10.0+cu128",
+        "torch_cuda": "12.8",
+        "torch_memory_allocated_gb": 18.315,
+        "torch_memory_free_gb": 45.81,
+        "torch_memory_reserved_gb": 30.445,
+        "torch_memory_total_gb": 79.25,
+        "uuid": "GPU-3bdc4997-4acc-53b0-c86d-15427ddcf89d"
+      },
+      "mode": "sft",
+      "run_id": "flash-1784364634-2d4cb643",
+      "seed": 42,
+      "stage": "done",
+      "ts": 1784371477.0533602
+    },
+    "gpu_status": {
+      "cuda_available": true,
+      "device_count": 1,
+      "device_name": "NVIDIA A100-SXM4-80GB",
+      "driver_version": "580.159.03",
+      "gpu_util_pct": 0,
+      "index": 0,
+      "mem_clock_mhz": 1593,
+      "mem_util_pct": 0,
+      "memory_free_gb": 45.811,
+      "memory_total_gb": 80.0,
+      "memory_used_gb": 33.44,
+      "nvidia_smi": "0, GPU-3bdc4997-4acc-53b0-c86d-15427ddcf89d, 580.159.03, NVIDIA A100-SXM4-80GB, 0, 0, 81920, 34243, 46910, 38, 78.09, 400.00, P0, 1275, 1593, 4, 16",
+      "pcie_gen": 4,
+      "pcie_width": 16,
+      "power_limit_w": 400.0,
+      "power_w": 78.09,
+      "processes": [
+        {
+          "pid": 2307485,
+          "process_name": "[Not Found]",
+          "used_memory_gb": 33.055
+        }
+      ],
+      "pstate": "P0",
+      "sm_clock_mhz": 1275,
+      "temperature_c": 38,
+      "torch": "2.10.0+cu128",
+      "torch_cuda": "12.8",
+      "torch_memory_allocated_gb": 18.315,
+      "torch_memory_free_gb": 45.81,
+      "torch_memory_reserved_gb": 30.445,
+      "torch_memory_total_gb": 79.25,
+      "uuid": "GPU-3bdc4997-4acc-53b0-c86d-15427ddcf89d"
+    }
+  }
+]
