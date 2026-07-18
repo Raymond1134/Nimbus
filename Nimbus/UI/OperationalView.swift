@@ -44,18 +44,107 @@ struct OperationalView: View {
     }
 
     private var noFeedPlaceholder: some View {
-        VStack(spacing: 10) {
-            Image(systemName: orc.bridge.isAircraftConnected
-                  ? "camera.fill"
-                  : "airplane.circle.fill")
-                .font(.system(size: 60, weight: .thin))
-                .foregroundStyle(.white.opacity(0.18))
-            Text(orc.bridge.isAircraftConnected
-                 ? "Awaiting camera feed…"
-                 : "Aircraft not connected")
-                .font(.caption)
-                .foregroundStyle(.white.opacity(0.30))
+        VStack(spacing: 20) {
+            Image(systemName: orc.bridge.isAircraftConnected ? "camera.fill" : "airplane.circle")
+                .font(.system(size: 56, weight: .thin))
+                .foregroundStyle(.white.opacity(0.22))
+
+            if orc.bridge.isAircraftConnected {
+                Text("Awaiting camera feed…")
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.35))
+            } else {
+                connectionPanel
+            }
         }
+    }
+
+    // MARK: - Connection Panel (shown when no aircraft is connected)
+
+    private var connectionPanel: some View {
+        VStack(spacing: 14) {
+            Text("Aircraft Not Connected")
+                .font(.headline)
+                .foregroundStyle(.white.opacity(0.85))
+
+            Text(connectionStatusSummary)
+                .font(.caption)
+                .foregroundStyle(.white.opacity(0.5))
+                .multilineTextAlignment(.center)
+
+            if !orc.djiManager.pairingStatus.isEmpty {
+                Text(orc.djiManager.pairingStatus)
+                    .font(.caption2)
+                    .foregroundStyle(.orange)
+                    .multilineTextAlignment(.center)
+            }
+
+            if orc.djiManager.isConnecting {
+                HStack(spacing: 8) {
+                    ProgressView()
+                        .progressViewStyle(.circular)
+                        .scaleEffect(0.75)
+                        .tint(.white)
+                    Text("Connecting…")
+                        .font(.subheadline)
+                        .foregroundStyle(.white.opacity(0.6))
+                }
+            } else {
+                HStack(spacing: 10) {
+                    // Connect
+                    Button { orc.djiManager.startConnectionToProduct() } label: {
+                        Label("Connect", systemImage: "link")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 18).padding(.vertical, 9)
+                            .background(Color.blue.opacity(0.85))
+                            .clipShape(Capsule())
+                    }
+                    .disabled(!orc.djiManager.isRegistered)
+
+                    // Pair RC  (available once RC is plugged into phone)
+                    if orc.djiManager.isPairing {
+                        Button { orc.djiManager.stopPairing() } label: {
+                            Label("Stop Pair", systemImage: "antenna.radiowaves.left.and.right.slash")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 18).padding(.vertical, 9)
+                                .background(Color.orange.opacity(0.85))
+                                .clipShape(Capsule())
+                        }
+                    } else {
+                        Button { orc.djiManager.startPairing() } label: {
+                            Label("Pair RC", systemImage: "antenna.radiowaves.left.and.right")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 18).padding(.vertical, 9)
+                                .background(Color.orange.opacity(0.75))
+                                .clipShape(Capsule())
+                        }
+                        .disabled(!orc.djiManager.isRCConnected)
+                    }
+                }
+
+                // Disconnect  (useful to force-reset a stuck connection)
+                Button { orc.djiManager.disconnectFromProduct() } label: {
+                    Text("Disconnect")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.white.opacity(0.55))
+                        .padding(.horizontal, 14).padding(.vertical, 6)
+                        .background(Color.white.opacity(0.08))
+                        .clipShape(Capsule())
+                }
+            }
+        }
+        .padding(.horizontal, 28).padding(.vertical, 22)
+        .background(.ultraThinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .padding(.horizontal, 36)
+    }
+
+    private var connectionStatusSummary: String {
+        if !orc.djiManager.isRegistered { return "Registering SDK…" }
+        return "Power on the drone and RC, then tap Connect."
     }
 
     // MARK: - Status Bar
@@ -71,6 +160,11 @@ struct OperationalView: View {
                 .fill(orc.isBackendReachable ? Color.green : Color.red)
                 .frame(width: 7, height: 7)
                 .help(orc.isBackendReachable ? "Backend reachable" : "Backend unreachable")
+
+            // RC signal — shown when RC is present (connected or not to aircraft)
+            if orc.djiManager.isRCConnected {
+                rcSignalBadge
+            }
 
             if orc.bridge.isAircraftConnected {
                 let t = orc.bridge.telemetry
@@ -97,10 +191,50 @@ struct OperationalView: View {
                 .frame(width: 6, height: 6)
             Text(orc.bridge.isAircraftConnected ? "Drone Connected" : "No Aircraft")
                 .font(.caption2.weight(.medium))
+            // Disconnect button when connected
+            if orc.bridge.isAircraftConnected {
+                Button { orc.djiManager.disconnectFromProduct() } label: {
+                    Image(systemName: "eject.fill")
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.5))
+                }
+                .buttonStyle(.plain)
+            }
         }
         .padding(.horizontal, 10).padding(.vertical, 5)
         .background(Color.white.opacity(0.10))
         .clipShape(Capsule())
+    }
+
+    // MARK: - RC Signal Badge
+
+    private var rcSignalBadge: some View {
+        HStack(spacing: 3) {
+            Image(systemName: rcSignalIcon)
+                .font(.caption2)
+            if orc.djiManager.rcSignalPercent >= 0 {
+                Text("\(orc.djiManager.rcSignalPercent)%")
+                    .font(.caption2.monospacedDigit())
+            }
+        }
+        .foregroundStyle(rcSignalColor)
+    }
+
+    private var rcSignalIcon: String {
+        switch orc.djiManager.rcSignalPercent {
+        case 75...: return "wifi"
+        case 50..<75: return "wifi"
+        case 25..<50: return "wifi.exclamationmark"
+        default:     return "wifi.slash"
+        }
+    }
+
+    private var rcSignalColor: Color {
+        switch orc.djiManager.rcSignalPercent {
+        case 50...: return .white.opacity(0.85)
+        case 25..<50: return .orange
+        default:     return .red
+        }
     }
 
     private func statBadge(icon: String, text: String, warn: Bool = false) -> some View {

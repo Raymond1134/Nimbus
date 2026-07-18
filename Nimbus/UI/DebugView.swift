@@ -17,6 +17,7 @@ struct DebugView: View {
         NavigationStack {
             List {
                 djiSection
+                rcSection
                 backendSection
                 lastCommandSection
                 logSection
@@ -46,6 +47,59 @@ struct DebugView: View {
                 row("GPS",        t.isGPSValid ? "\(t.satelliteCount) sat" : "No fix",
                     color: t.isGPSValid ? .primary : .orange)
                 row("Vel X/Y/Z",  "\(String(format: "%.2f / %.2f / %.2f", t.velocityX, t.velocityY, t.velocityZ)) m/s")
+            }
+
+            // Connection controls
+            if orc.djiManager.isConnecting {
+                HStack(spacing: 8) {
+                    ProgressView().progressViewStyle(.circular).scaleEffect(0.75)
+                    Text("Connecting…").font(.subheadline).foregroundStyle(.secondary)
+                }
+            } else {
+                Button("Connect to Product") {
+                    orc.djiManager.startConnectionToProduct()
+                }
+                .font(.subheadline)
+                .disabled(!orc.djiManager.isRegistered || orc.bridge.isAircraftConnected)
+
+                Button("Disconnect") {
+                    orc.djiManager.disconnectFromProduct()
+                }
+                .font(.subheadline)
+                .foregroundStyle(.red)
+                .disabled(!orc.bridge.isAircraftConnected)
+            }
+        }
+    }
+
+    // MARK: - RC Status
+
+    private var rcSection: some View {
+        Section("Remote Controller") {
+            row("RC Connected",
+                orc.djiManager.isRCConnected ? "✓ Yes" : "✗ No",
+                color: orc.djiManager.isRCConnected ? .green : .secondary)
+
+            if orc.djiManager.isRCConnected {
+                let sig = orc.djiManager.rcSignalPercent
+                row("Uplink Signal",
+                    sig >= 0 ? "\(sig)%" : "—",
+                    color: sig < 25 ? .red : sig < 50 ? .orange : .primary)
+            }
+
+            if !orc.djiManager.pairingStatus.isEmpty {
+                row("Pair Status", orc.djiManager.pairingStatus,
+                    color: orc.djiManager.isPairing ? .orange : .secondary)
+            }
+
+            if orc.djiManager.isPairing {
+                Button("Stop Pairing") { orc.djiManager.stopPairing() }
+                    .font(.subheadline)
+                    .foregroundStyle(.red)
+            } else {
+                Button("Pair RC with Drone") { orc.djiManager.startPairing() }
+                    .font(.subheadline)
+                    .disabled(!orc.djiManager.isRCConnected)
             }
         }
     }
