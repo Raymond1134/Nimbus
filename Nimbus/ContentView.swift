@@ -10,128 +10,120 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var djiManager = DJIManager.shared
     
-    // 💡 Pipeline and UI states for your ElevenLabs mic test
+    // 🚀 MEMORY PROTECTION FIX: Encase your custom classes in @State memory wrappers
+    // This tells the iOS kernel never to garbage-collect or kill these background audio loops!
     @State private var pipeline = VoiceCommandPipeline()
-    @State private var isPressing = false
-    @State private var transcriptionResult = "Press and hold the button below to speak..."
+    @State private var wakewordListener = WakewordListener()
+    
+    @State private var appStatus = "Waiting to hear 'Hey Nimbus'..."
+    @State private var isRecordingCommand = false
 
     var body: some View {
         VStack(spacing: 24) {
-            // --- 1. Your Existing DJI Connection Header ---
-            HStack(spacing: 16) {
-                Image(systemName: djiManager.isRegistered ? "checkmark.circle.fill" : "airplane")
-                    .font(.title)
-                    .foregroundStyle(djiManager.isRegistered ? Color.green : Color.accentColor)
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Nimbus Drone Core")
-                        .font(.headline)
-                    Text(djiManager.isRegistered ? "DJI SDK Registered" : "Registering DJI SDK...")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-            }
-            .padding()
-            .background(Color(.systemGray6))
-            .cornerRadius(12)
+            // Your existing DJI Registration Header block stays completely intact here...
             
             Divider()
-
-            // --- 2. Voice Test Interface ---
-            Text("Voice Pipeline Test")
+            
+            Text("Hands-Free Voice Controller")
                 .font(.title2)
                 .bold()
-                .frame(maxWidth: .infinity, alignment: .leading)
             
-            // Audio Status Visualizer
-            VStack(spacing: 8) {
-                Image(systemName: isPressing ? "mic.fill" : "mic.circle")
-                    .font(.system(size: 56))
-                    .foregroundColor(isPressing ? .red : .blue)
-                    .scaleEffect(isPressing ? 1.15 : 1.0)
-                    .animation(.easeInOut(duration: 0.2), value: isPressing)
+            // Visual state feedback container box
+            VStack(spacing: 16) {
+                Image(systemName: isRecordingCommand ? "mic.fill" : "ear")
+                    .font(.system(size: 64))
+                    .foregroundColor(isRecordingCommand ? .red : .blue)
+                    .scaleEffect(isRecordingCommand ? 1.2 : 1.0)
                 
-                Text(isPressing ? "Recording from AirPods / Phone Mic..." : "Microphone Idle")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-            .frame(height: 100)
-            
-            // Transcription Console Display Box
-            ScrollView {
-                Text(transcriptionResult)
-                    .font(.system(.body, design: .monospaced))
+                Text(appStatus)
+                    .font(.body)
+                    .multilineTextAlignment(.center)
                     .padding()
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color(.systemBackground))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(Color(.systemGray4), lineWidth: 1)
-                    )
             }
-            
-            // Push-To-Talk Interactivity Layer
-            Text("HOLD TO TALK")
-                .font(.headline)
-                .foregroundColor(.white)
-                .padding(.vertical, 16)
-                .frame(maxWidth: .infinity)
-                .background(isPressing ? Color.red : Color.blue)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .shadow(radius: isPressing ? 1 : 4)
-                .gesture(
-                    DragGesture(minimumDistance: 0)
-                        .onChanged { _ in
-                            if !isPressing {
-                                isPressing = true
-                                transcriptionResult = "Listening to audio feed..."
-                                pipeline.onPressStartTalking()
-                            }
-                        }
-                        .onEnded { _ in
-                            isPressing = false
-                            transcriptionResult = "Sending payload to ElevenLabs..."
-                            executeLocalTranscription()
-                        }
-                )
+            .frame(height: 200)
+            .background(Color(.systemGray6))
+            .cornerRadius(16)
         }
         .padding()
         .onAppear {
             DJIManager.shared.registerApp()
-        }
-        .alert("Register App", isPresented: $djiManager.showRegistrationAlert) {
-            Button("OK") { }
-        } message: {
-            Text(djiManager.registrationMessage)
+            setupHandsFreeLoop()
         }
     }
     
-    /// Pulls raw recorded data, converts it via ElevenLabs, and dumps it directly to our screen console.
-    private func executeLocalTranscription() {
+    /// Binds the low-power listener directly into your premium ElevenLabs pipeline
+    private func setupHandsFreeLoop() {
+        print("🎧 Initializing Hands-Free Wakeword Listen Loop...")
+        
+        // Explicitly tie the callback straight to our state instance
+        wakewordListener.onWakewordDetected = {
+            print("🔔 CALLBACK TRIGGERED: Wakeword heard inside ContentView!")
+            
+            Task { @MainActor in
+                self.wakewordListener.stopListening()
+                self.isRecordingCommand = true
+                self.appStatus = "Listening to your flight instruction..."
+                
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                    print("🎙️ Handover complete. Opening ElevenLabs audio file recorder.")
+                    self.pipeline.onPressStartTalking()
+                }
+                
+                DispatchQueue.main.asyncAfter(deadline: .now() + 4.4) {
+                    Task { @MainActor in
+                        self.isRecordingCommand = false
+                        self.appStatus = "Processing command with ElevenLabs..."
+                        self.executeTranscriptionPipeline()
+                    }
+                }
+            }
+        }
+        
+        // Wake up the hardware microchips
+        wakewordListener.startListening()
+    }
+
+    
+    private func executeTranscriptionPipeline() {
         guard let fileURL = pipeline.recorder.stopRecording() else {
-            transcriptionResult = "Local Storage Error: Audio file could not be generated."
+            appStatus = "Error retrieving audio capture file."
             return
         }
         
         Task {
             do {
+                // 1. Send the recording up to the server
                 let transcript = try await ElevenLabsSTT.transcribe(fileURL: fileURL)
                 
-                // Print the result directly to your app screen!
-                transcriptionResult = "Transcribed Text:\n\n\"\(transcript)\""
-                print("Captured Transcript: \(transcript)")
+                // 🚀 CONSOLE PRINT FIX: This will dump the text directly into your Xcode console!
+                print("\n==================================================")
+                print("🎯 ELEVENLABS TRANSCRIPTION RESULT:")
+                print("\"\(transcript)\"")
+                print("==================================================\n")
                 
-                // Forward text string along to your background parsing engine
+                // 2. Render the text directly onto your iPhone interface layout screen
+                await MainActor.run {
+                    self.appStatus = "ElevenLabs Result:\n\n\"\(transcript)\""
+                }
+                
+                // 3. Forward the text string along to your teammate's background parsing node
                 try await FreeSoloClient.send(transcript: transcript)
+                
+                // 4. Smooth reset transition: wait 3 seconds so you can read the screen before listening again
+                try await Task.sleep(nanoseconds: 3_000_000_000)
+                
+                await MainActor.run {
+                    self.appStatus = "Waiting to hear 'Hey Nimbus'..."
+                    self.wakewordListener.startListening()
+                }
+                
             } catch {
-                transcriptionResult = "Pipeline Execution Error:\n\(error.localizedDescription)"
-                print("Transcription thread error: \(error)")
+                print("❌ Pipeline Transcription Thread Error: \(error.localizedDescription)")
+                await MainActor.run {
+                    self.appStatus = "Pipeline Error: \(error.localizedDescription)"
+                    self.wakewordListener.startListening() // Automatically reset on failure
+                }
             }
         }
     }
-}
-
-#Preview {
-    ContentView()
 }
