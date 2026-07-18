@@ -37,19 +37,15 @@ enum BackendClient {
                ?? URL(string: "http://localhost:8000")!
     }
 
-    // MARK: - /voice_command  (transcript + frame → OBJECTIVE + MissionPlan)
+    // MARK: - /voice_command  (transcript + frame → NimbusResponse)
 
     /// Sends transcript and the latest drone camera frame to the backend.
-    /// Returns FreeSolo OBJECTIVE + mid-level InstructionStep plan (with boxes).
-    ///
-    /// Pipeline: FreeSolo (WHAT) → Gemini grounds targets + sequences ops.
-    /// App implements fly_to / orbit / selfie / etc. on Virtual Stick.
-    /// Call /resolve_step when needs_grounding or tracker is lost.
+    /// Returns a NimbusResponse with ordered NimbusSteps ready for execution.
     static func processVoiceCommand(
         transcript: String,
         imageData: Data,
         mimeType: String = "image/jpeg"
-    ) async throws -> BackendVoiceCommandResponse {
+    ) async throws -> NimbusResponse {
 
         let url = baseURL.appendingPathComponent("voice_command")
         var request = URLRequest(url: url)
@@ -86,56 +82,7 @@ enum BackendClient {
         }
 
         do {
-            return try JSONDecoder().decode(BackendVoiceCommandResponse.self, from: data)
-        } catch {
-            throw BackendError.decodingFailed(error.localizedDescription)
-        }
-    }
-
-    // MARK: - /resolve_step  (fresh frame → re-ground one InstructionStep)
-
-    /// Call before executing a step with `needsGrounding == true`, or when the
-    /// on-device tracker is lost. Does not replan the rest of the mission.
-    static func resolveStep(
-        step: InstructionStep,
-        imageData: Data,
-        mimeType: String = "image/jpeg"
-    ) async throws -> InstructionStep {
-        let url = baseURL.appendingPathComponent("resolve_step")
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.timeoutInterval = 20
-
-        let boundary = "Boundary-\(UUID().uuidString)"
-        request.setValue(
-            "multipart/form-data; boundary=\(boundary)",
-            forHTTPHeaderField: "Content-Type"
-        )
-
-        let stepData = try JSONEncoder().encode(step)
-        let stepJSON = String(data: stepData, encoding: .utf8) ?? "{}"
-
-        var body = Data()
-        body.appendFormField(name: "step_json", value: stepJSON, boundary: boundary)
-
-        body.append("--\(boundary)\r\n")
-        body.append("Content-Disposition: form-data; name=\"image\"; filename=\"frame.jpg\"\r\n")
-        body.append("Content-Type: \(mimeType)\r\n\r\n")
-        body.append(imageData)
-        body.append("\r\n")
-        body.append("--\(boundary)--\r\n")
-        request.httpBody = body
-
-        let (data, response) = try await URLSession.shared.data(for: request)
-
-        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
-            let code    = (response as? HTTPURLResponse)?.statusCode ?? 0
-            let bodyStr = String(data: data, encoding: .utf8) ?? "(no body)"
-            throw BackendError.httpError(code, bodyStr)
-        }
-
-        do {
-            return try JSONDecoder().decode(InstructionStep.self, from: data)
+            return try JSONDecoder().decode(NimbusResponse.self, from: data)
         } catch {
             throw BackendError.decodingFailed(error.localizedDescription)
         }

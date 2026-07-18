@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Generate (transcript -> OBJECTIVE JSON) SFT data for the intent model.
+"""Generate (transcript -> OBJECTIVE JSON) SFT data for the intent model (v2).
 
-Covers every op in objective.OPS with varied phrasing, ASR-style noise,
-compound multi-step commands, classic demo sequences, and non-flight
-negatives that map to `say`.
+Covers every op in the 14-op v2 grammar (objective.OPS) with varied phrasing,
+ASR-style noise, compound multi-step commands, classic demo sequences, and
+non-flight negatives that map to `say`.
 
-  python scripts/generate_dataset.py --count 12000 --eval-count 800
+  python scripts/generate_dataset.py --count 4000 --eval-count 400
 """
 
 from __future__ import annotations
@@ -50,9 +50,19 @@ SUFFIXES = ["", " please", " thanks", " now", " real quick", " for me", " uh"]
 THEN = [" then ", " and then ", " after that ", ", then ", " and ", ", and ", " next "]
 
 DURATIONS = [2, 3, 5, 8, 10, 15, 20, 30, 45, 60]
-ALTITUDES = [1, 2, 3, 5, 8, 10]
 DEGREES = [30, 45, 90, 120, 180, 270, 360]
 REVOLUTIONS = [1, 2, 3]
+DIST_M = [1, 2, 3, 5, 10]
+# change_altitude magnitudes (meters)
+ALT_VALUES = [0.5, 1, 1.5, 2, 3, 5]
+# Common feet values converted to meters (rounded to 1 decimal)
+DIST_FT_TO_M = {1: 0.3, 2: 0.6, 3: 0.9, 5: 1.5, 10: 3.0}
+
+
+def _num(v) -> str:
+    """Format a number without a trailing .0 (1.0 -> '1', 1.5 -> '1.5')."""
+    f = float(v)
+    return str(int(f)) if f == int(f) else str(f)
 
 
 def row(inp: str, steps: list[str], confidence: float) -> dict:
@@ -119,49 +129,102 @@ def gen_fly_to(rng: random.Random) -> tuple[str, str]:
         f"fly towards that {t}", f"go over to that {t}", f"head over to the {t}",
         f"fly behind the {t}", f"go behind that {t}", f"get behind the {t}",
         f"fly past the {t}", f"fly under the {t}", f"go through the {t}",
-        f"fly next to the {t}", f"get close to the {t}",
+        f"fly next to the {t}", f"get close to the {t}", f"fly above the {t}",
     ])
     return phrase, f"fly_to|{t}"
 
 
-def gen_fly_higher(rng: random.Random) -> tuple[str, str]:
+def gen_fly_relative(rng: random.Random) -> tuple[str, str]:
+    """Relative directional move without a visual target."""
+    direction = rng.choice(["forward", "backward", "left", "right"])
+    step_dir = "back" if direction == "backward" else direction
+
     if rng.random() < 0.55:
-        m = rng.choice(ALTITUDES)
+        # With distance
+        if rng.random() < 0.3:
+            # Feet (convert to meters in the step)
+            ft = rng.choice(list(DIST_FT_TO_M.keys()))
+            m = DIST_FT_TO_M[ft]
+            phrase = rng.choice([
+                f"fly {direction} {ft} {'foot' if ft == 1 else 'feet'}",
+                f"move {direction} {ft} {'foot' if ft == 1 else 'feet'}",
+                f"go {direction} {ft} {'foot' if ft == 1 else 'feet'}",
+            ])
+            return phrase, f"fly_to|{step_dir}|{_num(m)}"
+        m = rng.choice(DIST_M)
         phrase = rng.choice([
-            f"fly up {m} meters", f"go up {m} meters", f"climb {m} meters",
-            f"gain {m} meters of altitude", f"up {m} meters", f"rise {m} meters",
+            f"fly {direction} {m} meters",
+            f"move {direction} {m} meters",
+            f"go {direction} {m} meters",
+            f"move {direction} {m} m",
+            f"go {direction} {m}m",
         ])
-        return phrase, f"fly_higher|{m}"
+        return phrase, f"fly_to|{step_dir}|{_num(m)}"
+    # No distance (app defaults to 0.5 m)
     phrase = rng.choice([
-        "fly higher", "go higher", "go up", "climb", "get some altitude",
-        "up a bit", "gain some height", "a little higher", "up you go a bit",
+        f"fly {direction}",
+        f"move {direction}",
+        f"go {direction}",
+        f"drift {step_dir}",
+        f"nudge {step_dir}",
+        f"scoot {step_dir}",
     ])
-    return phrase, "fly_higher"
+    return phrase, f"fly_to|{step_dir}"
 
 
-def gen_fly_lower(rng: random.Random) -> tuple[str, str]:
-    if rng.random() < 0.55:
-        m = rng.choice(ALTITUDES)
+def gen_change_altitude(rng: random.Random) -> tuple[str, str]:
+    """Climb or descend. + = up, - = down. Bare (no value) defaults to +0.5 m."""
+    up = rng.random() < 0.5
+    with_value = rng.random() < 0.5
+    if up:
+        if with_value:
+            if rng.random() < 0.3:
+                ft = rng.choice(list(DIST_FT_TO_M.keys()))
+                m = DIST_FT_TO_M[ft]
+                phrase = rng.choice([
+                    f"go up {ft} {'foot' if ft == 1 else 'feet'}",
+                    f"fly up {ft} {'foot' if ft == 1 else 'feet'}",
+                    f"climb {ft} {'foot' if ft == 1 else 'feet'}",
+                    f"rise {ft} {'foot' if ft == 1 else 'feet'}",
+                ])
+                return phrase, f"change_altitude|+{_num(m)}"
+            m = rng.choice(ALT_VALUES)
+            phrase = rng.choice([
+                f"go up {_num(m)} meters", f"fly up {_num(m)} meters",
+                f"climb {_num(m)} meters", f"rise {_num(m)} meters",
+                f"gain {_num(m)} meters of altitude", f"ascend {_num(m)} meters",
+            ])
+            return phrase, f"change_altitude|+{_num(m)}"
         phrase = rng.choice([
-            f"fly down {m} meters", f"descend {m} meters", f"drop {m} meters",
-            f"come down {m} meters", f"down {m} meters", f"lower by {m} meters",
+            "go up", "go higher", "fly higher", "climb", "ascend",
+            "get some altitude", "up a bit", "gain some height",
+            "a little higher", "up you go a bit",
         ])
-        return phrase, f"fly_lower|{m}"
+        return phrase, "change_altitude"
+    # descend
+    if with_value:
+        if rng.random() < 0.3:
+            ft = rng.choice(list(DIST_FT_TO_M.keys()))
+            m = DIST_FT_TO_M[ft]
+            phrase = rng.choice([
+                f"go down {ft} {'foot' if ft == 1 else 'feet'}",
+                f"fly down {ft} {'foot' if ft == 1 else 'feet'}",
+                f"descend {ft} {'foot' if ft == 1 else 'feet'}",
+                f"drop {ft} {'foot' if ft == 1 else 'feet'}",
+            ])
+            return phrase, f"change_altitude|-{_num(m)}"
+        m = rng.choice(ALT_VALUES)
+        phrase = rng.choice([
+            f"go down {_num(m)} meters", f"fly down {_num(m)} meters",
+            f"descend {_num(m)} meters", f"drop {_num(m)} meters",
+            f"come down {_num(m)} meters", f"lower by {_num(m)} meters",
+        ])
+        return phrase, f"change_altitude|-{_num(m)}"
     phrase = rng.choice([
-        "fly lower", "go lower", "go down", "descend", "come down a bit",
+        "go down", "go lower", "fly lower", "descend", "come down a bit",
         "drop down a little", "a little lower", "get lower",
     ])
-    return phrase, "fly_lower"
-
-
-def gen_fly_above(rng: random.Random) -> tuple[str, str]:
-    t = rng.choice(TARGETS)
-    phrase = rng.choice([
-        f"fly above the {t}", f"get above the {t}", f"hover above the {t}",
-        f"position yourself over the {t}", f"go directly over the {t}",
-        f"fly over the {t} and stay there", f"get over the {t}",
-    ])
-    return phrase, f"fly_above|{t}"
+    return phrase, "change_altitude|-0.5"
 
 
 def gen_rotate(rng: random.Random) -> tuple[str, str]:
@@ -320,19 +383,18 @@ def gen_say(rng: random.Random) -> tuple[str, str]:
 
 
 SINGLE_BUILDERS = [
-    (gen_takeoff, 0.05),
-    (gen_land, 0.05),
-    (gen_fly_to, 0.11),
-    (gen_fly_higher, 0.06),
-    (gen_fly_lower, 0.06),
-    (gen_fly_above, 0.06),
-    (gen_rotate, 0.09),
-    (gen_orbit, 0.08),
-    (gen_hover, 0.06),
-    (gen_look_at, 0.07),
+    (gen_takeoff, 0.04),
+    (gen_land, 0.04),
+    (gen_fly_to, 0.10),
+    (gen_fly_relative, 0.08),
+    (gen_change_altitude, 0.09),
+    (gen_rotate, 0.08),
+    (gen_orbit, 0.07),
+    (gen_hover, 0.05),
+    (gen_look_at, 0.06),
     (gen_photo, 0.05),
-    (gen_selfie, 0.05),
-    (gen_panorama, 0.05),
+    (gen_selfie, 0.04),
+    (gen_panorama, 0.04),
     (gen_follow, 0.07),
     (gen_return, 0.05),
     (gen_abort, 0.04),
@@ -378,8 +440,12 @@ def gen_demo_sequence(rng: random.Random) -> tuple[list[str], list[str]]:
             [f"orbit|{t}", "panorama", "return"],
         ),
         (
-            [f"fly above the {t}", "take a picture", "come back and land"],
-            [f"fly_above|{t}", "photo", "return", "land"],
+            ["take off", rng.choice(["go up 3 meters", "climb 3 meters"]), "take a panorama"],
+            ["takeoff", "change_altitude|+3", "panorama"],
+        ),
+        (
+            [f"fly to the {t}", "take a picture", "come back and land"],
+            [f"fly_to|{t}", "photo", "return", "land"],
         ),
         (
             ["take a selfie", "then do a panorama"],
@@ -445,8 +511,8 @@ def write_jsonl(path: Path, rows: list[dict]) -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--count", type=int, default=12000)
-    ap.add_argument("--eval-count", type=int, default=800)
+    ap.add_argument("--count", type=int, default=4000)
+    ap.add_argument("--eval-count", type=int, default=400)
     ap.add_argument("--seed", type=int, default=42)
     args = ap.parse_args()
     rng = random.Random(args.seed)
@@ -464,7 +530,7 @@ def main() -> None:
             continue
         seen.add(key)
         rows.append(r)
-        if len(rows) % 5000 == 0:
+        if len(rows) % 2000 == 0:
             print(f"generated {len(rows)}/{target}", flush=True)
 
     rng.shuffle(rows)

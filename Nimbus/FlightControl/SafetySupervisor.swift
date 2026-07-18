@@ -39,29 +39,6 @@ final class SafetySupervisor {
         Swift.max(-maxDps, Swift.min(maxDps, v))
     }
 
-    // MARK: - FlightTarget Validation
-
-    enum ValidationResult {
-        case approved
-        case rejected(String)
-    }
-
-    func validate(_ target: FlightTarget, telemetry: TelemetrySnapshot) -> ValidationResult {
-        if target.standoffM < minStandoffM {
-            return .rejected(
-                "Standoff \(String(format: "%.1f", target.standoffM))m is below "
-                + "minimum \(String(format: "%.1f", minStandoffM))m"
-            )
-        }
-        if telemetry.altitudeM >= maxAltitudeM {
-            return .rejected(
-                "Already at altitude ceiling \(Int(telemetry.altitudeM))m "
-                + "(limit \(Int(maxAltitudeM))m)"
-            )
-        }
-        return .approved
-    }
-
     // MARK: - Live Telemetry Check
 
     enum SafetyStatus {

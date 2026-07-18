@@ -1,7 +1,7 @@
 // MissionExecutor.swift — Nimbus
-// Executes a Gemini MissionPlan (ordered InstructionSteps) on Virtual Stick.
+// Executes ordered NimbusSteps on Virtual Stick.
 //
-// Voice → STT → backend /voice_command → MissionPlan → MissionExecutor.
+// Voice → STT → backend /voice_command → NimbusResponse → MissionExecutor.
 // Each op maps onto a FlightBehaviors primitive or a DJISDKBridge action.
 // Steps run strictly in order; the executor awaits each behavior's completion
 // by polling FlightBehaviors.isExecuting (behaviors end via their own
@@ -29,8 +29,10 @@ final class MissionExecutor {
 
     private(set) var isRunning = false
     private var cancelRequested = false
-    /// Step currently being executed (for UI).
-    private(set) var currentStep: InstructionStep?
+    /// Op name of the step currently being executed (for UI).
+    private(set) var currentOp: String?
+    /// Called when an "abort" step fires; Orchestrator should resume overhead hold.
+    var onAbortRequested: (() -> Void)?
 
     init(bridge: DJISDKBridge,
          behaviors: FlightBehaviors,
@@ -55,53 +57,37 @@ final class MissionExecutor {
 
     /// Execute all steps in order. Returns when the mission finishes,
     /// fails, or is cancelled.
-    func run(plan: MissionPlan) async -> MissionResult {
+    func run(steps: [NimbusStep]) async -> MissionResult {
         guard !isRunning else { return .failed("A mission is already running") }
         isRunning = true
         cancelRequested = false
         defer {
             isRunning = false
-            currentStep = nil
+            currentOp = nil
         }
 
-        if plan.blocked {
-            log("Plan blocked: \(plan.blockReason)")
-            say("I can't see that from here.")
-            return .failed(plan.blockReason)
-        }
-
-        for step in plan.steps {
+        for index in steps.indices {
             if cancelRequested { return .cancelled }
-            currentStep = step
-            log("Step \(step.id): \(step.op)\(step.target.map { " → \($0)" } ?? "")")
+            var step = steps[index]
+            step.id = index
+            currentOp = step.op
+            log("Step \(index): \(step.op)\(step.target.map { " → \($0)" } ?? "")")
 
             let ok = await execute(step: step)
             if cancelRequested { return .cancelled }
             if !ok {
-                log("Step \(step.id) (\(step.op)) failed — aborting mission.")
+                log("Step \(index) (\(step.op)) failed — aborting mission.")
                 behaviors.stop()
                 return .failed("Step \(step.op) failed")
             }
         }
-        log("Mission complete (\(plan.steps.count) steps).")
+        log("Mission complete (\(steps.count) steps).")
         return .completed
     }
 
     // MARK: - Step Dispatch
 
-    private func execute(step: InstructionStep) async -> Bool {
-        var step = step
-
-        // Re-ground against a fresh frame when the planner deferred grounding.
-        if step.needsGrounding, requiresBox(step.op) {
-            step = await reground(step) ?? step
-            if step.needsGrounding || step.box2d.isEmpty {
-                log("Target '\(step.target ?? "?")' not found in frame.")
-                say("I can't find \(step.target ?? "that").")
-                return false
-            }
-        }
-
+    private func execute(step: NimbusStep) async -> Bool {
         switch step.op {
 
         case "takeoff":
@@ -115,81 +101,69 @@ final class MissionExecutor {
             return await bridge.startLanding()
 
         case "fly_to":
-            // "return" objective → go back overhead of the operator.
-            if step.notes.contains("return_home") || step.target == "operator" {
-                return await returnOverhead()
+            if let direction = step.direction {
+                // Relative nudge: convert direction + distance to a timed velocity.
+                let dist = step.distanceM ?? 0.5
+                let speed: Float = 0.8
+                let dur = dist / Double(speed)
+                switch direction {
+                case "forward": behaviors.timedVelocity(pitch:  speed, duration: dur)
+                case "back":    behaviors.timedVelocity(pitch: -speed, duration: dur)
+                case "left":    behaviors.timedVelocity(roll:  -speed, duration: dur)
+                case "right":   behaviors.timedVelocity(roll:   speed, duration: dur)
+                default:        behaviors.timedVelocity(pitch:  speed, duration: dur)
+                }
+                return await waitForBehavior(timeout: dur + 5)
+            } else if step.found && step.box2d.count == 4 {
+                let standoff = max(safety.minStandoffM,
+                                   step.distanceM.map { $0 * 0.3 } ?? 3.0)
+                behaviors.approach(box: step.box2d, standoffM: standoff, maxSeconds: 40)
+                return await waitForBehavior(timeout: 45)
+            } else {
+                say("I can't see \(step.target ?? "that").")
+                return true  // soft failure — don't abort the mission
             }
-            if step.box2d.count == 4 {
-                behaviors.approach(box: step.box2d,
-                                   standoffM: max(safety.minStandoffM, step.standoffM),
-                                   maxSeconds: 45)
-                return await waitForBehavior(timeout: 50)
-            }
-            // No visual target: relative move (direction + distance).
-            let dist = step.distanceM ?? 3.0
-            let speed: Float = 1.0
-            let dur = min(10.0, dist / Double(speed))
-            switch step.direction {
-            case "back":  behaviors.timedVelocity(pitch: -speed, duration: dur)
-            case "left":  behaviors.timedVelocity(roll: -speed, duration: dur)
-            case "right": behaviors.timedVelocity(roll: speed, duration: dur)
-            default:      behaviors.timedVelocity(pitch: speed, duration: dur)
-            }
-            return await waitForBehavior(timeout: dur + 5)
 
-        case "fly_above":
-            if step.box2d.count == 4 {
-                behaviors.approach(box: step.box2d,
-                                   standoffM: max(safety.minStandoffM, step.standoffM),
-                                   maxSeconds: 40)
-                guard await waitForBehavior(timeout: 45) else { return false }
-                if cancelRequested { return false }
-            }
-            // Climb and look straight down over the target.
-            behaviors.changeAltitude(deltaM: 3.0)
-            bridge.pointGimbal(pitchDeg: -85)
-            return await waitForBehavior(timeout: 25)
-
-        case "fly_higher":
-            behaviors.changeAltitude(deltaM: abs(step.altitudeDeltaM ?? 2.0))
-            return await waitForBehavior(timeout: 25)
-
-        case "fly_lower":
-            behaviors.changeAltitude(deltaM: -abs(step.altitudeDeltaM ?? 2.0))
-            return await waitForBehavior(timeout: 25)
+        case "change_altitude":
+            let delta = step.deltaM ?? 0.5
+            behaviors.changeAltitude(deltaM: delta)
+            return await waitForBehavior(timeout: 20)
 
         case "rotate":
-            var deg = step.yawDeg ?? 90
-            if deg == 0 { deg = step.direction == "left" ? -90 : 90 }
-            behaviors.rotateBy(yawDeg: deg)
-            return await waitForBehavior(timeout: 35)
+            let deg = step.degrees ?? 90
+            let signed = step.direction == "left" ? -deg : deg
+            behaviors.rotateBy(yawDeg: signed)
+            return await waitForBehavior(timeout: 30)
 
         case "orbit":
-            // Face the target first when we have a box, then circle.
-            let revs = max(0.5, step.revolutions ?? 1.0)
-            let secondsPerRev = 18.0
-            behaviors.orbit(radiusM: step.radiusM ?? 5.0,
-                            durationSec: step.durationS ?? (revs * secondsPerRev))
-            return await waitForBehavior(timeout: (step.durationS ?? revs * secondsPerRev) + 8)
+            if step.found && step.box2d.count == 4 {
+                behaviors.approach(box: step.box2d, standoffM: 3, maxSeconds: 20)
+                guard await waitForBehavior(timeout: 25) else { return false }
+                if cancelRequested { return false }
+            }
+            let revs = step.revolutions ?? 1.0
+            let orbitDur = revs * 18.0
+            behaviors.orbit(radiusM: 5, durationSec: orbitDur)
+            return await waitForBehavior(timeout: orbitDur + 8)
 
         case "hover":
-            let dur = step.durationS ?? 5.0
+            let dur = step.seconds ?? 5.0
             behaviors.stop()
             try? await Task.sleep(for: .seconds(dur))
             return true
 
         case "look_at":
-            if step.box2d.count == 4 {
+            if step.found && step.box2d.count == 4 {
                 pointGimbalAt(box: step.box2d)
             } else {
-                bridge.pointGimbal(pitchDeg: step.gimbalPitchDeg ?? -30)
+                bridge.pointGimbal(pitchDeg: -30)
             }
             try? await Task.sleep(for: .seconds(1.0))
             return true
 
         case "photo":
             behaviors.stop()
-            try? await Task.sleep(for: .seconds(0.8))   // settle for a sharp shot
+            try? await Task.sleep(for: .seconds(0.6))
             return await bridge.capturePhoto()
 
         case "selfie":
@@ -199,19 +173,23 @@ final class MissionExecutor {
             return await runPanorama()
 
         case "follow":
-            let seed = step.box2d.count == 4 ? visionRect(from: step.box2d) : nil
-            behaviors.followPerson(maxSeconds: step.durationS ?? 10.0,
-                                   overheadMode: false,
-                                   seedBox: seed)
-            return await waitForBehavior(timeout: (step.durationS ?? 10.0) + 8)
+            let dur = step.seconds ?? 30.0
+            let seed = step.found && step.box2d.count == 4 ? visionRect(from: step.box2d) : nil
+            behaviors.followPerson(maxSeconds: dur, overheadMode: false, seedBox: seed)
+            return await waitForBehavior(timeout: dur + 8)
+
+        case "return":
+            behaviors.followPerson(maxSeconds: 60, overheadMode: true)
+            return await waitForBehavior(timeout: 65)
 
         case "abort":
             behaviors.stop()
             cancelRequested = true
+            Task { @MainActor in self.onAbortRequested?() }
             return true
 
         case "say":
-            if let text = step.text { say(text) }
+            if let t = step.text { say(t) }
             return true
 
         default:
@@ -224,9 +202,9 @@ final class MissionExecutor {
 
     /// Selfie: aim the camera at the operator, back away + climb for a wide
     /// framing, settle, then shoot.
-    private func runSelfie(step: InstructionStep) async -> Bool {
+    private func runSelfie(step: NimbusStep) async -> Bool {
         // 1) Aim gimbal at the person (grounded box if available, else slightly down).
-        if step.box2d.count == 4 {
+        if step.found && step.box2d.count == 4 {
             pointGimbalAt(box: step.box2d)
         } else if let frame = bridge.cameraFrame?.cgImage,
                   let person = FlightBehaviors.detectPersonBox(in: frame) {
@@ -271,29 +249,7 @@ final class MissionExecutor {
         return await waitForBehavior(timeout: 20)
     }
 
-    /// Return to the operator: re-acquire the person and settle overhead.
-    /// Runs the overhead-follow controller briefly, which climbs/centers the
-    /// drone above the operator's head, then hands control back.
-    private func returnOverhead() async -> Bool {
-        bridge.pointGimbal(pitchDeg: -85)
-        behaviors.followPerson(maxSeconds: 12.0, overheadMode: true)
-        return await waitForBehavior(timeout: 18)
-    }
-
     // MARK: - Helpers
-
-    private func requiresBox(_ op: String) -> Bool {
-        ["fly_to", "fly_above", "orbit", "look_at", "follow"].contains(op)
-    }
-
-    /// Ask the backend to re-ground a step against a fresh frame.
-    private func reground(_ step: InstructionStep) async -> InstructionStep? {
-        // "operator"/return steps never need backend grounding.
-        if step.notes.contains("return_home") || step.target == "operator" { return step }
-        log("Re-grounding '\(step.target ?? "?")' against fresh frame…")
-        let frame = bridge.captureFrameJPEG()
-        return try? await BackendClient.resolveStep(step: step, imageData: frame)
-    }
 
     /// Point the gimbal so the box center moves toward the frame center
     /// (pitch only — yaw is handled by rotating the aircraft).

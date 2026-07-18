@@ -1,0 +1,17 @@
+model = "Qwen/Qwen3.5-4B"
+algorithm = "sft"
+seed = 42
+
+[environment]
+id = "nimbus/voice-drone-v2"
+
+[environment.params]
+split = "smoke"
+
+[train]
+epochs = 3
+max_examples = 132
+lora_rank = 16
+lora_alpha = 32
+max_context_tokens = 512
+max_steps = 20

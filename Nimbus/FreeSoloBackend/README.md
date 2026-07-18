@@ -22,9 +22,9 @@ Steps are flat pipe-strings (easy for a small SFT model to emit reliably).
 (`score_objectives`). `backend/objective.py` is a vendored copy — keep in sync.
 
 Ops (1:1 with the planner's InstructionStep ops):
-`takeoff, land, fly_to|t, fly_higher|m?, fly_lower|m?, fly_above|t,
-rotate|left/right|deg?, orbit|t|revs?, hover|s?, look_at|t, photo, selfie,
-panorama, follow|t|s?, return, abort, say|text`
+`takeoff, land, fly_to|t, fly_to|forward/back/left/right|m?,
+change_altitude|+/-m?, rotate|left/right|deg?, orbit|t|revs?, hover|s?,
+look_at|t, photo, selfie, panorama, follow|t|s?, return, abort, say|text`
 
 ## Files
 
@@ -36,6 +36,20 @@ panorama, follow|t|s?, return, abort, say|text`
 - `scripts/infer.py` — call the deployed adapter (`--repl`, `--eval dataset/eval.jsonl`)
 - `configs/{smoke,sft,rl}.toml` — Flash training configs
 - `test_objective.py` — grammar unit tests (`python -m pytest test_objective.py`)
+
+## v2 Training (new 14-op grammar)
+
+```bash
+cd /mnt/d/projects/nimbus/Nimbus/FreeSoloBackend
+python scripts/generate_dataset.py --count 4000 --eval-count 400
+flash env push --name voice-drone-v2 .
+flash train configs/smoke_v2.toml --dry-run
+flash train configs/smoke_v2.toml
+flash train configs/sft_v2.toml
+flash deploy <run-id>
+```
+
+After training, update `FREESOLO_MODEL` in `.env` to the deployed run id.
 
 ## Training workflow (flash CLI — run from WSL; the CLI is not Windows-native)
 

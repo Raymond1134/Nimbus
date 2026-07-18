@@ -21,8 +21,7 @@ final class Orchestrator {
 
     var appState: AppState              = .idle
     var lastTranscript                  = ""
-    var lastIntent: ParsedIntent?
-    var lastResponse: BackendVoiceCommandResponse?
+    var lastResponse: NimbusResponse?
     var logMessages: [LogEntry]         = []
     var isBackendReachable              = false
     var rememberedSpots: [RememberedSpot] = []
@@ -89,6 +88,9 @@ final class Orchestrator {
             log: { [weak self] msg in self?.log("[Mission] \(msg)") },
             say: { [weak self] text in self?.speak(text) }
         )
+        missionExecutor.onAbortRequested = { [weak self] in
+            self?.resumeOverheadHold_public()
+        }
         wakeword.onWakewordDetected = { [weak self] in
             self?.handleWakewordTriggered()
         }
@@ -314,20 +316,9 @@ final class Orchestrator {
             )
             lastResponse = response
 
-            let gStr = response.found
-                ? "found \(String(format: "%.2f", response.groundingConfidence))"
-                : "not found"
-            log("← intent=\(response.intent ?? "nil")  target=\(response.target ?? "-")  grounding=\(gStr)")
+            log("← \(response.steps.count) step(s) | transcript: \(response.transcript) | confidence: \(String(format: "%.2f", response.confidence))")
 
-            lastIntent = ParsedIntent(
-                intent:       response.intent ?? "unknown",
-                target:       response.target,
-                sayText:      response.sayText,
-                constraints:  response.constraints ?? .empty,
-                confidence:   response.confidence ?? 0
-            )
-
-            await executeIntent(response)
+            await runMission(steps: response.steps)
 
         } catch {
             log("Backend error: \(error.localizedDescription)", level: .error)
@@ -338,112 +329,21 @@ final class Orchestrator {
         }
     }
 
-    // MARK: - Intent Dispatcher (spec §5 steps 4–6)
+    // MARK: - Mission Execution
 
-    private func executeIntent(_ r: BackendVoiceCommandResponse) async {
-        headTracking.unfreeze()
-
-        // Preferred path: multi-step MissionPlan (FreeSolo OBJECTIVE → Gemini).
-        if let plan = r.plan, !plan.steps.isEmpty {
-            await runMission(plan)
-            return
-        }
-
-        let intent = r.intent ?? "unknown"
-
-        switch intent {
-
-        case "abort":
-            behaviors.stop()
-            tracker.stopTracking()
-            log("Aborted.")
-            returnToIdle()
-
-        case "hover_station":
-            behaviors.hover()
-            appState = .executing(verb: "HOVER", target: nil)
-            log("Hovering at station.")
-            scheduleReturnToIdle(after: 1.5)
-
-        case "return_to_station":
-            behaviors.returnToHome()
-            appState = .executing(verb: "RETURN", target: nil)
-            log("Returning to home point.")
-            // Stays in executing; DJI SDK auto-transitions when home is reached.
-
-        case "land":
-            behaviors.land()
-            appState = .executing(verb: "LAND", target: nil)
-            log("Landing.")
-
-        case "say":
-            log("Say: \"\(r.sayText ?? "")\"")
-            returnToIdle()
-
-        case "seek_and_photo":
-            guard r.found, !r.box2d.isEmpty else {
-                log("Grounding: target '\(r.target ?? "")' not found in frame.", level: .warning)
-                spatialAudio.playNotFound()
-                returnToIdle()
-                return
-            }
-            guard r.groundingConfidence >= 0.30 else {
-                log("Grounding confidence \(String(format: "%.2f", r.groundingConfidence)) too low — aborting.", level: .warning)
-                spatialAudio.playNotFound()
-                returnToIdle()
-                return
-            }
-
-            let targetName = r.target ?? "object"
-            let standoff   = resolveStandoff(from: r.constraints?.maxRadiusM)
-            let maxSec     = r.constraints?.maxSeconds ?? 45.0
-
-            let flightTarget = FlightTarget(
-                intent:       intent,
-                target:       targetName,
-                groundingBox: r.box2d,
-                standoffM:    standoff,
-                maxSeconds:   maxSec,
-                maxRadiusM:   r.constraints?.maxRadiusM ?? 30.0
-            )
-
-            switch safety.validate(flightTarget, telemetry: bridge.telemetry) {
-            case .rejected(let reason):
-                log("Safety rejected: \(reason)", level: .warning)
-                spatialAudio.playErrorCue()
-                returnToIdle()
-                return
-            case .approved:
-                break
-            }
-
-            // Lock object tracker onto the grounded box (spec §5 step 5)
-            tracker.startTracking(bbox: normalizedVisionBox(from: r.box2d))
-
-            appState = .executing(verb: "APPROACH", target: targetName)
-            log("Executing approach → '\(targetName)'  standoff=\(standoff)m  maxSec=\(maxSec)s")
-            behaviors.approach(box: r.box2d, standoffM: standoff, maxSeconds: maxSec)
-
-        default:
-            log("Unknown intent '\(intent)' — idle.", level: .warning)
-            returnToIdle()
-        }
-    }
-
-    // MARK: - Mission Execution (plan path)
-
-    private func runMission(_ plan: MissionPlan) async {
+    private func runMission(steps: [NimbusStep]) async {
         // Suspend the overhead hold / any running behavior while the mission owns the aircraft.
         behaviors.stop()
         tracker.stopTracking()
+        headTracking.unfreeze()
 
-        let firstOp = plan.steps.first?.op.uppercased() ?? "MISSION"
-        appState = .executing(verb: firstOp, target: plan.steps.first?.target)
-        log("Mission start: \(plan.steps.map(\.op).joined(separator: " → ")) (planner=\(plan.planner))")
+        let firstOp = steps.first?.op.uppercased() ?? "MISSION"
+        appState = .executing(verb: firstOp, target: steps.first?.target)
+        log("Mission start: \(steps.map(\.op).joined(separator: " → "))")
         // Keep the wakeword hot during the mission so "Nimbus, stop" interrupts.
         restartWakewordIfNeeded()
 
-        let result = await missionExecutor.run(plan: plan)
+        let result = await missionExecutor.run(steps: steps)
         switch result {
         case .completed:
             spatialAudio.playCommandConfirmation()
@@ -563,22 +463,8 @@ final class Orchestrator {
         }
     }
 
-    /// max_radius_m from constraints is a search bound, not a standoff.
-    /// Map it to a reasonable standoff (default 3 m).
-    private func resolveStandoff(from radiusHint: Double?) -> Double {
-        let raw = radiusHint ?? 30.0
-        return raw > 10 ? 3.0 : max(safety.minStandoffM, raw)
-    }
-
-    /// Convert backend [ymin, xmin, ymax, xmax] (0–1000) to a Vision CGRect
-    /// (origin bottom-left, 0–1, Y flipped).
-    private func normalizedVisionBox(from box: [Int]) -> CGRect {
-        guard box.count == 4 else { return .zero }
-        let xMin   = CGFloat(box[1]) / 1000
-        let yMin   = 1.0 - CGFloat(box[2]) / 1000   // flip Y
-        let width  = CGFloat(box[3] - box[1]) / 1000
-        let height = CGFloat(box[2] - box[0]) / 1000
-        return CGRect(x: xMin, y: yMin, width: width, height: height)
+    private func resumeOverheadHold_public() {
+        resumeOverheadHold()
     }
 
     // MARK: - Logging

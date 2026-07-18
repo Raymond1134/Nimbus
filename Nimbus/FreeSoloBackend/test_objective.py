@@ -20,10 +20,9 @@ def test_every_op_parses():
         "takeoff": {"op": "takeoff"},
         "land": {"op": "land"},
         "fly_to|red tent": {"op": "fly_to", "target": "red tent"},
-        "fly_higher": {"op": "fly_higher", "altitude_delta_m": 2.0},
-        "fly_higher|5": {"op": "fly_higher", "altitude_delta_m": 5.0},
-        "fly_lower|3": {"op": "fly_lower", "altitude_delta_m": 3.0},
-        "fly_above|picnic table": {"op": "fly_above", "target": "picnic table"},
+        "change_altitude": {"op": "change_altitude", "delta_m": 0.5},
+        "change_altitude|+2": {"op": "change_altitude", "delta_m": 2.0},
+        "change_altitude|-1.5": {"op": "change_altitude", "delta_m": -1.5},
         "rotate|left": {"op": "rotate", "direction": "left", "yaw_deg": -90.0},
         "rotate|right|360": {"op": "rotate", "direction": "right", "yaw_deg": 360.0},
         "orbit|tree": {"op": "orbit", "target": "tree", "revolutions": 1.0},
@@ -34,8 +33,8 @@ def test_every_op_parses():
         "photo": {"op": "photo"},
         "selfie": {"op": "selfie"},
         "panorama": {"op": "panorama"},
-        "follow|dog": {"op": "follow", "target": "dog", "duration_s": 10.0},
-        "follow|dog|30": {"op": "follow", "target": "dog", "duration_s": 30.0},
+        "follow|dog": {"op": "follow", "target": "dog", "duration_s": 30.0},
+        "follow|dog|45": {"op": "follow", "target": "dog", "duration_s": 45.0},
         "return": {"op": "return"},
         "abort": {"op": "abort"},
         "say|Ready.": {"op": "say", "text": "Ready."},
@@ -44,6 +43,24 @@ def test_every_op_parses():
     assert covered_ops == set(OPS), f"uncovered: {set(OPS) - covered_ops}"
     for step, expected in samples.items():
         assert parse_step(step) == expected, step
+
+
+def test_fly_to_relative_nudges():
+    assert parse_step("fly_to|forward") == {"op": "fly_to", "direction": "forward", "distance_m": 0.5}
+    assert parse_step("fly_to|left|2") == {"op": "fly_to", "direction": "left", "distance_m": 2.0}
+    assert parse_step("fly_to|backward|3") == {"op": "fly_to", "direction": "back", "distance_m": 3.0}
+
+
+def test_lenient_aliases():
+    assert parse_step("fly_higher|2", lenient=True) == {"op": "change_altitude", "delta_m": 2.0}
+    assert parse_step("descend|3", lenient=True) == {"op": "change_altitude", "delta_m": -3.0}
+    assert parse_step("climb", lenient=True) == {"op": "change_altitude", "delta_m": 0.5}
+    assert parse_step("fly_forward|2", lenient=True) == {"op": "fly_to", "direction": "forward", "distance_m": 2.0}
+    assert parse_step("circle|tree|2", lenient=True) == {"op": "orbit", "target": "tree", "revolutions": 2.0}
+    assert parse_step("spin|360", lenient=True) == {"op": "rotate", "direction": "right", "yaw_deg": 360.0}
+    # strict mode rejects near-miss aliases
+    assert parse_step("fly_higher|2") is None
+    assert parse_step("circle|tree") is None
 
 
 def test_invalid_steps_rejected():

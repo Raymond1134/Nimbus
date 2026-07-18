@@ -1,800 +1,400 @@
-{"input": "please aim at the red tent", "output": "{\"steps\":[\"look_at|red tent\"],\"confidence\":0.86}"}
-{"input": "fly towards that kids on the playground", "output": "{\"steps\":[\"fly_to|kids on the playground\"],\"confidence\":0.9}"}
-{"input": "take off after that fly to the pond then take a photo", "output": "{\"steps\":[\"takeoff\",\"fly_to|pond\",\"photo\"],\"confidence\":0.97}"}
-{"input": "point at that pine tree and then please land", "output": "{\"steps\":[\"look_at|pine tree\",\"land\"],\"confidence\":0.95}"}
-{"input": "hover for me", "output": "{\"steps\":[\"hover\"],\"confidence\":0.9}"}
-{"input": "aim at the picnic table", "output": "{\"steps\":[\"look_at|picnic table\"],\"confidence\":0.87}"}
-{"input": "hey rotate left 360 degrees", "output": "{\"steps\":[\"rotate|left|360\"],\"confidence\":0.89}"}
-{"input": "orbit the orange cone after that then take a panorama, and and come back", "output": "{\"steps\":[\"orbit|orange cone\",\"panorama\",\"return\"],\"confidence\":0.9}"}
-{"input": "drone, fly over the pond and stay there", "output": "{\"steps\":[\"fly_above|pond\"],\"confidence\":0.88}"}
-{"input": "um up 2 meters and then go over to that grill next get above the tree", "output": "{\"steps\":[\"fly_higher|2\",\"fly_to|grill\",\"fly_above|tree\"],\"confidence\":0.92}"}
-{"input": "find the orange cone for me", "output": "{\"steps\":[\"fly_to|orange cone\"],\"confidence\":0.91}"}
-{"input": "look at the tree and then panorama shot next point at that black truck next fly up 5 meters", "output": "{\"steps\":[\"look_at|tree\",\"panorama\",\"look_at|black truck\",\"fly_higher|5\"],\"confidence\":0.85}"}
-{"input": "find the blanket on the grass and photograph it", "output": "{\"steps\":[\"fly_to|blanket on the grass\",\"photo\"],\"confidence\":0.9}"}
-{"input": "fly higher after that circle the lamp post three times and fly over the people at the picnic table and stay there", "output": "{\"steps\":[\"fly_higher\",\"orbit|lamp post|3\",\"fly_above|people at the picnic table\"],\"confidence\":0.91}"}
-{"input": "take off and fly to the person in the red jacket", "output": "{\"steps\":[\"takeoff\",\"fly_to|person in the red jacket\"],\"confidence\":0.83}"}
-{"input": "ui climb 3 meters", "output": "{\"steps\":[\"fly_higher|3\"],\"confidence\":0.91}"}
-{"input": "rise 8 meters", "output": "{\"steps\":[\"fly_higher|8\"],\"confidence\":0.89}"}
-{"input": "nimbus capture a panorama, and stay there after that fly towards that fence", "output": "{\"steps\":[\"panorama\",\"hover\",\"fly_to|fence\"],\"confidence\":0.89}"}
-{"input": "get above the doorway", "output": "{\"steps\":[\"fly_above|doorway\"],\"confidence\":0.92}"}
-{"input": "okay take a selfie, and then do a panorama", "output": "{\"steps\":[\"selfie\",\"panorama\"],\"confidence\":0.98}"}
-{"input": "alright hover 45 seconds, and follow that that person for 15 seconds next get in the air", "output": "{\"steps\":[\"hover|45\",\"follow|that person|15\",\"takeoff\"],\"confidence\":0.95}"}
-{"input": "please do a spin and come down 1 meters", "output": "{\"steps\":[\"rotate|right|360\",\"fly_lower|1\"],\"confidence\":0.96}"}
-{"input": "drone spin right a bit then track the golden retriever for 15 seconds next shoot a 360", "output": "{\"steps\":[\"rotate|right\",\"follow|golden retriever|15\",\"panorama\"],\"confidence\":0.91}"}
-{"input": "fly above the white van", "output": "{\"steps\":[\"fly_above|white van\"],\"confidence\":0.83}"}
-{"input": "head to the boulder", "output": "{\"steps\":[\"fly_to|boulder\"],\"confidence\":0.95}"}
-{"input": "drone, lower by 1 meters, and rotate 45 degrees to the left", "output": "{\"steps\":[\"fly_lower|1\",\"rotate|left|45\"],\"confidence\":0.93}"}
-{"input": "nimbus get a selfie then grab a photo and do 3 laps around the doorway, and fly over to the hill", "output": "{\"steps\":[\"selfie\",\"photo\",\"orbit|doorway|3\",\"fly_to|hill\"],\"confidence\":0.82}"}
-{"input": "hover above the person in the red jacket", "output": "{\"steps\":[\"fly_above|person in the red jacket\"],\"confidence\":0.9}"}
-{"input": "fly to the basketball hoop for me", "output": "{\"steps\":[\"fly_to|basketball hoop\"],\"confidence\":0.94}"}
-{"input": "drone go to the gazebo", "output": "{\"steps\":[\"fly_to|gazebo\"],\"confidence\":0.94}"}
-{"input": "fly higher for me", "output": "{\"steps\":[\"fly_higher\"],\"confidence\":0.96}"}
-{"input": "shoot a 360, and stay right there next fly arond the red tent", "output": "{\"steps\":[\"panorama\",\"hover\",\"orbit|red tent\"],\"confidence\":0.95}"}
-{"input": "alright orbit the canopy twice", "output": "{\"steps\":[\"orbit|canopy|2\"],\"confidence\":0.96}"}
-{"input": "up a bit then touch down", "output": "{\"steps\":[\"fly_higher\",\"land\"],\"confidence\":0.92}"}
-{"input": "circle the pond three times and rotate 90 degrees to the left for me", "output": "{\"steps\":[\"orbit|pond|3\",\"rotate|left|90\"],\"confidence\":0.91}"}
-{"input": "keep up aith the kid on the scooter", "output": "{\"steps\":[\"follow|kid on the scooter\"],\"confidence\":0.89}"}
-{"input": "drone head to the trash can now", "output": "{\"steps\":[\"fly_to|trash can\"],\"confidence\":0.92}"}
-{"input": "alright orbit the guy in the blue shirt three times", "output": "{\"steps\":[\"orbit|guy in the blue shirt|3\"],\"confidence\":0.89}"}
-{"input": "um find the parking lot and orbit the parking lot and then get to the fire pit then take a picture", "output": "{\"steps\":[\"fly_to|parking lot\",\"orbit|parking lot\",\"fly_to|fire pit\",\"photo\"],\"confidence\":0.95}"}
-{"input": "get a shot next stay on the jogger for 3 seconds", "output": "{\"steps\":[\"photo\",\"follow|jogger|3\"],\"confidence\":0.85}"}
-{"input": "keep up with the golden retriever uh", "output": "{\"steps\":[\"follow|golden retriever\"],\"confidence\":0.92}"}
-{"input": "fly to the crowd after that take a picture and then spin around", "output": "{\"steps\":[\"fly_to|crowd\",\"photo\",\"rotate|right|360\"],\"confidence\":0.89}"}
-{"input": "drone rotate right, then hover above the person waving, and drop down a little and fly above the stage for me", "output": "{\"steps\":[\"rotate|right\",\"fly_above|person waving\",\"fly_lower\",\"fly_above|stage\"],\"confidence\":0.98}"}
-{"input": "fly above the hill and then take a picture next come back and land now", "output": "{\"steps\":[\"fly_above|hill\",\"photo\",\"return\"],\"confidence\":0.84}"}
-{"input": "find the golden retriever and then look over at the food truck, and rotate left 270 degrees", "output": "{\"steps\":[\"fly_to|golden retriever\",\"look_at|food truck\",\"rotate|left|270\"],\"confidence\":0.94}"}
-{"input": "drone, take off, and head to the people at the picnic table next take a photo", "output": "{\"steps\":[\"takeoff\",\"fly_to|people at the picnic table\",\"photo\"],\"confidence\":0.86}"}
-{"input": "take a picture of me after that hover 45 seconds and take a selfie of me", "output": "{\"steps\":[\"selfie\",\"hover|45\",\"selfie\"],\"confidence\":0.93}"}
-{"input": "hey snap a photo of the big rock", "output": "{\"steps\":[\"fly_to|big rock\",\"photo\"],\"confidence\":0.97}"}
-{"input": "keep the camera on the white car then spin left a bit thanks", "output": "{\"steps\":[\"look_at|white car\",\"rotate|left\"],\"confidence\":0.92}"}
-{"input": "hey drone take a selfie of me", "output": "{\"steps\":[\"selfie\"],\"confidence\":0.83}"}
-{"input": "take a pic of the white car", "output": "{\"steps\":[\"fly_to|white car\",\"photo\"],\"confidence\":0.88}"}
-{"input": "nimbus fly over to the socoer goal thanks", "output": "{\"steps\":[\"fly_to|soccer goal\"],\"confidence\":0.96}"}
-{"input": "follow the guy in the blue shirt", "output": "{\"steps\":[\"follow|guy in the blue shirt\"],\"confidence\":0.88}"}
-{"input": "yaw right 360 after that descend, then focus on the soccer goal then move toward the volleyball net", "output": "{\"steps\":[\"rotate|right|360\",\"fly_lower\",\"look_at|soccer goal\",\"fly_to|volleyball net\"],\"confidence\":0.94}"}
-{"input": "alright take a picture of the orange cone real quick", "output": "{\"steps\":[\"fly_to|orange cone\",\"photo\"],\"confidence\":0.94}"}
-{"input": "hey drone shoot a picture, and do 2 laps around the mailbox, then capture a photo after that follow that guy in the blue shirt for 5 seconds please", "output": "{\"steps\":[\"photo\",\"orbit|mailbox|2\",\"photo\",\"follow|guy in the blue shirt|5\"],\"confidence\":0.86}"}
-{"input": "down 2 meters please", "output": "{\"steps\":[\"fly_lower|2\"],\"confidence\":0.95}"}
-{"input": "circle the pond then then take a panorama and then and come back", "output": "{\"steps\":[\"orbit|pond\",\"panorama\",\"return\"],\"confidence\":0.85}"}
-{"input": "turn left 180 degrees real quick", "output": "{\"steps\":[\"rotate|left|180\"],\"confidence\":0.93}"}
-{"input": "selfy and then stay with the me next go directly over the doorway", "output": "{\"steps\":[\"selfie\",\"follow|me\",\"fly_above|doorway\"],\"confidence\":0.91}"}
-{"input": "please head to the crowd", "output": "{\"steps\":[\"fly_to|crowd\"],\"confidence\":0.96}"}
-{"input": "photograph the pond uh", "output": "{\"steps\":[\"fly_to|pond\",\"photo\"],\"confidence\":0.93}"}
-{"input": "keep the camera on the basketball hoop", "output": "{\"steps\":[\"look_at|basketball hoop\"],\"confidence\":0.85}"}
-{"input": "circle the stop sign once", "output": "{\"steps\":[\"orbit|stop sign|1\"],\"confidence\":0.88}"}
-{"input": "fly above the basketball hoop, and take a picture, then come back and land", "output": "{\"steps\":[\"fly_above|basketball hoop\",\"photo\",\"return\",\"land\"],\"confidence\":0.83}"}
-{"input": "nimbus take a picture of the playground", "output": "{\"steps\":[\"fly_to|playground\",\"photo\"],\"confidence\":0.85}"}
-{"input": "snap a selfie, and rotate left, and circle around that grill for me", "output": "{\"steps\":[\"selfie\",\"rotate|left\",\"orbit|grill\"],\"confidence\":0.86}"}
-{"input": "nimbus follow the that person for 60 seconds then hold position then land the drone", "output": "{\"steps\":[\"follow|that person|60\",\"hover\",\"land\"],\"confidence\":0.91}"}
-{"input": "hey get a shot", "output": "{\"steps\":[\"photo\"],\"confidence\":0.88}"}
-{"input": "take a pic then keep the camera on the blue tent, and lower by 10 meters for me", "output": "{\"steps\":[\"photo\",\"look_at|blue tent\",\"fly_lower|10\"],\"confidence\":0.92}"}
-{"input": "hold station, and fly above the soccer goal, then follow that golden retriever for 60 seconds uh", "output": "{\"steps\":[\"hover\",\"fly_above|soccer goal\",\"follow|golden retriever|60\"],\"confidence\":0.9}"}
-{"input": "go over to that boulder then lift off next wait 60 seconds then get a selfie", "output": "{\"steps\":[\"fly_to|boulder\",\"takeoff\",\"hover|60\",\"selfie\"],\"confidence\":0.97}"}
-{"input": "rotate right and get to the food truck", "output": "{\"steps\":[\"rotate|right\",\"fly_to|food truck\"],\"confidence\":0.85}"}
-{"input": "hey fly towards that building entrance", "output": "{\"steps\":[\"fly_to|building entrance\"],\"confidence\":0.84}"}
-{"input": "hey spin left a bit then hang there for 5 seconds, and launch", "output": "{\"steps\":[\"rotate|left\",\"hover|5\",\"takeoff\"],\"confidence\":0.93}"}
-{"input": "hey drone take a selfiu, and then do a panorama", "output": "{\"steps\":[\"selfie\",\"panorama\"],\"confidence\":0.86}"}
-{"input": "drone snap a selfie and then face the other way then bring it down and land please", "output": "{\"steps\":[\"selfie\",\"rotate|right|180\",\"land\"],\"confidence\":0.9}"}
-{"input": "please orbit the hill three times", "output": "{\"steps\":[\"orbit|hill|3\"],\"confidence\":0.97}"}
-{"input": "take off and fly to the statue and take a photo", "output": "{\"steps\":[\"takeoff\",\"fly_to|statue\",\"photo\"],\"confidence\":0.87}"}
-{"input": "okay launch, then head to the group of people, then stay put for 15 seconds, then fly back here", "output": "{\"steps\":[\"takeoff\",\"fly_to|group of people\",\"hover|15\",\"return\"],\"confidence\":0.98}"}
-{"input": "fly over the statue and stay there now", "output": "{\"steps\":[\"fly_above|statue\"],\"confidence\":0.97}"}
-{"input": "um find the volleyball net", "output": "{\"steps\":[\"fly_to|volleyball net\"],\"confidence\":0.84}"}
-{"input": "snap a photo of the bench", "output": "{\"steps\":[\"fly_to|bench\",\"photo\"],\"confidence\":0.92}"}
-{"input": "orbit the grill twice", "output": "{\"steps\":[\"orbit|grill|2\"],\"confidence\":0.94}"}
-{"input": "please yaw left 270", "output": "{\"steps\":[\"rotate|left|270\"],\"confidence\":0.98}"}
-{"input": "hey take off after that head to the bike next take a photo", "output": "{\"steps\":[\"takeoff\",\"fly_to|bike\",\"photo\"],\"confidence\":0.85}"}
-{"input": "gain some height, and stay on the golden retriever for 20 seconds", "output": "{\"steps\":[\"fly_higher\",\"follow|golden retriever|20\"],\"confidence\":0.99}"}
-{"input": "spin 270 degrees right", "output": "{\"steps\":[\"rotate|right|270\"],\"confidence\":0.93}"}
-{"input": "please photograph the picnic table", "output": "{\"steps\":[\"fly_to|picnic table\",\"photo\"],\"confidence\":0.83}"}
-{"input": "rotate 360 degrees to the left then keep the camera on the basketball hoop", "output": "{\"steps\":[\"rotate|left|360\",\"look_at|basketball hoop\"],\"confidence\":0.86}"}
-{"input": "get lower and then capture a photo", "output": "{\"steps\":[\"fly_lower\",\"photo\"],\"confidence\":0.86}"}
-{"input": "look at the doorway", "output": "{\"steps\":[\"look_at|doorway\"],\"confidence\":0.85}"}
-{"input": "fly lower and then go to the playgruund", "output": "{\"steps\":[\"fly_lower\",\"fly_to|playground\"],\"confidence\":0.85}"}
-{"input": "go over to that bike", "output": "{\"steps\":[\"fly_to|bike\"],\"confidence\":0.92}"}
-{"input": "hover above the bridge, and selfie now", "output": "{\"steps\":[\"fly_above|bridge\",\"selfie\"],\"confidence\":0.83}"}
-{"input": "up 8 metera", "output": "{\"steps\":[\"fly_higher|8\"],\"confidence\":0.9}"}
-{"input": "okay go higher thanks", "output": "{\"steps\":[\"fly_higher\"],\"confidence\":0.98}"}
-{"input": "get a shot of the bridge uh", "output": "{\"steps\":[\"fly_to|bridge\",\"photo\"],\"confidence\":0.84}"}
-{"input": "drone go directly over the gate, and come back to me", "output": "{\"steps\":[\"fly_above|gate\",\"return\"],\"confidence\":0.83}"}
-{"input": "circle the fence", "output": "{\"steps\":[\"orbit|fence\"],\"confidence\":0.89}"}
-{"input": "drone track the pereon in the red jacket for 8 seconds now", "output": "{\"steps\":[\"follow|person in the red jacket|8\"],\"confidence\":0.87}"}
-{"input": "do a lap around the orange cone, and get above the person in the red jacket", "output": "{\"steps\":[\"orbit|orange cone\",\"fly_above|person in the red jacket\"],\"confidence\":0.83}"}
-{"input": "do a lap around the flagpole and then snap a photo", "output": "{\"steps\":[\"orbit|flagpole|1\",\"photo\"],\"confidence\":0.91}"}
-{"input": "just hover, and yaw left 360", "output": "{\"steps\":[\"hover\",\"rotate|left|360\"],\"confidence\":0.99}"}
-{"input": "drone focus on the white car, and face the other way uh", "output": "{\"steps\":[\"look_at|white car\",\"rotate|right|180\"],\"confidence\":0.84}"}
-{"input": "take off then head to the red trash can, and take a photo", "output": "{\"steps\":[\"takeoff\",\"fly_to|red trash can\",\"photo\"],\"confidence\":0.82}"}
-{"input": "go to the canopy", "output": "{\"steps\":[\"fly_to|canopy\"],\"confidence\":0.83}"}
-{"input": "follow the jogger then fly above the pond after that take a panorama, then end the flight", "output": "{\"steps\":[\"follow|jogger\",\"fly_above|pond\",\"panorama\",\"land\"],\"confidence\":0.9}"}
-{"input": "nimbus rotate 270 degrees to the left", "output": "{\"steps\":[\"rotate|left|270\"],\"confidence\":0.86}"}
-{"input": "circle around that boulder", "output": "{\"steps\":[\"orbit|boulder\"],\"confidence\":0.84}"}
-{"input": "drone, stop stop stop now", "output": "{\"steps\":[\"abort\"],\"confidence\":0.83}"}
-{"input": "spin left a bit then gain 5 meters of iltitude next fly around the bush", "output": "{\"steps\":[\"rotate|left\",\"fly_higher|5\",\"orbit|bush\"],\"confidence\":0.88}"}
-{"input": "take off then fly to the white car and then take a photo", "output": "{\"steps\":[\"takeoff\",\"fly_to|white car\",\"photo\"],\"confidence\":0.98}"}
-{"input": "watch the boulder and capture a pana rama and take a picture", "output": "{\"steps\":[\"look_at|boulder\",\"panorama\",\"photo\"],\"confidence\":0.89}"}
-{"input": "point at that parking lot, then move toward the white van", "output": "{\"steps\":[\"look_at|parking lot\",\"fly_to|white van\"],\"confidence\":0.92}"}
-{"input": "hey drone take a panorama", "output": "{\"steps\":[\"panorama\"],\"confidence\":0.86}"}
-{"input": "take a pic and then circle the doorway once", "output": "{\"steps\":[\"photo\",\"orbit|doorway|1\"],\"confidence\":0.95}"}
-{"input": "uh fly over the flower bed and stay there then just hover", "output": "{\"steps\":[\"fly_above|flower bed\",\"hover\"],\"confidence\":0.99}"}
-{"input": "watch the bench", "output": "{\"steps\":[\"look_at|bench\"],\"confidence\":0.88}"}
-{"input": "get me a picture of that bike", "output": "{\"steps\":[\"fly_to|bike\",\"photo\"],\"confidence\":0.96}"}
-{"input": "find the black truck and photograph it", "output": "{\"steps\":[\"fly_to|black truck\",\"photo\"],\"confidence\":0.9}"}
-{"input": "hey look over at the oak tree thanks", "output": "{\"steps\":[\"look_at|oak tree\"],\"confidence\":0.93}"}
-{"input": "fly above the person waving then take a picture next come back and land", "output": "{\"steps\":[\"fly_above|person waving\",\"photo\",\"return\",\"land\"],\"confidence\":0.89}"}
-{"input": "alright fly in circles around the gate, and down 10 meters", "output": "{\"steps\":[\"orbit|gate\",\"fly_lower|10\"],\"confidence\":0.88}"}
-{"input": "hey drone take the shot after that a little lower", "output": "{\"steps\":[\"photo\",\"fly_lower\"],\"confidence\":0.99}"}
-{"input": "take a pano then shoot a picture", "output": "{\"steps\":[\"panorama\",\"photo\"],\"confidence\":0.98}"}
-{"input": "drone fly to the hill and take a picture please", "output": "{\"steps\":[\"fly_to|hill\",\"photo\"],\"confidence\":0.88}"}
-{"input": "get a panorama of this place after that stay with the guy in the blue shirt and down 8 meters", "output": "{\"steps\":[\"panorama\",\"follow|guy in the blue shirt\",\"fly_lower|8\"],\"confidence\":0.98}"}
-{"input": "look at the guy in the blue shirt", "output": "{\"steps\":[\"look_at|guy in the blue shirt\"],\"confidence\":0.93}"}
-{"input": "um do a spin now", "output": "{\"steps\":[\"rotate|right|360\"],\"confidence\":0.97}"}
-{"input": "return home now", "output": "{\"steps\":[\"return\"],\"confidence\":0.84}"}
-{"input": "follow that jegger next do a full panorama", "output": "{\"steps\":[\"follow|jogger\",\"panorama\"],\"confidence\":0.94}"}
-{"input": "okay approach the white car", "output": "{\"steps\":[\"fly_to|white car\"],\"confidence\":0.9}"}
-{"input": "okay take a picture of the white car", "output": "{\"steps\":[\"fly_to|white car\",\"photo\"],\"confidence\":0.86}"}
-{"input": "keep the camera on the big rock then circle the crowd twice then point at that white car after that stay there", "output": "{\"steps\":[\"look_at|big rock\",\"orbit|crowd|2\",\"look_at|white car\",\"hover\"],\"confidence\":0.92}"}
-{"input": "nimbus snap a photo of the flagpole", "output": "{\"steps\":[\"fly_to|flagpole\",\"photo\"],\"confidence\":0.94}"}
-{"input": "go higher", "output": "{\"steps\":[\"fly_higher\"],\"confidence\":0.89}"}
-{"input": "get above the cooler, and look over at the lamp post", "output": "{\"steps\":[\"fly_above|cooler\",\"look_at|lamp post\"],\"confidence\":0.97}"}
-{"input": "um get a panorama of this place then get to the food truck", "output": "{\"steps\":[\"panorama\",\"fly_to|food truck\"],\"confidence\":0.95}"}
-{"input": "hey drone focus on the fire pit", "output": "{\"steps\":[\"look_at|fire pit\"],\"confidence\":0.84}"}
-{"input": "take a pic real quick", "output": "{\"steps\":[\"photo\"],\"confidence\":0.85}"}
-{"input": "get over the pond and then look over at the yellow backpack then orbit the gazebo twice", "output": "{\"steps\":[\"fly_above|pond\",\"look_at|yellow backpack\",\"orbit|gazebo|2\"],\"confidence\":0.91}"}
-{"input": "tail the white car and aim at the flagpole, and spin up and take off and then cancel real quick", "output": "{\"steps\":[\"follow|white car\",\"look_at|flagpole\",\"takeoff\",\"abort\"],\"confidence\":0.84}"}
-{"input": "spin 270 degrees left after that go find the cooler", "output": "{\"steps\":[\"rotate|left|270\",\"fly_to|cooler\"],\"confidence\":0.92}"}
-{"input": "fly to the park bench, and take a pic", "output": "{\"steps\":[\"fly_to|park bench\",\"photo\"],\"confidence\":0.89}"}
-{"input": "takeoff, then go directly over the fire pit and spin right a bit", "output": "{\"steps\":[\"takeoff\",\"fly_above|fire pit\",\"rotate|right\"],\"confidence\":0.94}"}
-{"input": "snap a photo of the hill", "output": "{\"steps\":[\"fly_to|hill\",\"photo\"],\"confidence\":0.92}"}
-{"input": "stay right there, then keep the camera on the swing set and wait stop please", "output": "{\"steps\":[\"hover\",\"look_at|swing set\",\"abort\"],\"confidence\":0.86}"}
-{"input": "okay take a dronie next down 2 meters and point the camera at the fire pit", "output": "{\"steps\":[\"selfie\",\"fly_lower|2\",\"look_at|fire pit\"],\"confidence\":0.98}"}
-{"input": "up 10 meters and then orbit the cooler twice", "output": "{\"steps\":[\"fly_higher|10\",\"orbit|cooler|2\"],\"confidence\":0.82}"}
-{"input": "hover 60 seconds thanks", "output": "{\"steps\":[\"hover|60\"],\"confidence\":0.88}"}
-{"input": "orbit the flower bed and then take a panorama", "output": "{\"steps\":[\"orbit|flower bed\",\"panorama\"],\"confidence\":0.87}"}
-{"input": "get lower next rotate right", "output": "{\"steps\":[\"fly_lower\",\"rotate|right\"],\"confidence\":0.93}"}
-{"input": "okay land now", "output": "{\"steps\":[\"land\"],\"confidence\":0.98}"}
-{"input": "spin 90 degrees right thanks", "output": "{\"steps\":[\"rotate|right|90\"],\"confidence\":0.99}"}
-{"input": "circle around that building entrance and position yourself over the grill after that head to the canopy", "output": "{\"steps\":[\"orbit|building entrance\",\"fly_above|grill\",\"fly_to|canopy\"],\"confidence\":0.88}"}
-{"input": "head to the picnic table", "output": "{\"steps\":[\"fly_to|picnic table\"],\"confidence\":0.83}"}
-{"input": "hang there for 10 seconds after that come down a bit, then a little higher and then orbit the lamp post twice", "output": "{\"steps\":[\"hover|10\",\"fly_lower\",\"fly_higher\",\"orbit|lamp post|2\"],\"confidence\":0.96}"}
-{"input": "drone, shoot a 360", "output": "{\"steps\":[\"panorama\"],\"confidence\":0.83}"}
-{"input": "up a bit after that follow the guy in the blue shirt then point at that bike", "output": "{\"steps\":[\"fly_higher\",\"follow|guy in the blue shirt\",\"look_at|bike\"],\"confidence\":0.91}"}
-{"input": "nimbus snap a photo of the blue tent", "output": "{\"steps\":[\"fly_to|blue tent\",\"photo\"],\"confidence\":0.91}"}
-{"input": "um fly to the stop sign and take a picture", "output": "{\"steps\":[\"fly_to|stop sign\",\"photo\"],\"confidence\":0.91}"}
-{"input": "fly above the dog, then take a picture next come back and land", "output": "{\"steps\":[\"fly_above|dog\",\"photo\",\"return\",\"land\"],\"confidence\":0.94}"}
-{"input": "takeoff, then spin 270 degrees left", "output": "{\"steps\":[\"takeoff\",\"rotate|left|270\"],\"confidence\":0.93}"}
-{"input": "hey do a 180, and take the shot", "output": "{\"steps\":[\"rotate|right|180\",\"photo\"],\"confidence\":0.98}"}
-{"input": "drone, follow that guy in the blue shirt, and yaw right", "output": "{\"steps\":[\"follow|guy in the blue shirt\",\"rotate|right\"],\"confidence\":0.87}"}
-{"input": "drone turn right 360 degrees after that get above the gate, and take a photo and turn left", "output": "{\"steps\":[\"rotate|right|360\",\"fly_above|gate\",\"photo\",\"rotate|left\"],\"confidence\":0.95}"}
-{"input": "take a 360 photo then bring it down and land", "output": "{\"steps\":[\"panorama\",\"land\"],\"confidence\":0.88}"}
-{"input": "start flying next keep up with the person waving, then bring it down and land", "output": "{\"steps\":[\"takeoff\",\"follow|person waving\",\"land\"],\"confidence\":0.99}"}
-{"input": "watch the person waving", "output": "{\"steps\":[\"look_at|person waving\"],\"confidence\":0.91}"}
-{"input": "get a panorama of this place and fly down 5 meters", "output": "{\"steps\":[\"panorama\",\"fly_lower|5\"],\"confidence\":0.83}"}
-{"input": "take off, then take a panorama", "output": "{\"steps\":[\"takeoff\",\"panorama\"],\"confidence\":0.86}"}
-{"input": "drone, fly up 2 meters next snap a pic", "output": "{\"steps\":[\"fly_higher|2\",\"photo\"],\"confidence\":0.98}"}
-{"input": "fly above the bush", "output": "{\"steps\":[\"fly_above|bush\"],\"confidence\":0.83}"}
-{"input": "head to the dog", "output": "{\"steps\":[\"fly_to|dog\"],\"confidence\":0.82}"}
-{"input": "um do a full panorama real quick", "output": "{\"steps\":[\"panorama\"],\"confidence\":0.83}"}
-{"input": "take a 360 photo, then follow that kid on the scooter, then rotate 180", "output": "{\"steps\":[\"panorama\",\"follow|kid on the scooter\",\"rotate|right|180\"],\"confidence\":0.83}"}
-{"input": "go down, then take a pano", "output": "{\"steps\":[\"fly_lower\",\"panorama\"],\"confidence\":0.88}"}
-{"input": "drone, please land", "output": "{\"steps\":[\"land\"],\"confidence\":0.86}"}
-{"input": "drone, fly above the flower bed after that take a picture then come back and land real quick", "output": "{\"steps\":[\"fly_above|flower bed\",\"photo\",\"return\",\"land\"],\"confidence\":0.87}"}
-{"input": "shoot a picture, and cancel", "output": "{\"steps\":[\"photo\",\"abort\"],\"confidence\":0.83}"}
-{"input": "up you go, and rise 3 meters and then orbitt the person in the red jacket, then follow the white car for 30 seconds", "output": "{\"steps\":[\"takeoff\",\"fly_higher|3\",\"orbit|person in the red jacket\",\"follow|white car|30\"],\"confidence\":0.97}"}
-{"input": "hover above the red tent and rotate 180 then get lower and then get to the bench", "output": "{\"steps\":[\"fly_above|red tent\",\"rotate|right|180\",\"fly_lower\",\"fly_to|bench\"],\"confidence\":0.89}"}
-{"input": "take a dronie and do a lap around the parking lot please", "output": "{\"steps\":[\"selfie\",\"orbit|parking lot|1\"],\"confidence\":0.9}"}
-{"input": "stay wito the bike", "output": "{\"steps\":[\"follow|bike\"],\"confidence\":0.82}"}
-{"input": "go to the cooler and then stay on the guy in the blue shirt for 20 seconds then hover 8 seconds and then a little higher", "output": "{\"steps\":[\"fly_to|cooler\",\"follow|guy in the blue shirt|20\",\"hover|8\",\"fly_higher\"],\"confidence\":0.95}"}
-{"input": "look at the canopy and stay right there", "output": "{\"steps\":[\"look_at|canopy\",\"hover\"],\"confidence\":0.97}"}
-{"input": "nimbus turn left, and fly above the stage next go up 3 meters next snap a selfie", "output": "{\"steps\":[\"rotate|left\",\"fly_above|stage\",\"fly_higher|3\",\"selfie\"],\"confidence\":0.93}"}
-{"input": "hey take off, and head too the guy in the blue shirt next take a photo", "output": "{\"steps\":[\"takeoff\",\"fly_to|guy in the blue shirt\",\"photo\"],\"confidence\":0.83}"}
-{"input": "um down 1 meters", "output": "{\"steps\":[\"fly_lower|1\"],\"confidence\":0.99}"}
-{"input": "hey drone take a dronie", "output": "{\"steps\":[\"selfie\"],\"confidence\":0.88}"}
-{"input": "please move toward the flagpole", "output": "{\"steps\":[\"fly_to|flagpole\"],\"confidence\":0.98}"}
-{"input": "um turn right then up a bit and a little lower", "output": "{\"steps\":[\"rotate|right\",\"fly_higher\",\"fly_lower\"],\"confidence\":0.9}"}
-{"input": "hey orbit the boulder twice", "output": "{\"steps\":[\"orbit|boulder|2\"],\"confidence\":0.96}"}
-{"input": "take a selfie and then set down", "output": "{\"steps\":[\"selfie\",\"land\"],\"confidence\":0.91}"}
-{"input": "fly around the red trash can", "output": "{\"steps\":[\"orbit|red trash can\"],\"confidence\":0.96}"}
-{"input": "go to the pine tree, then take a picture and then spin around and come back", "output": "{\"steps\":[\"fly_to|pine tree\",\"photo\",\"rotate|right|360\",\"return\"],\"confidence\":0.86}"}
-{"input": "tail the runner next orbit the gazebo", "output": "{\"steps\":[\"follow|runner\",\"orbit|gazebo\"],\"confidence\":0.98}"}
-{"input": "find the food truck and photograph it", "output": "{\"steps\":[\"fly_to|food truck\",\"photo\"],\"confidence\":0.94}"}
-{"input": "up 5 meters thanks", "output": "{\"steps\":[\"fly_higher|5\"],\"confidence\":0.82}"}
-{"input": "follow that the skateioarder for 30 seconds", "output": "{\"steps\":[\"follow|the skateboarder|30\"],\"confidence\":0.98}"}
-{"input": "capture a panorama and then forget it", "output": "{\"steps\":[\"panorama\",\"abort\"],\"confidence\":0.92}"}
-{"input": "just hover after that turn around next take a panorama then snap a pic", "output": "{\"steps\":[\"hover\",\"rotate|right|180\",\"panorama\",\"photo\"],\"confidence\":0.96}"}
-{"input": "follow the that person next take a selfie next find the fence", "output": "{\"steps\":[\"follow|that person\",\"selfie\",\"fly_to|fence\"],\"confidence\":0.91}"}
-{"input": "head over to the red trash can next look over at the hill", "output": "{\"steps\":[\"fly_to|red trash can\",\"look_at|hill\"],\"confidence\":0.94}"}
-{"input": "take a 360 photo, and turn to the right then a little higher and hold for 3 seconds please", "output": "{\"steps\":[\"panorama\",\"rotate|right\",\"fly_higher\",\"hover|3\"],\"confidence\":0.98}"}
-{"input": "drone watch the statue", "output": "{\"steps\":[\"look_at|statue\"],\"confidence\":0.85}"}
-{"input": "position yourself over the parking lot please", "output": "{\"steps\":[\"fly_above|parking lot\"],\"confidence\":0.89}"}
-{"input": "up you go a bit next hover", "output": "{\"steps\":[\"fly_higher\",\"hover\"],\"confidence\":0.88}"}
-{"input": "oait 20 seconds", "output": "{\"steps\":[\"hover|20\"],\"confidence\":0.97}"}
-{"input": "drone, follow that the skateboarder", "output": "{\"steps\":[\"follow|the skateboarder\"],\"confidence\":0.92}"}
-{"input": "hey orbit the flower bed after that then aake a panorama for me", "output": "{\"steps\":[\"orbit|flower bed\",\"panorama\"],\"confidence\":0.91}"}
-{"input": "turn around thanks", "output": "{\"steps\":[\"rotate|right|180\"],\"confidence\":0.89}"}
-{"input": "please go up then do a full spin, and return", "output": "{\"steps\":[\"fly_higher\",\"rotate|right|360\",\"return\"],\"confidence\":0.85}"}
-{"input": "nimbus keep up with the the skateboarder", "output": "{\"steps\":[\"follow|the skateboarder\"],\"confidence\":0.91}"}
-{"input": "please fly above the blue tent", "output": "{\"steps\":[\"fly_above|blue tent\"],\"confidence\":0.96}"}
-{"input": "alright rise 2 meters", "output": "{\"steps\":[\"fly_higher|2\"],\"confidence\":0.86}"}
-{"input": "grab a photo after that do 3 laps around the fire pit, then tail the person waving", "output": "{\"steps\":[\"photo\",\"orbit|fire pit|3\",\"follow|person waving\"],\"confidence\":0.89}"}
-{"input": "move toward the cooler and orbit the big rock then do a full panorama, and point the camera at the black truck", "output": "{\"steps\":[\"fly_to|cooler\",\"orbit|big rock\",\"panorama\",\"look_at|black truck\"],\"confidence\":0.95}"}
-{"input": "take a selfie after that then do a panorama", "output": "{\"steps\":[\"selfie\",\"panorama\"],\"confidence\":0.91}"}
-{"input": "come down 3 meters next stay with the bike, and do a 360 panorama", "output": "{\"steps\":[\"fly_lower|3\",\"follow|bike\",\"panorama\"],\"confidence\":0.94}"}
-{"input": "get to the volleyball net", "output": "{\"steps\":[\"fly_to|volleyball net\"],\"confidence\":0.96}"}
-{"input": "go to the volleyball net after that take a picture next do a 360 uh", "output": "{\"steps\":[\"fly_to|volleyball net\",\"photo\",\"rotate|right|360\"],\"confidence\":0.88}"}
-{"input": "go to the kids on the playground and take a photo", "output": "{\"steps\":[\"fly_to|kids on the playground\",\"photo\"],\"confidence\":0.84}"}
-{"input": "hold station and then take a photo", "output": "{\"steps\":[\"hover\",\"photo\"],\"confidence\":0.86}"}
-{"input": "get me a picture of that flagpole thanks", "output": "{\"steps\":[\"fly_to|flagpole\",\"photo\"],\"confidence\":0.86}"}
-{"input": "hey find the swing set next take a dronie", "output": "{\"steps\":[\"fly_to|swing set\",\"selfie\"],\"confidence\":0.98}"}
-{"input": "hey drone look over at the crowd and then fly around the trash can and then follow the runner for 60 seconds", "output": "{\"steps\":[\"look_at|crowd\",\"orbit|trash can\",\"follow|runner|60\"],\"confidence\":0.97}"}
-{"input": "drone come back", "output": "{\"steps\":[\"return\"],\"confidence\":0.89}"}
-{"input": "move toward the gate", "output": "{\"steps\":[\"fly_to|gate\"],\"confidence\":0.96}"}
-{"input": "fly to the gate and then take a picture after that spin around next come back thanks", "output": "{\"steps\":[\"fly_to|gate\",\"photo\",\"rotate|right|360\",\"return\"],\"confidence\":0.86}"}
-{"input": "point at that bench next keep up with the group walking", "output": "{\"steps\":[\"look_at|bench\",\"follow|group walking\"],\"confidence\":0.97}"}
-{"input": "find the bush and photograph it", "output": "{\"steps\":[\"fly_to|bush\",\"photo\"],\"confidence\":0.98}"}
-{"input": "drone start flying", "output": "{\"steps\":[\"takeoff\"],\"confidence\":0.97}"}
-{"input": "follow the guy in the blue shirt for 2 seconds uh", "output": "{\"steps\":[\"follow|guy in the blue shirt|2\"],\"confidence\":0.97}"}
-{"input": "do 3 laps around the pine tree", "output": "{\"steps\":[\"orbit|pine tree|3\"],\"confidence\":0.82}"}
-{"input": "fly around the white van once, then go up 3 meters next panorama shot next stop stop stop", "output": "{\"steps\":[\"orbit|white van|1\",\"fly_higher|3\",\"panorama\",\"abort\"],\"confidence\":0.91}"}
-{"input": "please do a full panorama then aim at the lamp post, then go higher", "output": "{\"steps\":[\"panorama\",\"look_at|lamp post\",\"fly_higher\"],\"confidence\":0.89}"}
-{"input": "please keep up with da bike", "output": "{\"steps\":[\"follow|bike\"],\"confidence\":0.93}"}
-{"input": "hover above the people at the picnic table", "output": "{\"steps\":[\"fly_above|people at the picnic table\"],\"confidence\":0.94}"}
-{"input": "fly down 8 meters", "output": "{\"steps\":[\"fly_lower|8\"],\"confidence\":0.95}"}
-{"input": "alright uo up 1 meters", "output": "{\"steps\":[\"fly_higher|1\"],\"confidence\":0.86}"}
-{"input": "fly around the red trash can 2 times after that up you go", "output": "{\"steps\":[\"orbit|red trash can|2\",\"takeoff\"],\"confidence\":0.96}"}
-{"input": "get to the white car", "output": "{\"steps\":[\"fly_to|white car\"],\"confidence\":0.86}"}
-{"input": "nimbus follow that group walking for 60 seconds", "output": "{\"steps\":[\"follow|group walking|60\"],\"confidence\":0.98}"}
-{"input": "please stay put for 15 seconds", "output": "{\"steps\":[\"hover|15\"],\"confidence\":0.82}"}
-{"input": "please gain some height and look over at the basketball hoop", "output": "{\"steps\":[\"fly_higher\",\"look_at|basketball hoop\"],\"confidence\":0.83}"}
-{"input": "hey fly to the stage, then take a picture and do a 360 after that come back", "output": "{\"steps\":[\"fly_to|stage\",\"photo\",\"rotate|right|360\",\"return\"],\"confidence\":0.88}"}
-{"input": "drone drop down a little then take flight", "output": "{\"steps\":[\"fly_lower\",\"takeoff\"],\"confidence\":0.96}"}
-{"input": "drone track the guy in the blue shirt for 60 seconds, then keep the camera on the grill", "output": "{\"steps\":[\"follow|guy in the blue shirt|60\",\"look_at|grill\"],\"confidence\":0.87}"}
-{"input": "stay on the me for 10 seconds", "output": "{\"steps\":[\"follow|me|10\"],\"confidence\":0.95}"}
-{"input": "drone hover for 60 seconds", "output": "{\"steps\":[\"hover|60\"],\"confidence\":0.94}"}
-{"input": "watch da canopy next take a paeorama", "output": "{\"steps\":[\"look_at|canopy\",\"panorama\"],\"confidence\":0.95}"}
-{"input": "come back here uh", "output": "{\"steps\":[\"return\"],\"confidence\":0.83}"}
-{"input": "get in the air, then track the group walking for 60 seconds and fly higher and bring it down and land", "output": "{\"steps\":[\"takeoff\",\"follow|group walking|60\",\"fly_higher\",\"land\"],\"confidence\":0.87}"}
-{"input": "fly towards that boulder", "output": "{\"steps\":[\"fly_to|boulder\"],\"confidence\":0.95}"}
-{"input": "hold position", "output": "{\"steps\":[\"hover\"],\"confidence\":0.86}"}
-{"input": "do a lap around the kids on the playground", "output": "{\"steps\":[\"orbit|kids on the playground|1\"],\"confidence\":0.9}"}
-{"input": "fly above the oak tree and then take a picture, then come back and land", "output": "{\"steps\":[\"fly_above|oak tree\",\"photo\",\"return\",\"land\"],\"confidence\":0.89}"}
-{"input": "drone, shoot a picture, and lower by 3 meters after that go directly over the golden retriever", "output": "{\"steps\":[\"photo\",\"fly_lower|3\",\"fly_above|golden retriever\"],\"confidence\":0.84}"}
-{"input": "orbit the person in the red jacket twice", "output": "{\"steps\":[\"orbit|person in the red jacket|2\"],\"confidence\":0.97}"}
-{"input": "rise 1 meters then rotate right thanks", "output": "{\"steps\":[\"fly_higher|1\",\"rotate|right\"],\"confidence\":0.97}"}
-{"input": "um get a selfie thanks", "output": "{\"steps\":[\"selfie\"],\"confidence\":0.88}"}
-{"input": "fly to the statue next fly lower", "output": "{\"steps\":[\"fly_to|statue\",\"fly_lower\"],\"confidence\":0.84}"}
-{"input": "up you go then follow that guy in the blue shirt for 5 seconds real quick", "output": "{\"steps\":[\"takeoff\",\"follow|guy in the blue shirt|5\"],\"confidence\":0.96}"}
-{"input": "follow that tae skateboarder, then hover", "output": "{\"steps\":[\"follow|the skateboarder\",\"hover\"],\"confidence\":0.86}"}
-{"input": "take a selfie, and approach the people at the picnic table, and snap a selfie next grab a photo please", "output": "{\"steps\":[\"selfie\",\"fly_to|people at the picnic table\",\"selfie\",\"photo\"],\"confidence\":0.88}"}
-{"input": "hey drone hang there for 30 seconds thanks", "output": "{\"steps\":[\"hover|30\"],\"confidence\":0.86}"}
-{"input": "hey fly above the orange cone next follow that person waving and hold station", "output": "{\"steps\":[\"fly_above|orange cone\",\"follow|person waving\",\"hover\"],\"confidence\":0.98}"}
-{"input": "take a dronie and then go up 3 meters now", "output": "{\"steps\":[\"selfie\",\"fly_higher|3\"],\"confidence\":0.88}"}
-{"input": "drone fly towards that guy in the blue shirt", "output": "{\"steps\":[\"fly_to|guy in the blue shirt\"],\"confidence\":0.99}"}
-{"input": "keep the camera on the food truck, and selfie and then fly towards that guy in the blue shirt after that selfie", "output": "{\"steps\":[\"look_at|food truck\",\"selfie\",\"fly_to|guy in the blue shirt\",\"selfie\"],\"confidence\":0.83}"}
-{"input": "up you go", "output": "{\"steps\":[\"takeoff\"],\"confidence\":0.95}"}
-{"input": "hey drone hover above the trail, and track the white car", "output": "{\"steps\":[\"fly_above|trail\",\"follow|white car\"],\"confidence\":0.89}"}
-{"input": "uh return home", "output": "{\"steps\":[\"return\"],\"confidence\":0.87}"}
-{"input": "track the that person", "output": "{\"steps\":[\"follow|that person\"],\"confidence\":0.98}"}
-{"input": "focus on the tree, then fly around the motorcycle real quick", "output": "{\"steps\":[\"look_at|tree\",\"orbit|motorcycle\"],\"confidence\":0.98}"}
-{"input": "spin left a bit, and get a panorama of this place", "output": "{\"steps\":[\"rotate|left\",\"panorama\"],\"confidence\":0.95}"}
-{"input": "drone, position yourself over the kids on the playground", "output": "{\"steps\":[\"fly_above|kids on the playground\"],\"confidence\":0.83}"}
-{"input": "fly to the person waving and take a picture", "output": "{\"steps\":[\"fly_to|person waving\",\"photo\"],\"confidence\":0.83}"}
-{"input": "fly higher then takeoff then circle the doorway once", "output": "{\"steps\":[\"fly_higher\",\"takeoff\",\"orbit|doorway|1\"],\"confidence\":0.92}"}
-{"input": "okay find the fence and photograph it", "output": "{\"steps\":[\"fly_to|fence\",\"photo\"],\"confidence\":0.94}"}
-{"input": "circle the mailbox and then then take a panorama then and come back", "output": "{\"steps\":[\"orbit|mailbox\",\"panorama\",\"return\"],\"confidence\":0.87}"}
-{"input": "hey drone follow the golden retriever for 45 seconds", "output": "{\"steps\":[\"follow|golden retriever|45\"],\"confidence\":0.87}"}
-{"input": "photograph the cooler please", "output": "{\"steps\":[\"fly_to|cooler\",\"photo\"],\"confidence\":0.91}"}
-{"input": "a little higher and then approach the hill and then point the camera at the soccer goal real quick", "output": "{\"steps\":[\"fly_higher\",\"fly_to|hill\",\"look_at|soccer goal\"],\"confidence\":0.86}"}
-{"input": "hey get above the fountain for me", "output": "{\"steps\":[\"fly_above|fountain\"],\"confidence\":0.82}"}
-{"input": "fly around the canopy 3 times next a little higher", "output": "{\"steps\":[\"orbit|canopy|3\",\"fly_higher\"],\"confidence\":0.91}"}
-{"input": "fly above the blue tent, then take a picture", "output": "{\"steps\":[\"fly_above|blue tent\",\"photo\"],\"confidence\":0.98}"}
-{"input": "up a bit, and cancee that", "output": "{\"steps\":[\"fly_higher\",\"abort\"],\"confidence\":0.87}"}
-{"input": "take a 360 photo after that land", "output": "{\"steps\":[\"panorama\",\"land\"],\"confidence\":0.93}"}
-{"input": "head over to the umbrella, then go up, then end the floght", "output": "{\"steps\":[\"fly_to|umbrella\",\"fly_higher\",\"land\"],\"confidence\":0.97}"}
-{"input": "lift off then take a 360 photo", "output": "{\"steps\":[\"takeoff\",\"panorama\"],\"confidence\":0.91}"}
-{"input": "get me a picture of that bush for me", "output": "{\"steps\":[\"fly_to|bush\",\"photo\"],\"confidence\":0.87}"}
-{"input": "drone, turn left 360 degrees then photo of me please", "output": "{\"steps\":[\"rotate|left|360\",\"selfie\"],\"confidence\":0.89}"}
-{"input": "drone, take a selfie next then do a panorama", "output": "{\"steps\":[\"selfie\",\"panorama\"],\"confidence\":0.98}"}
-{"input": "alright follow the the skateboarder and focus on the bridge", "output": "{\"steps\":[\"follow|the skateboarder\",\"look_at|bridge\"],\"confidence\":0.94}"}
-{"input": "circle the soccer goal three times next take off after that return", "output": "{\"steps\":[\"orbit|soccer goal|3\",\"takeoff\",\"return\"],\"confidence\":0.88}"}
-{"input": "drone, circle the red trash can once", "output": "{\"steps\":[\"orbit|red trash can|1\"],\"confidence\":0.95}"}
-{"input": "fly towards that parking lot and then keep up with the runner after that look over at the playground", "output": "{\"steps\":[\"fly_to|parking lot\",\"follow|runner\",\"look_at|playground\"],\"confidence\":0.86}"}
-{"input": "hey spin right a bit please", "output": "{\"steps\":[\"rotate|right\"],\"confidence\":0.82}"}
-{"input": "alright take a picture of toe white van", "output": "{\"steps\":[\"fly_to|white van\",\"photo\"],\"confidence\":0.98}"}
-{"input": "do 3 laps around the pond please", "output": "{\"steps\":[\"orbit|pond|3\"],\"confidence\":0.97}"}
-{"input": "get above tha soccer goal and then go up", "output": "{\"steps\":[\"fly_above|soccer goal\",\"fly_higher\"],\"confidence\":0.83}"}
-{"input": "aim at the statue", "output": "{\"steps\":[\"look_at|statue\"],\"confidence\":0.99}"}
-{"input": "look at the orange cone then spin 30 degree right after that fly back", "output": "{\"steps\":[\"look_at|orange cone\",\"rotate|right|30\",\"return\"],\"confidence\":0.85}"}
-{"input": "follow that bike for 60 seconds", "output": "{\"steps\":[\"follow|bike|60\"],\"confidence\":0.86}"}
-{"input": "nimbus orbit the grill", "output": "{\"steps\":[\"orbit|grill\"],\"confidence\":0.89}"}
-{"input": "hey orbit the soccer goal once after that point at that canopy, then rotate left 180 degrees after that take the shot", "output": "{\"steps\":[\"orbit|soccer goal|1\",\"look_at|canopy\",\"rotate|left|180\",\"photo\"],\"confidence\":0.89}"}
-{"input": "fly to the white van and take a picture and spin around, then come back", "output": "{\"steps\":[\"fly_to|white van\",\"photo\",\"rotate|right|360\",\"return\"],\"confidence\":0.82}"}
-{"input": "abort missioo", "output": "{\"steps\":[\"abort\"],\"confidence\":0.86}"}
-{"input": "circle the cooler once after that yaw left 180, then stay put for 3 seconds then hover above the playground real quick", "output": "{\"steps\":[\"orbit|cooler|1\",\"rotate|left|180\",\"hover|3\",\"fly_above|playground\"],\"confidence\":0.89}"}
-{"input": "please fly over to the gazebo and then hover 2 seconds after that follow that person waving for 60 seconds", "output": "{\"steps\":[\"fly_to|gazebo\",\"hover|2\",\"follow|person waving|60\"],\"confidence\":0.91}"}
-{"input": "take off and then fly to the black truck, then take a photo", "output": "{\"steps\":[\"takeoff\",\"fly_to|black truck\",\"photo\"],\"confidence\":0.88}"}
-{"input": "please takeoff then head to the yellow backpack, then take a photo", "output": "{\"steps\":[\"takeoff\",\"fly_to|yellow backpack\",\"photo\"],\"confidence\":0.89}"}
-{"input": "drone, stay there and then cancel", "output": "{\"steps\":[\"hover\",\"abort\"],\"confidence\":0.88}"}
-{"input": "watch the swing set", "output": "{\"steps\":[\"look_at|swing set\"],\"confidence\":0.92}"}
-{"input": "eimbus get a shot of the trail", "output": "{\"steps\":[\"fly_to|trail\",\"photo\"],\"confidence\":0.89}"}
-{"input": "take a photo and then watch the oak tree, then go up then take the shot", "output": "{\"steps\":[\"photo\",\"look_at|oak tree\",\"fly_higher\",\"photo\"],\"confidence\":0.88}"}
-{"input": "take a picture of the playground", "output": "{\"steps\":[\"fly_to|playground\",\"photo\"],\"confidence\":0.94}"}
-{"input": "follow the that person, and land now real quick", "output": "{\"steps\":[\"follow|that person\",\"land\"],\"confidence\":0.94}"}
-{"input": "take a picture of the gate", "output": "{\"steps\":[\"fly_to|gate\",\"photo\"],\"confidence\":0.95}"}
-{"input": "nimbus head to the fountain then position yourself over the person in the red jacket next look over at the guy in the blue shirt", "output": "{\"steps\":[\"fly_to|fountain\",\"fly_above|person in the red jacket\",\"look_at|guy in the blue shirt\"],\"confidence\":0.92}"}
-{"input": "take off and then fly to the voileyball net next take a photo", "output": "{\"steps\":[\"takeoff\",\"fly_to|volleyball net\",\"photo\"],\"confidence\":0.93}"}
-{"input": "fly around the canopy, and grab a photo and go to the building entrance", "output": "{\"steps\":[\"orbit|canopy\",\"photo\",\"fly_to|building entrance\"],\"confidence\":0.92}"}
-{"input": "stay there", "output": "{\"steps\":[\"hover\"],\"confidence\":0.93}"}
-{"input": "drop 8 meters then move toward the white car and panorama shot real quick", "output": "{\"steps\":[\"fly_lower|8\",\"fly_to|white car\",\"panorama\"],\"confidence\":0.98}"}
-{"input": "hey drone go directly over the volleyball net then take a selfie", "output": "{\"steps\":[\"fly_above|volleyball net\",\"selfie\"],\"confidence\":0.98}"}
-{"input": "track the kid on the scooter and orbit the fence twice", "output": "{\"steps\":[\"follow|kid on the scooter\",\"orbit|fence|2\"],\"confidence\":0.83}"}
-{"input": "fly above the gazebo after that take a picture next come back and land", "output": "{\"steps\":[\"fly_above|gazebo\",\"photo\",\"return\",\"land\"],\"confidence\":0.98}"}
-{"input": "hey turn left after that take a picture, and shoot a 360", "output": "{\"steps\":[\"rotate|left\",\"photo\",\"panorama\"],\"confidence\":0.84}"}
-{"input": "stay there next do 2 laps aoound the bike then rise 2 meters", "output": "{\"steps\":[\"hover\",\"orbit|bike|2\",\"fly_higher|2\"],\"confidence\":0.93}"}
-{"input": "alright take a pano", "output": "{\"steps\":[\"panorama\"],\"confidence\":0.97}"}
-{"input": "point the camera at the bridge", "output": "{\"steps\":[\"look_at|bridge\"],\"confidence\":0.99}"}
-{"input": "shoot a picture, and snap a selfie thanks", "output": "{\"steps\":[\"photo\",\"selfie\"],\"confidence\":0.84}"}
-{"input": "circle the gate and then take a panorama, and and come back", "output": "{\"steps\":[\"orbit|gate\",\"panorama\",\"return\"],\"confidence\":0.95}"}
-{"input": "approach the silver suv uh", "output": "{\"steps\":[\"fly_to|silver suv\"],\"confidence\":0.82}"}
-{"input": "hey climb 10 meters and then get above the person in the red jacket", "output": "{\"steps\":[\"fly_higher|10\",\"fly_above|person in the red jacket\"],\"confidence\":0.96}"}
-{"input": "circle the park bench, and then take a panorama and then and come back", "output": "{\"steps\":[\"orbit|park bench\",\"panorama\",\"return\"],\"confidence\":0.88}"}
-{"input": "head over to the hill, and take a picture of me", "output": "{\"steps\":[\"fly_to|hill\",\"selfie\"],\"confidence\":0.89}"}
-{"input": "get a shot of me, and take the shot and look at the silver suv and land", "output": "{\"steps\":[\"selfie\",\"photo\",\"look_at|silver suv\",\"land\"],\"confidence\":0.95}"}
-{"input": "okay move toward the stop sign and face the other way", "output": "{\"steps\":[\"fly_to|stop sign\",\"rotate|right|180\"],\"confidence\":0.86}"}
-{"input": "um fly above the swing set, and take a picture next come back and lond", "output": "{\"steps\":[\"fly_above|swing set\",\"photo\",\"return\",\"land\"],\"confidence\":0.98}"}
-{"input": "circle the statue", "output": "{\"steps\":[\"orbit|statue\"],\"confidence\":0.9}"}
-{"input": "circle the silver suv", "output": "{\"steps\":[\"orbit|silver suv\"],\"confidence\":0.96}"}
-{"input": "hover 60 seconds, then watch the oak tree then fly around the group of people", "output": "{\"steps\":[\"hover|60\",\"look_at|oak tree\",\"orbit|group of people\"],\"confidence\":0.98}"}
-{"input": "hold for 10 seconds", "output": "{\"steps\":[\"hover|10\"],\"confidence\":0.87}"}
-{"input": "drone, fly around the hill once next get to the flower bed", "output": "{\"steps\":[\"orbit|hill|1\",\"fly_to|flower bed\"],\"confidence\":0.88}"}
-{"input": "hey rotate 120 degrees to the left and head over to the motorcycle then up 8 meters next get over the grill", "output": "{\"steps\":[\"rotate|left|120\",\"fly_to|motorcycle\",\"fly_higher|8\",\"fly_above|grill\"],\"confidence\":0.84}"}
-{"input": "hover above the gazebo", "output": "{\"steps\":[\"fly_above|gazebo\"],\"confidence\":0.89}"}
-{"input": "face the other way then fly in circles around the stop sign, and yaw left", "output": "{\"steps\":[\"rotate|right|180\",\"orbit|stop sign\",\"rotate|left\"],\"confidence\":0.97}"}
-{"input": "hover above the stop sign", "output": "{\"steps\":[\"fly_above|stop sign\"],\"confidence\":0.83}"}
-{"input": "hey drone get above the trash can then up you go then tail the golden retriever", "output": "{\"steps\":[\"fly_above|trash can\",\"takeoff\",\"follow|golden retriever\"],\"confidence\":0.83}"}
-{"input": "okay circle the canopy once", "output": "{\"steps\":[\"orbit|canopy|1\"],\"confidence\":0.85}"}
-{"input": "go over to that big rock real quick", "output": "{\"steps\":[\"fly_to|big rock\"],\"confidence\":0.86}"}
-{"input": "circle the swing set and please land", "output": "{\"steps\":[\"orbit|swing set\",\"land\"],\"confidence\":0.84}"}
-{"input": "hey return home", "output": "{\"steps\":[\"return\"],\"confidence\":0.84}"}
-{"input": "nimbus head to the dog", "output": "{\"steps\":[\"fly_to|dog\"],\"confidence\":0.95}"}
-{"input": "fly in circles around the yellow backpack then down 3 meters after that stay on the golden retriever for 8 seconds then yaw left", "output": "{\"steps\":[\"orbit|yellow backpack\",\"fly_lower|3\",\"follow|golden retriever|8\",\"rotate|left\"],\"confidence\":0.98}"}
-{"input": "orbit the bush twice and turn left 120 degrees", "output": "{\"steps\":[\"orbit|bush|2\",\"rotate|left|120\"],\"confidence\":0.88}"}
-{"input": "fly above the boulder and take a picture and come back and land", "output": "{\"steps\":[\"fly_above|boulder\",\"photo\",\"return\",\"land\"],\"confidence\":0.92}"}
-{"input": "look over at the yellow backpack and then hover 60 seconds after that take a picture of me", "output": "{\"steps\":[\"look_at|yellow backpack\",\"hover|60\",\"selfie\"],\"confidence\":0.84}"}
-{"input": "puease land", "output": "{\"steps\":[\"land\"],\"confidence\":0.9}"}
-{"input": "please take the shot real quick", "output": "{\"steps\":[\"photo\"],\"confidence\":0.94}"}
-{"input": "stop now", "output": "{\"steps\":[\"abort\"],\"confidence\":0.91}"}
-{"input": "circle the kids on the playground twice after that tail the person waving ior me", "output": "{\"steps\":[\"orbit|kids on the playground|2\",\"follow|person waving\"],\"confidence\":0.88}"}
-{"input": "rotate 360 after that hover 5 seconds now", "output": "{\"steps\":[\"rotate|right|360\",\"hover|5\"],\"confidence\":0.86}"}
-{"input": "hey drone hang there for 20 seconds", "output": "{\"steps\":[\"hover|20\"],\"confidence\":0.96}"}
-{"input": "hey go to the group of people", "output": "{\"steps\":[\"fly_to|group of people\"],\"confidence\":0.85}"}
-{"input": "up you go then shoot a 360 and look over at the gate", "output": "{\"steps\":[\"takeoff\",\"panorama\",\"look_at|gate\"],\"confidence\":0.96}"}
-{"input": "lower by 1 meters now", "output": "{\"steps\":[\"fly_lower|1\"],\"confidence\":0.94}"}
-{"input": "hey drone capture a photo, and hover for 15 seconds", "output": "{\"steps\":[\"photo\",\"hover|15\"],\"confidence\":0.96}"}
-{"input": "okay get over the mailbox", "output": "{\"steps\":[\"fly_above|mailbox\"],\"confidence\":0.89}"}
-{"input": "uh go to the blanket on the grass and take a photo thanks", "output": "{\"steps\":[\"fly_to|blanket on the grass\",\"photo\"],\"confidence\":0.85}"}
-{"input": "take a photo for me", "output": "{\"steps\":[\"photo\"],\"confidence\":0.95}"}
-{"input": "please uo a 360 panorama", "output": "{\"steps\":[\"panorama\"],\"confidence\":0.84}"}
-{"input": "okay look at the bike please", "output": "{\"steps\":[\"look_at|bike\"],\"confidence\":0.83}"}
-{"input": "turn right 45 degrees after that look at the crowd", "output": "{\"steps\":[\"rotate|right|45\",\"look_at|crowd\"],\"confidence\":0.96}"}
-{"input": "rotate right 180 degrees next keep the camera on the orange cone now", "output": "{\"steps\":[\"rotate|right|180\",\"look_at|orange cone\"],\"confidence\":0.83}"}
-{"input": "alright get in the air", "output": "{\"steps\":[\"takeoff\"],\"confidence\":0.97}"}
-{"input": "drone spin left a bit", "output": "{\"steps\":[\"rotate|left\"],\"confidence\":0.89}"}
-{"input": "hey take off then head to the tree, and take a photo now", "output": "{\"steps\":[\"takeoff\",\"fly_to|tree\",\"photo\"],\"confidence\":0.9}"}
-{"input": "drone fly above the soccer goal and take a picture after that come back and land for me", "output": "{\"steps\":[\"fly_above|soccer goal\",\"photo\",\"return\"],\"confidence\":0.92}"}
-{"input": "um rotate 180", "output": "{\"steps\":[\"rotate|right|180\"],\"confidence\":0.97}"}
-{"input": "take fligot after that do a full panorama", "output": "{\"steps\":[\"takeoff\",\"panorama\"],\"confidence\":0.85}"}
-{"input": "point the camera at the park bench", "output": "{\"steps\":[\"look_at|park bench\"],\"confidence\":0.9}"}
-{"input": "okay hold it", "output": "{\"steps\":[\"hover\"],\"confidence\":0.91}"}
-{"input": "track the dog for 15 seconds", "output": "{\"steps\":[\"follow|dog|15\"],\"confidence\":0.98}"}
-{"input": "okay face the other way and then descend", "output": "{\"steps\":[\"rotate|right|180\",\"fly_lower\"],\"confidence\":0.87}"}
-{"input": "come back to me real quick", "output": "{\"steps\":[\"return\"],\"confidence\":0.86}"}
-{"input": "hey drone drop down a little next fly over the canopy and stay there and then fly to the orange cone", "output": "{\"steps\":[\"fly_lower\",\"fly_above|canopy\",\"fly_to|orange cone\"],\"confidence\":0.89}"}
-{"input": "go find the seing set", "output": "{\"steps\":[\"fly_to|swing set\"],\"confidence\":0.94}"}
-{"input": "circle the canopy next then take a panorama next and come back", "output": "{\"steps\":[\"orbit|canopy\",\"panorama\",\"return\"],\"confidence\":0.96}"}
-{"input": "fly above the crowd", "output": "{\"steps\":[\"fly_above|crowd\"],\"confidence\":0.88}"}
-{"input": "orbit the stop sign thanks", "output": "{\"steps\":[\"orbit|stop sign\"],\"confidence\":0.95}"}
-{"input": "fly in circles around the swing set after that take a selfie of me, then tail the person waving, then do a lap around the swing set", "output": "{\"steps\":[\"orbit|swing set\",\"selfie\",\"follow|person waving\",\"orbit|swing set\"],\"confidence\":0.98}"}
-{"input": "nimbus bring it down and land", "output": "{\"steps\":[\"land\"],\"confidence\":0.83}"}
-{"input": "okay spin 45 degrees left and then fly around the building entrance", "output": "{\"steps\":[\"rotate|left|45\",\"orbit|building entrance\"],\"confidence\":0.89}"}
-{"input": "take a picture of the pine tree", "output": "{\"steps\":[\"fly_to|pine tree\",\"photo\"],\"confidence\":0.92}"}
-{"input": "please fly around the umbrella 2 times", "output": "{\"steps\":[\"orbit|umbrella|2\"],\"confidence\":0.85}"}
-{"input": "hey fly over the mailbox and stay there after that follow that runner for 20 seconds next grab a photo, then position yourself over the crowd", "output": "{\"steps\":[\"fly_above|mailbox\",\"follow|runner|20\",\"photo\",\"fly_above|crowd\"],\"confidence\":0.9}"}
-{"input": "get me a picture of that big rock", "output": "{\"steps\":[\"fly_to|big rock\",\"photo\"],\"confidence\":0.98}"}
-{"input": "hey drone do 2 laps around the yellow backpack", "output": "{\"steps\":[\"orbit|yellow backpack|2\"],\"confidence\":0.86}"}
-{"input": "panorama shot, then rotate 30 degrees to the right", "output": "{\"steps\":[\"panorama\",\"rotate|right|30\"],\"confidence\":0.91}"}
-{"input": "hey drone hover for 5 seconds, and rotate 270 degrees to the left", "output": "{\"steps\":[\"hover|5\",\"rotate|left|270\"],\"confidence\":0.87}"}
-{"input": "asdfghjkl", "output": "{\"steps\":[\"say|Sorry, I didn't catch that. Try a flight command.\"],\"confidence\":0.7}"}
-{"input": "drone, fly above the flower bed and take a picture, then eome back and land for me", "output": "{\"steps\":[\"fly_above|flower bed\",\"photo\",\"return\"],\"confidence\":0.85}"}
-{"input": "please rotate left 120 degrees next descend 8 meters", "output": "{\"steps\":[\"rotate|left|120\",\"fly_lower|8\"],\"confidence\":0.91}"}
-{"input": "take a selfie, then then do a panorama thanks", "output": "{\"steps\":[\"selfie\",\"panorama\"],\"confidence\":0.91}"}
-{"input": "circle the white car, and fly home", "output": "{\"steps\":[\"orbit|white car\",\"return\"],\"confidence\":0.88}"}
-{"input": "take a picture of me and keep the camera on the bike please", "output": "{\"steps\":[\"selfie\",\"look_at|bike\"],\"confidence\":0.92}"}
-{"input": "alright follow that golden retriever and then come back uh", "output": "{\"steps\":[\"follow|golden retriever\",\"return\"],\"confidence\":0.98}"}
-{"input": "um get me a picture of that parking lot", "output": "{\"steps\":[\"fly_to|parking lot\",\"photo\"],\"confidence\":0.87}"}
-{"input": "descend, then snap a pic", "output": "{\"steps\":[\"fly_lower\",\"photo\"],\"confidence\":0.84}"}
-{"input": "descend 8 meters, and grab a photo and then fly towards that parking lot", "output": "{\"steps\":[\"fly_lower|8\",\"photo\",\"fly_to|parking lot\"],\"confidence\":0.83}"}
-{"input": "take off then fly to the hill and then take a photo", "output": "{\"steps\":[\"takeoff\",\"fly_to|hill\",\"photo\"],\"confidence\":0.96}"}
-{"input": "fly to the building entrance then take a picture next spin around, then return", "output": "{\"steps\":[\"fly_to|building entrance\",\"photo\",\"rotate|right|360\",\"return\"],\"confidence\":0.98}"}
-{"input": "nimbus stay put for 20 seconds", "output": "{\"steps\":[\"hover|20\"],\"confidence\":0.85}"}
-{"input": "hey drone face the other way after that follow the dog for 15 seconds then hover above the golden retriever", "output": "{\"steps\":[\"rotate|right|180\",\"follow|dog|15\",\"fly_above|golden retriever\"],\"confidence\":0.99}"}
-{"input": "go to the doorwau and take a photo", "output": "{\"steps\":[\"fly_to|doorway\",\"photo\"],\"confidence\":0.94}"}
-{"input": "drone, snap a photo of the yellow backpack", "output": "{\"steps\":[\"fly_to|yellow backpack\",\"photo\"],\"confidence\":0.92}"}
-{"input": "please circle the trash can once and stay on the guy in the blue shirt for 5 seconds real quick", "output": "{\"steps\":[\"orbit|trash can|1\",\"follow|guy in the blue shirt|5\"],\"confidence\":0.85}"}
-{"input": "drone a little lower then take a dronie, and fly over to the trail, then spin 120 degrees right", "output": "{\"steps\":[\"fly_lower\",\"selfie\",\"fly_to|trail\",\"rotate|right|120\"],\"confidence\":0.87}"}
-{"input": "uh take a selfie then then do a panorama uh", "output": "{\"steps\":[\"selfie\",\"panorama\"],\"confidence\":0.95}"}
-{"input": "fly above the blanket on the grass and take a picture then comi back and land", "output": "{\"steps\":[\"fly_above|blanket on the grass\",\"photo\",\"return\",\"land\"],\"confidence\":0.93}"}
-{"input": "start flying, and fly down 5 meters and then hang there for 60 seconds after that spin up and take off", "output": "{\"steps\":[\"takeoff\",\"fly_lower|5\",\"hover|60\",\"takeoff\"],\"confidence\":0.85}"}
-{"input": "orbit the white car", "output": "{\"steps\":[\"orbit|white car\"],\"confidence\":0.94}"}
-{"input": "fly towards that yellow backpack", "output": "{\"steps\":[\"fly_to|yellow backpack\"],\"confidence\":0.91}"}
-{"input": "nimbus aim at the person in the red jacket, and go to the parking lot real quick", "output": "{\"steps\":[\"look_at|person in the red jacket\",\"fly_to|parking lot\"],\"confidence\":0.94}"}
-{"input": "follow that person waving", "output": "{\"steps\":[\"follow|person waving\"],\"confidence\":0.84}"}
-{"input": "photograph the yellow backpack", "output": "{\"steps\":[\"fly_to|yellow backpack\",\"photo\"],\"confidence\":0.89}"}
-{"input": "uh stop now thanks", "output": "{\"steps\":[\"abort\"],\"confidence\":0.92}"}
-{"input": "takeoff, then get a panorama of this place, then fly over to the statue real quick", "output": "{\"steps\":[\"takeoff\",\"panorama\",\"fly_to|statue\"],\"confidence\":0.9}"}
-{"input": "circle the fence three times, then take a photo and then watch the white car", "output": "{\"steps\":[\"orbit|fence|3\",\"photo\",\"look_at|white car\"],\"confidence\":0.89}"}
-{"input": "nimbus shoot a 360, then head to the trail", "output": "{\"steps\":[\"panorama\",\"fly_to|trail\"],\"confidence\":0.9}"}
-{"input": "drone, do a full panorama, then descend and then stay with the golden retriever", "output": "{\"steps\":[\"panorama\",\"fly_lower\",\"follow|golden retriever\"],\"confidence\":0.97}"}
-{"input": "fly around the food truck please", "output": "{\"steps\":[\"orbit|food truck\"],\"confidence\":0.91}"}
-{"input": "drone get a shot of the fire pit", "output": "{\"steps\":[\"fly_to|fire pit\",\"photo\"],\"confidence\":0.98}"}
-{"input": "fly up 5 meters please", "output": "{\"steps\":[\"fly_higher|5\"],\"confidence\":0.92}"}
-{"input": "fly towards that mailbox and point at that gate then fly towards that pine tree next descend 1 meters please", "output": "{\"steps\":[\"fly_to|mailbox\",\"look_at|gate\",\"fly_to|pine tree\",\"fly_lower|1\"],\"confidence\":0.84}"}
-{"input": "go directly over the pine tree, then take flight, and fly over to the silver suv, then stay right there real quick", "output": "{\"steps\":[\"fly_above|pine tree\",\"takeoff\",\"fly_to|silver suv\",\"hover\"],\"confidence\":0.83}"}
-{"input": "find the lamp post", "output": "{\"steps\":[\"fly_to|lamp post\"],\"confidence\":0.95}"}
-{"input": "end the flight", "output": "{\"steps\":[\"land\"],\"confidence\":0.99}"}
-{"input": "drone take a picture", "output": "{\"steps\":[\"photo\"],\"confidence\":0.87}"}
-{"input": "please go directly over the bench and rotate 270 degrees to the right", "output": "{\"steps\":[\"fly_above|bench\",\"rotate|right|270\"],\"confidence\":0.98}"}
-{"input": "panorama shot, then spin 270 degrees left next fly over the soccer goal and stay there next capture a photo", "output": "{\"steps\":[\"panorama\",\"rotate|left|270\",\"fly_above|soccer goal\",\"photo\"],\"confidence\":0.85}"}
-{"input": "take off, then fly to da bush and take a photo", "output": "{\"steps\":[\"takeoff\",\"fly_to|bush\",\"photo\"],\"confidence\":0.82}"}
-{"input": "fly around the pine trei, then head over to the gate", "output": "{\"steps\":[\"orbit|pine tree\",\"fly_to|gate\"],\"confidence\":0.89}"}
-{"input": "head over to the person waving for me", "output": "{\"steps\":[\"fly_to|person waving\"],\"confidence\":0.89}"}
-{"input": "please turn left 360 degrees thanks", "output": "{\"steps\":[\"rotate|left|360\"],\"confidence\":0.97}"}
-{"input": "drone photograph the motorcycle", "output": "{\"steps\":[\"fly_to|motorcycle\",\"photo\"],\"confidence\":0.95}"}
-{"input": "okay get a panorama of this place, and fly lower after that hover 20 seconds", "output": "{\"steps\":[\"panorama\",\"fly_lower\",\"hover|20\"],\"confidence\":0.92}"}
-{"input": "please hover above the mailbox and then drop 3 meters", "output": "{\"steps\":[\"fly_above|mailbox\",\"fly_lower|3\"],\"confidence\":0.83}"}
-{"input": "circle the black truck once", "output": "{\"steps\":[\"orbit|black truck|1\"],\"confidence\":0.89}"}
-{"input": "drone fly above tae cooler then take a picture, and come back and land", "output": "{\"steps\":[\"fly_above|cooler\",\"photo\",\"return\",\"land\"],\"confidence\":0.87}"}
-{"input": "hey drone do 2 laps around the flower bed then aim at the lamp post, then rise 1 meters", "output": "{\"steps\":[\"orbit|flower bed|2\",\"look_at|lamp post\",\"fly_higher|1\"],\"confidence\":0.98}"}
-{"input": "hey look at the motorcycle, then capture a panorama please", "output": "{\"steps\":[\"look_at|motorcycle\",\"panorama\"],\"confidence\":0.99}"}
-{"input": "circle around that big rock", "output": "{\"steps\":[\"orbit|big rock\"],\"confidence\":0.94}"}
-{"input": "uh head to the volleyball net", "output": "{\"steps\":[\"fly_to|volleyball net\"],\"confidence\":0.83}"}
-{"input": "hey snap a selfie", "output": "{\"steps\":[\"selfie\"],\"confidence\":0.83}"}
-{"input": "keep the camera on the volleyball net", "output": "{\"steps\":[\"look_at|volleyball net\"],\"confidence\":0.86}"}
-{"input": "look over ao the gate", "output": "{\"steps\":[\"look_at|gate\"],\"confidence\":0.93}"}
-{"input": "stay put, and get back over here", "output": "{\"steps\":[\"hover\",\"return\"],\"confidence\":0.94}"}
-{"input": "go to the park binch and take a photo", "output": "{\"steps\":[\"fly_to|park bench\",\"photo\"],\"confidence\":0.88}"}
-{"input": "drone, capture a panorama", "output": "{\"steps\":[\"panorama\"],\"confidence\":0.97}"}
-{"input": "take the shot, and position yourself over the tree and then snap a pic, then get in the air", "output": "{\"steps\":[\"photo\",\"fly_above|tree\",\"photo\",\"takeoff\"],\"confidence\":0.9}"}
-{"input": "drone fly over the fence and stay there and then get to the picnic table", "output": "{\"steps\":[\"fly_above|fence\",\"fly_to|picnic table\"],\"confidence\":0.86}"}
-{"input": "approach tee yellow backpack", "output": "{\"steps\":[\"fly_to|yellow backpack\"],\"confidence\":0.88}"}
-{"input": "head to the yellow backpack", "output": "{\"steps\":[\"fly_to|yellow backpack\"],\"confidence\":0.96}"}
-{"input": "take a 360 photo next orbit the trash can twice, and fly down 3 meters", "output": "{\"steps\":[\"panorama\",\"orbit|trash can|2\",\"fly_lower|3\"],\"confidence\":0.95}"}
-{"input": "hover above the motorcycle and take a selfie", "output": "{\"steps\":[\"fly_above|motorcycle\",\"selfie\"],\"confidence\":0.96}"}
-{"input": "get to the canopy and then do a full spin", "output": "{\"steps\":[\"fly_to|canopy\",\"rotate|right|360\"],\"confidence\":0.84}"}
-{"input": "drone, fly up 5 meters and then get over the orange cone", "output": "{\"steps\":[\"fly_higher|5\",\"fly_above|orange cone\"],\"confidence\":0.86}"}
-{"input": "grab a photo, and position yourself over the trash can", "output": "{\"steps\":[\"photo\",\"fly_above|trash can\"],\"confidence\":0.93}"}
-{"input": "take a 360 photo, then follow that golden retriever for 2 seconds real quick", "output": "{\"steps\":[\"panorama\",\"follow|golden retriever|2\"],\"confidence\":0.93}"}
-{"input": "focus on the cooler next head to the flagpole", "output": "{\"steps\":[\"look_at|cooler\",\"fly_to|flagpole\"],\"confidence\":0.86}"}
-{"input": "nimbus just hover", "output": "{\"steps\":[\"hover\"],\"confidence\":0.98}"}
-{"input": "hey get a selfy, and look over at the fountain after that snap a selfy", "output": "{\"steps\":[\"selfie\",\"look_at|fountain\",\"selfie\"],\"confidence\":0.9}"}
-{"input": "fly above da pond, and take a picture", "output": "{\"steps\":[\"fly_above|pond\",\"photo\"],\"confidence\":0.95}"}
-{"input": "hang there for 60 suconds", "output": "{\"steps\":[\"hover|60\"],\"confidence\":0.99}"}
-{"input": "spin 120 degrees left", "output": "{\"steps\":[\"rotate|left|120\"],\"confidence\":0.87}"}
-{"input": "fly in circles around the trash can and then take a selfie of me then follow that guy in the blue shirt for 5 seconds", "output": "{\"steps\":[\"orbit|trash can\",\"selfie\",\"follow|guy in the blue shirt|5\"],\"confidence\":0.88}"}
-{"input": "climb 2 meters", "output": "{\"steps\":[\"fly_higher|2\"],\"confidence\":0.97}"}
-{"input": "okay up 3 meters", "output": "{\"steps\":[\"fly_higher|3\"],\"confidence\":0.92}"}
-{"input": "approach the pond", "output": "{\"steps\":[\"fly_to|pond\"],\"confidence\":0.95}"}
-{"input": "ilimb please", "output": "{\"steps\":[\"fly_higher\"],\"confidence\":0.88}"}
-{"input": "drone, fly above the building entrance", "output": "{\"steps\":[\"fly_above|building entrance\"],\"confidence\":0.82}"}
-{"input": "drone, fly around the yellow backpack, then go down next go to the stage", "output": "{\"steps\":[\"orbit|yellow backpack\",\"fly_lower\",\"fly_to|stage\"],\"confidence\":0.92}"}
-{"input": "aim ae the red tent then hang there for 3 seconds", "output": "{\"steps\":[\"look_at|red tent\",\"hover|3\"],\"confidence\":0.85}"}
-{"input": "track the dog for 5 seconds, and do a lap around the silver sui after that keep up with the jogger", "output": "{\"steps\":[\"follow|dog|5\",\"orbit|silver suv|1\",\"follow|jogger\"],\"confidence\":0.98}"}
-{"input": "circle the fountain and then take a panorama", "output": "{\"steps\":[\"orbit|fountain\",\"panorama\"],\"confidence\":0.98}"}
-{"input": "um take a picture of the stage", "output": "{\"steps\":[\"fly_to|stage\",\"photo\"],\"confidence\":0.97}"}
-{"input": "please go find the kids on the playground and then fly above the gazebo", "output": "{\"steps\":[\"fly_to|kids on the playground\",\"fly_above|gazebo\"],\"confidence\":0.97}"}
-{"input": "take off after that fly to the swing set, and take a photo for me", "output": "{\"steps\":[\"takeoff\",\"fly_to|swing set\",\"photo\"],\"confidence\":0.95}"}
-{"input": "drone spin up and take off and turn right 90 degrees", "output": "{\"steps\":[\"takeoff\",\"rotate|right|90\"],\"confidence\":0.83}"}
-{"input": "fly to the mailbox, then take a picture next do a 360 and then return", "output": "{\"steps\":[\"fly_to|mailbox\",\"photo\",\"rotate|right|360\",\"return\"],\"confidence\":0.96}"}
-{"input": "orbit the hill, then then take a panorama next and come back", "output": "{\"steps\":[\"orbit|hill\",\"panorama\",\"return\"],\"confidence\":0.87}"}
-{"input": "drone, orbit the pond and then then take a panorama, then and come back uh", "output": "{\"steps\":[\"orbit|pond\",\"panorama\",\"return\"],\"confidence\":0.86}"}
-{"input": "tail the me", "output": "{\"steps\":[\"follow|me\"],\"confidence\":0.87}"}
-{"input": "stay put and then aim at the guy in the blue shirt", "output": "{\"steps\":[\"hover\",\"look_at|guy in the blue shirt\"],\"confidence\":0.94}"}
-{"input": "take a selfie and then then do a panorama", "output": "{\"steps\":[\"selfie\",\"panorama\"],\"confidence\":0.89}"}
-{"input": "please take off then fly to the tree next take a photo", "output": "{\"steps\":[\"takeoff\",\"fly_to|tree\",\"photo\"],\"confidence\":0.87}"}
-{"input": "do a 180 uh", "output": "{\"steps\":[\"rotate|right|180\"],\"confidence\":0.91}"}
-{"input": "hey hover", "output": "{\"steps\":[\"hover\"],\"confidence\":0.98}"}
-{"input": "head over to the mailbox", "output": "{\"steps\":[\"fly_to|mailbox\"],\"confidence\":0.9}"}
-{"input": "take a 360 photo uh", "output": "{\"steps\":[\"panorama\"],\"confidence\":0.88}"}
-{"input": "follow the bike then up you go then hold position", "output": "{\"steps\":[\"follow|bike\",\"takeoff\",\"hover\"],\"confidence\":0.93}"}
-{"input": "orbit the group of people, then then take a panorama, then and come back", "output": "{\"steps\":[\"orbit|group of people\",\"panorama\",\"return\"],\"confidence\":0.91}"}
-{"input": "turn around, then get a selfie and wait stop", "output": "{\"steps\":[\"rotate|right|180\",\"selfie\",\"abort\"],\"confidence\":0.92}"}
-{"input": "fly above the pine tree, and track the bike for 15 seconds, then hold station, then turn left please", "output": "{\"steps\":[\"fly_above|pine tree\",\"follow|bike|15\",\"hover\",\"rotate|left\"],\"confidence\":0.99}"}
-{"input": "focus on da oak tree and then approach da volleyball net, and fly in circles around da fence", "output": "{\"steps\":[\"look_at|oak tree\",\"fly_to|volleyball net\",\"orbit|fence\"],\"confidence\":0.94}"}
-{"input": "hey get a shot of the canopy", "output": "{\"steps\":[\"fly_to|canopy\",\"photo\"],\"confidence\":0.82}"}
-{"input": "aim at the playground next take a panorami and return home", "output": "{\"steps\":[\"look_at|playground\",\"panorama\",\"return\"],\"confidence\":0.85}"}
-{"input": "stay on the white car for 5 seconds then fly towards that cooler", "output": "{\"steps\":[\"follow|white car|5\",\"fly_to|cooler\"],\"confidence\":0.9}"}
-{"input": "take a picture of da bike", "output": "{\"steps\":[\"fly_to|bike\",\"photo\"],\"confidence\":0.84}"}
-{"input": "drone point at that people at the picnic table then fly over the people at the picnic table and stay there next look over at the white van", "output": "{\"steps\":[\"look_at|people at the picnic table\",\"fly_above|people at the picnic table\",\"look_at|white van\"],\"confidence\":0.92}"}
-{"input": "alright focus on the kids on the playground then take a selfie", "output": "{\"steps\":[\"look_at|kids on the playground\",\"selfie\"],\"confidence\":0.86}"}
-{"input": "please look over at the gate", "output": "{\"steps\":[\"look_at|gate\"],\"confidence\":0.88}"}
-{"input": "drone turn to the left, then get above the fountain thanks", "output": "{\"steps\":[\"rotate|left\",\"fly_above|fountain\"],\"confidence\":0.9}"}
-{"input": "orbit the soccer goal twice after that look at the swing set", "output": "{\"steps\":[\"orbit|soccer goal|2\",\"look_at|swing set\"],\"confidence\":0.83}"}
-{"input": "uh get me a picture of that bridge", "output": "{\"steps\":[\"fly_to|bridge\",\"photo\"],\"confidence\":0.86}"}
-{"input": "snap a foto, then stay there, and cancel that", "output": "{\"steps\":[\"photo\",\"hover\",\"abort\"],\"confidence\":0.94}"}
-{"input": "do a spin, then track the me", "output": "{\"steps\":[\"rotate|right|360\",\"follow|me\"],\"confidence\":0.98}"}
-{"input": "stay on the kid on the scooter for 20 seconds and snap a pic", "output": "{\"steps\":[\"follow|kid on the scooter|20\",\"photo\"],\"confidence\":0.9}"}
-{"input": "please laed", "output": "{\"steps\":[\"land\"],\"confidence\":0.96}"}
-{"input": "hang there for 45 seconds then get back over here", "output": "{\"steps\":[\"hover|45\",\"return\"],\"confidence\":0.92}"}
-{"input": "position yourself over the tree and move toward the trash can", "output": "{\"steps\":[\"fly_above|tree\",\"fly_to|trash can\"],\"confidence\":0.87}"}
-{"input": "get over the fountain real quick", "output": "{\"steps\":[\"fly_above|fountain\"],\"confidence\":0.83}"}
-{"input": "drop down a littie", "output": "{\"steps\":[\"fly_lower\"],\"confidence\":0.93}"}
-{"input": "alright take a selfie and then do a panorama", "output": "{\"steps\":[\"selfie\",\"panorama\"],\"confidence\":0.86}"}
-{"input": "hey stay put after that track the white car for 8 seconds", "output": "{\"steps\":[\"hover\",\"follow|white car|8\"],\"confidence\":0.88}"}
-{"input": "okay selfie, and get above the park bench", "output": "{\"steps\":[\"selfie\",\"fly_above|park bench\"],\"confidence\":0.84}"}
-{"input": "hey arone point at that grill, and turn around", "output": "{\"steps\":[\"look_at|grill\",\"rotate|right|180\"],\"confidence\":0.89}"}
-{"input": "snap a photo of the motorcycle", "output": "{\"steps\":[\"fly_to|motorcycle\",\"photo\"],\"confidence\":0.85}"}
-{"input": "okay fly over the crowd and stay there then find the golden retriever, then watch the volleyball net and tail the me", "output": "{\"steps\":[\"fly_above|crowd\",\"fly_to|golden retriever\",\"look_at|volleyball net\",\"follow|me\"],\"confidence\":0.91}"}
-{"input": "rotate left next capture a photo", "output": "{\"steps\":[\"rotate|left\",\"photo\"],\"confidence\":0.93}"}
-{"input": "hey drone go to the yellow backpack", "output": "{\"steps\":[\"fly_to|yellow backpack\"],\"confidence\":0.98}"}
-{"input": "up a bit please", "output": "{\"steps\":[\"fly_higher\"],\"confidence\":0.95}"}
-{"input": "um snap a photo of the silver suv please", "output": "{\"steps\":[\"fly_to|silver suv\",\"photo\"],\"confidence\":0.82}"}
-{"input": "please go to the trail and take a photo thanks", "output": "{\"steps\":[\"fly_to|trail\",\"photo\"],\"confidence\":0.9}"}
-{"input": "fly over to the bike now", "output": "{\"steps\":[\"fly_to|bike\"],\"confidence\":0.84}"}
-{"input": "drone, go find the pine tree, then down 5 meters and then capture a panorama, then take a picture of me now", "output": "{\"steps\":[\"fly_to|pine tree\",\"fly_lower|5\",\"panorama\",\"selfie\"],\"confidence\":0.84}"}
-{"input": "stay put for 5 seconds and do a lap around the golden retriever, then bring it down and land", "output": "{\"steps\":[\"hover|5\",\"orbit|golden retriever|1\",\"land\"],\"confidence\":0.95}"}
-{"input": "move toward the stage after that yaw left 120, and come back to me", "output": "{\"steps\":[\"fly_to|stage\",\"rotate|left|120\",\"return\"],\"confidence\":0.85}"}
-{"input": "fly above the bench, then take a picture, and come back and land please", "output": "{\"steps\":[\"fly_above|bench\",\"photo\",\"return\",\"land\"],\"confidence\":0.94}"}
-{"input": "keep the camera on the pine tree then take a pano", "output": "{\"steps\":[\"look_at|pine tree\",\"panorama\"],\"confidence\":0.91}"}
-{"input": "drone, circle the yellow backpack three times, then get back over here please", "output": "{\"steps\":[\"orbit|yellow backpack|3\",\"return\"],\"confidence\":0.88}"}
-{"input": "hey drone rotate right 180 degrees then rise 8 meters", "output": "{\"steps\":[\"rotate|right|180\",\"fly_higher|8\"],\"confidence\":0.98}"}
-{"input": "um fly over the stage and stay there", "output": "{\"steps\":[\"fly_above|stage\"],\"confidence\":0.86}"}
-{"input": "snap a photo, and stay there", "output": "{\"steps\":[\"photo\",\"hover\"],\"confidence\":0.83}"}
-{"input": "stay on the person in the red jacket for 20 seconds and point the camera at the group of people after that circle the white van twice", "output": "{\"steps\":[\"follow|person in the red jacket|20\",\"look_at|group of people\",\"orbit|white van|2\"],\"confidence\":0.83}"}
-{"input": "do a 360 panorama after that takeoff next fly above the golden retriever uh", "output": "{\"steps\":[\"panorama\",\"takeoff\",\"fly_above|golden retriever\"],\"confidence\":0.89}"}
-{"input": "take a dronie and takeoff", "output": "{\"steps\":[\"selfie\",\"takeoff\"],\"confidence\":0.94}"}
-{"input": "take off next fly to the trash can and take a photo", "output": "{\"steps\":[\"takeoff\",\"fly_to|trash can\",\"photo\"],\"confidence\":0.89}"}
-{"input": "fly over to the white van", "output": "{\"steps\":[\"fly_to|white van\"],\"confidence\":0.95}"}
-{"input": "please rotate 360", "output": "{\"steps\":[\"rotate|right|360\"],\"confidence\":0.88}"}
-{"input": "yaw left 90 after that end the flight", "output": "{\"steps\":[\"rotate|left|90\",\"land\"],\"confidence\":0.98}"}
-{"input": "fly above the oak tree, and up you go", "output": "{\"steps\":[\"fly_above|oak tree\",\"takeoff\"],\"confidence\":0.84}"}
-{"input": "nimbus look over at the big rock, and up 3 meters", "output": "{\"steps\":[\"look_at|big rock\",\"fly_higher|3\"],\"confidence\":0.82}"}
-{"input": "drone, aim at the food truck and then forget it", "output": "{\"steps\":[\"look_at|food truck\",\"abort\"],\"confidence\":0.83}"}
-{"input": "okay gain some height and then hold it", "output": "{\"steps\":[\"fly_higher\",\"hover\"],\"confidence\":0.9}"}
-{"input": "head to the gazebo", "output": "{\"steps\":[\"fly_to|gazebo\"],\"confidence\":0.98}"}
-{"input": "do a spin, then stop", "output": "{\"steps\":[\"rotate|right|360\",\"abort\"],\"confidence\":0.95}"}
-{"input": "take off then fly to the orange cone, and take a photo", "output": "{\"steps\":[\"takeoff\",\"fly_to|orange cone\",\"photo\"],\"confidence\":0.96}"}
-{"input": "focus on the canopy after that take a picture of me", "output": "{\"steps\":[\"look_at|canopy\",\"selfie\"],\"confidence\":0.89}"}
-{"input": "don't move, and go over too that guy in the blue shirt, and shoot a 360, then do a spin now", "output": "{\"steps\":[\"hover\",\"fly_to|guy in the blue shirt\",\"panorama\",\"rotate|right|360\"],\"confidence\":0.88}"}
-{"input": "drop 2 meters and rotate 45 degrees to the left after that launch", "output": "{\"steps\":[\"fly_lower|2\",\"rotate|left|45\",\"takeoff\"],\"confidence\":0.97}"}
-{"input": "hey drone snap a photo of the dog", "output": "{\"steps\":[\"fly_to|dog\",\"photo\"],\"confidence\":0.97}"}
-{"input": "get a panorama of this place and oaw left", "output": "{\"steps\":[\"panorama\",\"rotate|left\"],\"confidence\":0.93}"}
-{"input": "take a pic, and look over at the group of people", "output": "{\"steps\":[\"photo\",\"look_at|group of people\"],\"confidence\":0.87}"}
-{"input": "okay fly to the fence and take a picture", "output": "{\"steps\":[\"fly_to|fence\",\"photo\"],\"confidence\":0.87}"}
-{"input": "drone return home", "output": "{\"steps\":[\"return\"],\"confidence\":0.89}"}
-{"input": "point the camera at the volleyball net, then shoot a picture", "output": "{\"steps\":[\"look_at|volleyball net\",\"photo\"],\"confidence\":0.87}"}
-{"input": "stay with the that person, then circle the pine tree", "output": "{\"steps\":[\"follow|that person\",\"orbit|pine tree\"],\"confidence\":0.96}"}
-{"input": "take a pano next come down 1 meters", "output": "{\"steps\":[\"panorama\",\"fly_lower|1\"],\"confidence\":0.89}"}
-{"input": "orbit the lamp post then then take a panorama after that and come back", "output": "{\"steps\":[\"orbit|lamp post\",\"panorama\",\"return\"],\"confidence\":0.92}"}
-{"input": "capture a panorama thanks", "output": "{\"steps\":[\"panorama\"],\"confidence\":0.84}"}
-{"input": "hey drone go over to that park bench thanks", "output": "{\"steps\":[\"fly_to|park bench\"],\"confidence\":0.93}"}
-{"input": "go to the red trash can and take a photo for me", "output": "{\"steps\":[\"fly_to|red trash can\",\"photo\"],\"confidence\":0.88}"}
-{"input": "get a panorama of this place after that tail the kid on the scooter and aim at the bike and then take flight", "output": "{\"steps\":[\"panorama\",\"follow|kid on the scooter\",\"look_at|bike\",\"takeoff\"],\"confidence\":0.85}"}
-{"input": "uh come back here", "output": "{\"steps\":[\"return\"],\"confidence\":0.84}"}
-{"input": "go down", "output": "{\"steps\":[\"fly_lower\"],\"confidence\":0.99}"}
-{"input": "take a selfie, and then do a panorama uh", "output": "{\"steps\":[\"selfie\",\"panorama\"],\"confidence\":0.95}"}
-{"input": "focus on the flagpole and then shoot a 360", "output": "{\"steps\":[\"look_at|flagpole\",\"panorama\"],\"confidence\":0.93}"}
-{"input": "fly over the statue and stay there next point at that fire pit then descend 2 meters", "output": "{\"steps\":[\"fly_above|statue\",\"look_at|fire pit\",\"fly_lower|2\"],\"confidence\":0.94}"}
-{"input": "spin left a bit", "output": "{\"steps\":[\"rotate|left\"],\"confidence\":0.93}"}
-{"input": "get a shot of me now", "output": "{\"steps\":[\"selfie\"],\"confidence\":0.97}"}
-{"input": "drone follow that jogger for 5 seconds then fly around the flower bed once", "output": "{\"steps\":[\"follow|jogger|5\",\"orbit|flower bed|1\"],\"confidence\":0.91}"}
-{"input": "alright hover above the boulder and do a 180", "output": "{\"steps\":[\"fly_above|boulder\",\"rotate|right|180\"],\"confidence\":0.97}"}
-{"input": "nimbus tail the guy in the blue shirt", "output": "{\"steps\":[\"follow|guy in the blue shirt\"],\"confidence\":0.89}"}
-{"input": "please lower by 1 eeters", "output": "{\"steps\":[\"fly_lower|1\"],\"confidence\":0.88}"}
-{"input": "okay descend, and focus on the swing set after that hang there for 3 seconds next return", "output": "{\"steps\":[\"fly_lower\",\"look_at|swing set\",\"hover|3\",\"return\"],\"confidence\":0.86}"}
-{"input": "stop stoo stop", "output": "{\"steps\":[\"abort\"],\"confidence\":0.87}"}
-{"input": "keep the camera on the lamp post thanks", "output": "{\"steps\":[\"look_at|lamp post\"],\"confidence\":0.86}"}
-{"input": "nimbus look over at the pond uh", "output": "{\"steps\":[\"look_at|pond\"],\"confidence\":0.85}"}
-{"input": "drone fly back", "output": "{\"steps\":[\"return\"],\"confidence\":0.86}"}
-{"input": "go find the volleyball net next we're done, land", "output": "{\"steps\":[\"fly_to|volleyball net\",\"land\"],\"confidence\":0.93}"}
-{"input": "do 2 laps around the parking lot next hover above the silver suv next end the flight thanks", "output": "{\"steps\":[\"orbit|parking lot|2\",\"fly_above|silver suv\",\"land\"],\"confidence\":0.97}"}
-{"input": "stay on the the skateboarder for 3 seconds after that take a photo, and land real quick", "output": "{\"steps\":[\"follow|the skateboarder|3\",\"photo\",\"land\"],\"confidence\":0.93}"}
-{"input": "take off and then head to the playground and then take a photo for me", "output": "{\"steps\":[\"takeoff\",\"fly_to|playground\",\"photo\"],\"confidence\":0.93}"}
-{"input": "photo of me please after that turn to the left and then capture a photo uh", "output": "{\"steps\":[\"selfie\",\"rotate|left\",\"photo\"],\"confidence\":0.98}"}
-{"input": "hey drone come to me please", "output": "{\"steps\":[\"return\"],\"confidence\":0.91}"}
-{"input": "up 10 meters now", "output": "{\"steps\":[\"fly_higher|10\"],\"confidence\":0.82}"}
-{"input": "track the jogger for 15 seconds and then rotate 270 degrees to the left", "output": "{\"steps\":[\"follow|jogger|15\",\"rotate|left|270\"],\"confidence\":0.85}"}
-{"input": "uh take a dronie next do a 360 panorama, then snap a selfie now", "output": "{\"steps\":[\"selfie\",\"panorama\",\"selfie\"],\"confidence\":0.99}"}
-{"input": "go to the bike after that yaw left 45", "output": "{\"steps\":[\"fly_to|bike\",\"rotate|left|45\"],\"confidence\":0.93}"}
-{"input": "hey drone gain 5 meters of altitude, and focus on the pine tree", "output": "{\"steps\":[\"fly_higher|5\",\"look_at|pine tree\"],\"confidence\":0.9}"}
-{"input": "follow that jogger next spin left a bit after that take a picture of me next keep up with the golden retriever please", "output": "{\"steps\":[\"follow|jogger\",\"rotate|left\",\"selfie\",\"follow|golden retriever\"],\"confidence\":0.98}"}
-{"input": "please return to me", "output": "{\"steps\":[\"return\"],\"confidence\":0.93}"}
-{"input": "take off and fly to the kids on the playground", "output": "{\"steps\":[\"takeoff\",\"fly_to|kids on the playground\"],\"confidence\":0.99}"}
-{"input": "go directly over the gazebo", "output": "{\"steps\":[\"fly_above|gazebo\"],\"confidence\":0.88}"}
-{"input": "alright capture a photo after that position yourself over the yellow backpack please", "output": "{\"steps\":[\"photo\",\"fly_above|yellow backpack\"],\"confidence\":0.91}"}
-{"input": "point at that lamp post after that follow the person waving", "output": "{\"steps\":[\"look_at|lamp post\",\"follow|person waving\"],\"confidence\":0.92}"}
-{"input": "follow the dog for 45 seconds", "output": "{\"steps\":[\"follow|dog|45\"],\"confidence\":0.99}"}
-{"input": "orbit the pine tree twice", "output": "{\"steps\":[\"orbit|pine tree|2\"],\"confidence\":0.96}"}
-{"input": "uh watch the pono please", "output": "{\"steps\":[\"look_at|pond\"],\"confidence\":0.82}"}
-{"input": "please spin 180 degrees right, and point the camera at the fountain next land now uh", "output": "{\"steps\":[\"rotate|right|180\",\"look_at|fountain\",\"land\"],\"confidence\":0.84}"}
-{"input": "okay hold station after that get a shot then hover for 15 seconds", "output": "{\"steps\":[\"hover\",\"photo\",\"hover|15\"],\"confidence\":0.88}"}
-{"input": "point at that food truck thanks", "output": "{\"steps\":[\"look_at|food truck\"],\"confidence\":0.94}"}
-{"input": "climb 10 meters thanks", "output": "{\"steps\":[\"fly_higher|10\"],\"confidence\":0.96}"}
-{"input": "yaw left and then fly over to the golden retriever, and go down", "output": "{\"steps\":[\"rotate|left\",\"fly_to|golden retriever\",\"fly_lower\"],\"confidence\":0.84}"}
-{"input": "drone get me a picture of that blanket on the grass real quick", "output": "{\"steps\":[\"fly_to|blanket on the grass\",\"photo\"],\"confidence\":0.97}"}
-{"input": "yaw right 360, then get some altitude", "output": "{\"steps\":[\"rotate|right|360\",\"fly_higher\"],\"confidence\":0.88}"}
-{"input": "uh fly back here", "output": "{\"steps\":[\"return\"],\"confidence\":0.85}"}
-{"input": "take a picture please", "output": "{\"steps\":[\"photo\"],\"confidence\":0.86}"}
-{"input": "drone, do a lap around the bush now", "output": "{\"steps\":[\"orbit|bush\"],\"confidence\":0.93}"}
-{"input": "down 5 meters next go higher", "output": "{\"steps\":[\"fly_lower|5\",\"fly_higher\"],\"confidence\":0.96}"}
-{"input": "hey take a selfie, and then do a panorama", "output": "{\"steps\":[\"selfie\",\"panorama\"],\"confidence\":0.84}"}
-{"input": "go directly over the motorcycle and up you go a bit", "output": "{\"steps\":[\"fly_above|motorcycle\",\"fly_higher\"],\"confidence\":0.86}"}
-{"input": "a little higheu", "output": "{\"steps\":[\"fly_higher\"],\"confidence\":0.91}"}
-{"input": "hover for 20 seconds please", "output": "{\"steps\":[\"hover|20\"],\"confidence\":0.99}"}
-{"input": "take a selfie of me, and fly over to the stop sign, then look over at the parkine lot", "output": "{\"steps\":[\"selfie\",\"fly_to|stop sign\",\"look_at|parking lot\"],\"confidence\":0.94}"}
-{"input": "get a panorama of this place next hang there for 20 seconds", "output": "{\"steps\":[\"panorama\",\"hover|20\"],\"confidence\":0.9}"}
-{"input": "turn to the right teen get lower for me", "output": "{\"steps\":[\"rotate|right\",\"fly_lower\"],\"confidence\":0.99}"}
-{"input": "spin around, and go to da mailbox", "output": "{\"steps\":[\"rotate|right|360\",\"fly_to|mailbox\"],\"confidence\":0.97}"}
-{"input": "hover above the playground, then do a lap around the crowd", "output": "{\"steps\":[\"fly_above|playground\",\"orbit|crowd\"],\"confidence\":0.83}"}
-{"input": "fly above the tree", "output": "{\"steps\":[\"fly_above|tree\"],\"confidence\":0.84}"}
-{"input": "fly over to the basketball hoop", "output": "{\"steps\":[\"fly_to|basketball hoop\"],\"confidence\":0.94}"}
-{"input": "fly to the white car and take a picture", "output": "{\"steps\":[\"fly_to|white car\",\"photo\"],\"confidence\":0.92}"}
-{"input": "gain 3 meters of altitude now", "output": "{\"steps\":[\"fly_higher|3\"],\"confidence\":0.97}"}
-{"input": "drone go to the food truck, and position yourself over the big rock then turn right uh", "output": "{\"steps\":[\"fly_to|food truck\",\"fly_above|big rock\",\"rotate|right\"],\"confidence\":0.85}"}
-{"input": "take a selfie, and then do a panorama now", "output": "{\"steps\":[\"selfie\",\"panorama\"],\"confidence\":0.92}"}
-{"input": "nimbus take the shot thanks", "output": "{\"steps\":[\"photo\"],\"confidence\":0.86}"}
-{"input": "get above the ulayground please", "output": "{\"steps\":[\"fly_above|playground\"],\"confidence\":0.88}"}
-{"input": "drone a little higher and wait stop", "output": "{\"steps\":[\"fly_higher\",\"abort\"],\"confidence\":0.89}"}
-{"input": "please follow that person waving for 15 seconds now", "output": "{\"steps\":[\"follow|person waving|15\"],\"confidence\":0.83}"}
-{"input": "alright get a shot of the volleyball net", "output": "{\"steps\":[\"fly_to|volleyball net\",\"photo\"],\"confidence\":0.95}"}
-{"input": "fly lower next track the white car for 15 seconds then launch", "output": "{\"steps\":[\"fly_lower\",\"follow|white car|15\",\"takeoff\"],\"confidence\":0.98}"}
-{"input": "turn left 30 degrees after that hang there for 45 seconds", "output": "{\"steps\":[\"rotate|left|30\",\"hover|45\"],\"confidence\":0.87}"}
-{"input": "lower by 10 meters", "output": "{\"steps\":[\"fly_lower|10\"],\"confidence\":0.98}"}
-{"input": "drop 8 meters", "output": "{\"steps\":[\"fly_lower|8\"],\"confidence\":0.97}"}
-{"input": "head over to the white van", "output": "{\"steps\":[\"fly_to|white van\"],\"confidence\":0.92}"}
-{"input": "drone spin 90 degrees left and then panorama shot please", "output": "{\"steps\":[\"rotate|left|90\",\"panorama\"],\"confidence\":0.86}"}
-{"input": "hey drone set down", "output": "{\"steps\":[\"land\"],\"confidence\":0.92}"}
-{"input": "fly towards that fence next go down and do a full panorama, then fly towards that swing set", "output": "{\"steps\":[\"fly_to|fence\",\"fly_lower\",\"panorama\",\"fly_to|swing set\"],\"confidence\":0.82}"}
-{"input": "fallow that kid on the scooter, then get to tae blanket on the grass", "output": "{\"steps\":[\"follow|kid on the scooter\",\"fly_to|blanket on the grass\"],\"confidence\":0.83}"}
-{"input": "head to the golden retriever", "output": "{\"steps\":[\"fly_to|golden retriever\"],\"confidence\":0.92}"}
-{"input": "orbit the stage next then take a panorama, and and come back now", "output": "{\"steps\":[\"orbit|stage\",\"panorama\",\"return\"],\"confidence\":0.92}"}
-{"input": "get a panorama of this place, and focus on the pond and up 2 meters", "output": "{\"steps\":[\"panorama\",\"look_at|pond\",\"fly_higher|2\"],\"confidence\":0.99}"}
-{"input": "uh take a dronie", "output": "{\"steps\":[\"selfie\"],\"confidence\":0.95}"}
-{"input": "track the golden retriever after that go over to that doorway and then position yourself over the red trash can", "output": "{\"steps\":[\"follow|golden retriever\",\"fly_to|doorway\",\"fly_above|red trash can\"],\"confidence\":0.97}"}
-{"input": "just hover, end get a panorama of this place after that stay put", "output": "{\"steps\":[\"hover\",\"panorama\",\"hover\"],\"confidence\":0.99}"}
-{"input": "um track the bike for 15 seconds next go higher and then track the dog for 30 seconds after that end the flight", "output": "{\"steps\":[\"follow|bike|15\",\"fly_higher\",\"follow|dog|30\",\"land\"],\"confidence\":0.97}"}
-{"input": "fly in circles around the grill", "output": "{\"steps\":[\"orbit|grill\"],\"confidence\":0.93}"}
-{"input": "um fly to the red trash can and take a picture", "output": "{\"steps\":[\"fly_to|red trash can\",\"photo\"],\"confidence\":0.84}"}
-{"input": "nimbus wait 15 seconds", "output": "{\"steps\":[\"hover|15\"],\"confidence\":0.89}"}
-{"input": "drone photograph the tree", "output": "{\"steps\":[\"fly_to|tree\",\"photo\"],\"confidence\":0.87}"}
-{"input": "circle the trash can next then take a panorama then and come back", "output": "{\"steps\":[\"orbit|trash can\",\"panorama\",\"return\"],\"confidence\":0.96}"}
-{"input": "yaw left 360 and track the jogger for 30 seconds", "output": "{\"steps\":[\"rotate|left|360\",\"follow|jogger|30\"],\"confidence\":0.93}"}
-{"input": "okuy fly back", "output": "{\"steps\":[\"return\"],\"confidence\":0.95}"}
-{"input": "follow the person in the red jacket", "output": "{\"steps\":[\"follow|person in the red jacket\"],\"confidence\":0.82}"}
-{"input": "hey take a pano and fly up 10 meters", "output": "{\"steps\":[\"panorama\",\"fly_higher|10\"],\"confidence\":0.83}"}
-{"input": "um stop stop stop thanis", "output": "{\"steps\":[\"abort\"],\"confidence\":0.93}"}
-{"input": "please forget it thanks", "output": "{\"steps\":[\"abort\"],\"confidence\":0.87}"}
-{"input": "take a panorama for me", "output": "{\"steps\":[\"panorama\"],\"confidence\":0.97}"}
-{"input": "um fly to the orange cone and then follow that me for me", "output": "{\"steps\":[\"fly_to|orange cone\",\"follow|me\"],\"confidence\":0.86}"}
-{"input": "look at the person waving next come to me", "output": "{\"steps\":[\"look_at|person waving\",\"return\"],\"confidence\":0.93}"}
-{"input": "fly to the stop sign, then take a picture, then do a 360 then return", "output": "{\"steps\":[\"fly_to|stop sign\",\"photo\",\"rotate|right|360\",\"return\"],\"confidence\":0.9}"}
-{"input": "drone hover above the white van", "output": "{\"steps\":[\"fly_above|white van\"],\"confidence\":0.91}"}
-{"input": "alright snap a photo of the bench", "output": "{\"steps\":[\"fly_to|bench\",\"photo\"],\"confidence\":0.88}"}
-{"input": "okay track the that person now", "output": "{\"steps\":[\"follow|that person\"],\"confidence\":0.92}"}
-{"input": "shoot a picture, then get above the flower bed and then do a full panorama", "output": "{\"steps\":[\"photo\",\"fly_above|flower bed\",\"panorama\"],\"confidence\":0.93}"}
-{"input": "um spin 30 degrees right", "output": "{\"steps\":[\"rotate|right|30\"],\"confidence\":0.96}"}
-{"input": "get to da lamp post", "output": "{\"steps\":[\"fly_to|lamp post\"],\"confidence\":0.95}"}
-{"input": "okay take a selfie", "output": "{\"steps\":[\"selfie\"],\"confidence\":0.9}"}
-{"input": "hoy do a 360 panorama and land the drone", "output": "{\"steps\":[\"panorama\",\"land\"],\"confidence\":0.94}"}
-{"input": "fly above the stage, then take a picture next come back and land", "output": "{\"steps\":[\"fly_above|stage\",\"photo\",\"return\",\"land\"],\"confidence\":0.98}"}
-{"input": "climb 10 meters, then yaw right 270", "output": "{\"steps\":[\"fly_higher|10\",\"rotate|right|270\"],\"confidence\":0.86}"}
-{"input": "circle the parking lot then wait 3 seconds, and spin left a bit", "output": "{\"steps\":[\"orbit|parking lot\",\"hover|3\",\"rotate|left\"],\"confidence\":0.86}"}
-{"input": "get a selfie and approach the tree, and abort mission", "output": "{\"steps\":[\"selfie\",\"fly_to|tree\",\"abort\"],\"confidence\":0.96}"}
-{"input": "please turn right 45 degrees then descend 5 meters", "output": "{\"steps\":[\"rotate|right|45\",\"fly_lower|5\"],\"confidence\":0.85}"}
-{"input": "um come to me", "output": "{\"steps\":[\"return\"],\"confidence\":0.95}"}
-{"input": "snap a photo of the person in the red jacket", "output": "{\"steps\":[\"fly_to|person in the red jacket\",\"photo\"],\"confidence\":0.89}"}
-{"input": "take a panorama real quick", "output": "{\"steps\":[\"panorama\"],\"confidence\":0.97}"}
-{"input": "drone go down now", "output": "{\"steps\":[\"fly_lower\"],\"confidence\":0.84}"}
-{"input": "rotate left 30 degrees after that don't move", "output": "{\"steps\":[\"rotate|left|30\",\"hover\"],\"confidence\":0.83}"}
-{"input": "follow that person waving for 20 seconds", "output": "{\"steps\":[\"follow|person waving|20\"],\"confidence\":0.89}"}
-{"input": "fly around tae bench once", "output": "{\"steps\":[\"orbit|bench|1\"],\"confidence\":0.84}"}
-{"input": "alright stay put and launch next hold for 2 secunds, then point the camera at the red trash can", "output": "{\"steps\":[\"hover\",\"takeoff\",\"hover|2\",\"look_at|red trash can\"],\"confidence\":0.9}"}
-{"input": "fly down 8 meters and then take a picture of me", "output": "{\"steps\":[\"fly_lower|8\",\"selfie\"],\"confidence\":0.85}"}
-{"input": "alright head over to the bridge after that rotate 360 uh", "output": "{\"steps\":[\"fly_to|bridge\",\"rotate|right|360\"],\"confidence\":0.9}"}
-{"input": "fly lower real quick", "output": "{\"steps\":[\"fly_lower\"],\"confidence\":0.88}"}
-{"input": "hey keep the camera on the statue", "output": "{\"steps\":[\"look_at|statue\"],\"confidence\":0.96}"}
-{"input": "look over at the person in the red jacket", "output": "{\"steps\":[\"look_at|person in the red jacket\"],\"confidence\":0.83}"}
-{"input": "go find the bush", "output": "{\"steps\":[\"fly_to|bush\"],\"confidence\":0.97}"}
-{"input": "fly in circles around the kids on the playground then fly up 5 meters", "output": "{\"steps\":[\"orbit|kids on the playground\",\"fly_higher|5\"],\"confidence\":0.98}"}
-{"input": "up you go a bit, and circle the red trash can twice, then get in the air now", "output": "{\"steps\":[\"fly_higher\",\"orbit|red trash can|2\",\"takeoff\"],\"confidence\":0.98}"}
-{"input": "do 2 laps around the yellow backpack", "output": "{\"steps\":[\"orbit|yellow backpack|2\"],\"confidence\":0.97}"}
-{"input": "photograph the dog", "output": "{\"steps\":[\"fly_to|dog\",\"photo\"],\"confidence\":0.88}"}
-{"input": "nimbus fly higher, then hover 45 seconds next land now for me", "output": "{\"steps\":[\"fly_higher\",\"hover|45\",\"land\"],\"confidence\":0.92}"}
-{"input": "hang there for 20 seconds then do a 180, and fly up 2 meters", "output": "{\"steps\":[\"hover|20\",\"rotate|right|180\",\"fly_higher|2\"],\"confidence\":0.83}"}
-{"input": "orbit the picnic table", "output": "{\"steps\":[\"orbit|picnic table\"],\"confidence\":0.91}"}
-{"input": "panorama shot next capture a photo", "output": "{\"steps\":[\"panorama\",\"photo\"],\"confidence\":0.9}"}
-{"input": "um take a panorama and get some altitude and then point at that flower bed", "output": "{\"steps\":[\"panorama\",\"fly_higher\",\"look_at|flower bed\"],\"confidence\":0.91}"}
-{"input": "rotate left 270 degrees", "output": "{\"steps\":[\"rotate|left|270\"],\"confidence\":0.84}"}
-{"input": "hey drone snap a photo of the white van", "output": "{\"steps\":[\"fly_to|white van\",\"photo\"],\"confidence\":0.96}"}
-{"input": "approach the gate", "output": "{\"steps\":[\"fly_to|gate\"],\"confidence\":0.87}"}
-{"input": "go directly over the bush next turn left", "output": "{\"steps\":[\"fly_above|bush\",\"rotate|left\"],\"confidence\":0.84}"}
-{"input": "stay with the runner and start flying", "output": "{\"steps\":[\"follow|runner\",\"takeoff\"],\"confidence\":0.96}"}
-{"input": "lift off after that fly towards that lamp post, then follow the that person for 20 seconds", "output": "{\"steps\":[\"takeoff\",\"fly_to|lamp post\",\"follow|that person|20\"],\"confidence\":0.89}"}
-{"input": "look over at the white van and take a photo", "output": "{\"steps\":[\"look_at|white van\",\"photo\"],\"confidence\":0.87}"}
-{"input": "rotate 180 thanks", "output": "{\"steps\":[\"rotate|right|180\"],\"confidence\":0.82}"}
-{"input": "drone a little higher", "output": "{\"steps\":[\"fly_higher\"],\"confidence\":0.96}"}
-{"input": "hey circle the soccer goal, then then take a panorama and then and come back", "output": "{\"steps\":[\"orbit|soccer goal\",\"panorama\",\"return\"],\"confidence\":0.92}"}
-{"input": "alright get a shot and look over at the person waving then take off", "output": "{\"steps\":[\"photo\",\"look_at|person waving\",\"takeoff\"],\"confidence\":0.95}"}
-{"input": "drone, get a shot of the swing set", "output": "{\"steps\":[\"fly_to|swing set\",\"photo\"],\"confidence\":0.98}"}
-{"input": "orbit the white car then then take a panorama thanks", "output": "{\"steps\":[\"orbit|white car\",\"panorama\"],\"confidence\":0.93}"}
-{"input": "go to the parking lot and take a photo", "output": "{\"steps\":[\"fly_to|parking lot\",\"photo\"],\"confidence\":0.85}"}
-{"input": "down 5 meters", "output": "{\"steps\":[\"fly_lower|5\"],\"confidence\":0.9}"}
-{"input": "okay launch and then fly above the tree and then take a pano", "output": "{\"steps\":[\"takeoff\",\"fly_above|tree\",\"panorama\"],\"confidence\":0.86}"}
-{"input": "stay on the person in the red jacket for 8 seconds", "output": "{\"steps\":[\"follow|person in the red jacket|8\"],\"confidence\":0.83}"}
-{"input": "approach the black truck, then look over at the blanket on the grass", "output": "{\"steps\":[\"fly_to|black truck\",\"look_at|blanket on the grass\"],\"confidence\":0.98}"}
-{"input": "look over at the big rock", "output": "{\"steps\":[\"look_at|big rock\"],\"confidence\":0.91}"}
-{"input": "um eo too the parking lot and take a photo", "output": "{\"steps\":[\"fly_to|parking lot\",\"photo\"],\"confidence\":0.85}"}
-{"input": "capture a paoto", "output": "{\"steps\":[\"photo\"],\"confidence\":0.87}"}
-{"input": "uh come home", "output": "{\"steps\":[\"return\"],\"confidence\":0.92}"}
-{"input": "fly towards that bridge next up you go", "output": "{\"steps\":[\"fly_to|bridge\",\"takeoff\"],\"confidence\":0.82}"}
-{"input": "alright circle the orange cone once", "output": "{\"steps\":[\"orbit|orange cone|1\"],\"confidence\":0.92}"}
-{"input": "move toward the stop sign, and stay put for 60 seconds", "output": "{\"steps\":[\"fly_to|stop sign\",\"hover|60\"],\"confidence\":0.97}"}
-{"input": "okay down 10 meters", "output": "{\"steps\":[\"fly_lower|10\"],\"confidence\":0.87}"}
-{"input": "selfie and capture a photo next take flight, then fly above the hill", "output": "{\"steps\":[\"selfie\",\"photo\",\"takeoff\",\"fly_above|hill\"],\"confidence\":0.83}"}
-{"input": "get a panorama of this place, then point at that trail, then head to the bridge", "output": "{\"steps\":[\"panorama\",\"look_at|trail\",\"fly_to|bridge\"],\"confidence\":0.85}"}
-{"input": "um do a 360 panorama after that go over to that stop sign", "output": "{\"steps\":[\"panorama\",\"fly_to|stop sign\"],\"confidence\":0.92}"}
-{"input": "fly in circles around the mailbox next track the golden retriever for 3 seconds and fly over the person in the red jacket and stay there", "output": "{\"steps\":[\"orbit|mailbox\",\"follow|golden retriever|3\",\"fly_above|person in the red jacket\"],\"confidence\":0.92}"}
-{"input": "uh fly lower, then follow the runner for 5 seconds uh", "output": "{\"steps\":[\"fly_lower\",\"follow|runner|5\"],\"confidence\":0.92}"}
-{"input": "fly in circles around the mailbox and then watch the pine tree", "output": "{\"steps\":[\"orbit|mailbox\",\"look_at|pine tree\"],\"confidence\":0.88}"}
-{"input": "get some altitude real quick", "output": "{\"steps\":[\"fly_higher\"],\"confidence\":0.9}"}
+{"input": "do a spin now", "output": "{\"steps\":[\"rotate|right|360\"],\"confidence\":0.92}"}
+{"input": "drone, aim at the bike", "output": "{\"steps\":[\"look_at|bike\"],\"confidence\":0.83}"}
+{"input": "go right after that halt for me", "output": "{\"steps\":[\"fly_to|right\",\"abort\"],\"confidence\":0.95}"}
+{"input": "follow that runaer please", "output": "{\"steps\":[\"follow|runner\"],\"confidence\":0.85}"}
+{"input": "get lower", "output": "{\"steps\":[\"change_altitude|-0.5\"],\"confidence\":0.98}"}
+{"input": "hey take a panorama", "output": "{\"steps\":[\"panorama\"],\"confidence\":0.84}"}
+{"input": "hey fly behind the playground then stay put then keep the camera on the stop siin", "output": "{\"steps\":[\"fly_to|playground\",\"hover\",\"look_at|stop sign\"],\"confidence\":0.97}"}
+{"input": "move left", "output": "{\"steps\":[\"fly_to|left\"],\"confidence\":0.88}"}
+{"input": "start flying and follow the golden retriever for 2 seconds then approach the red tent", "output": "{\"steps\":[\"takeoff\",\"follow|golden retriever|2\",\"fly_to|red tent\"],\"confidence\":0.97}"}
+{"input": "hey return to me", "output": "{\"steps\":[\"return\"],\"confidence\":0.9}"}
+{"input": "drone get a shot of the groap of people", "output": "{\"steps\":[\"fly_to|group of people\",\"photo\"],\"confidence\":0.93}"}
+{"input": "hey drone land the drone", "output": "{\"steps\":[\"land\"],\"confidence\":0.9}"}
+{"input": "nimbus circle the bike then then take a panorama next and come back", "output": "{\"steps\":[\"orbit|bike\",\"panorama\",\"return\"],\"confidence\":0.97}"}
+{"input": "come down a bit, then don't move", "output": "{\"steps\":[\"change_altitude|-0.5\",\"hover\"],\"confidence\":0.87}"}
+{"input": "hover for 20 seconds after that circle around that basketball hoop next turn around", "output": "{\"steps\":[\"hover|20\",\"orbit|basketball hoop\",\"rotate|right|180\"],\"confidence\":0.97}"}
+{"input": "drone, take off and then head to the pond next take a photo", "output": "{\"steps\":[\"takeoff\",\"fly_to|pond\",\"photo\"],\"confidence\":0.98}"}
+{"input": "nimbus get a shot of the stop sign", "output": "{\"steps\":[\"fly_to|stop sign\",\"photo\"],\"confidence\":0.99}"}
+{"input": "snap a pic please", "output": "{\"steps\":[\"photo\"],\"confidence\":0.91}"}
+{"input": "fly to da crowd and take a picture thanks", "output": "{\"steps\":[\"fly_to|crowd\",\"photo\"],\"confidence\":0.86}"}
+{"input": "uh point at that canopy", "output": "{\"steps\":[\"look_at|canopy\"],\"confidence\":0.94}"}
+{"input": "fly around tee bench", "output": "{\"steps\":[\"orbit|bench\"],\"confidence\":0.87}"}
+{"input": "fly to the white car then take a picture and do a 360, then return", "output": "{\"steps\":[\"fly_to|white car\",\"photo\",\"rotate|right|360\",\"return\"],\"confidence\":0.91}"}
+{"input": "hey drone get a seot of the crowd", "output": "{\"steps\":[\"fly_to|crowd\",\"photo\"],\"confidence\":0.84}"}
+{"input": "drop 3 meters and grab a photo, and end the flight", "output": "{\"steps\":[\"change_altitude|-3\",\"photo\",\"land\"],\"confidence\":0.93}"}
+{"input": "come back to me", "output": "{\"steps\":[\"return\"],\"confidence\":0.85}"}
+{"input": "drone, follow that dug", "output": "{\"steps\":[\"follow|dog\"],\"confidence\":0.89}"}
+{"input": "do a lap around the dog then turn right 90 degrees", "output": "{\"steps\":[\"orbit|dog\",\"rotate|right|90\"],\"confidence\":0.91}"}
+{"input": "fly back for me", "output": "{\"steps\":[\"return\"],\"confidence\":0.88}"}
+{"input": "take a photo then turn right thanks", "output": "{\"steps\":[\"photo\",\"rotate|right\"],\"confidence\":0.96}"}
+{"input": "fly over to da umbrella and then take a picture of me", "output": "{\"steps\":[\"fly_to|umbrella\",\"selfie\"],\"confidence\":0.95}"}
+{"input": "nimbus take off and go up 3 meters after that take a panorama", "output": "{\"steps\":[\"takeoff\",\"change_altitude|+3\",\"panorama\"],\"confidence\":0.94}"}
+{"input": "fly to the trail and then take a picture then spin around", "output": "{\"steps\":[\"fly_to|trail\",\"photo\",\"rotate|right|360\"],\"confidence\":0.82}"}
+{"input": "hey drone rise 2 meters next take off after that selfie", "output": "{\"steps\":[\"change_altitude|+2\",\"takeoff\",\"selfie\"],\"confidence\":0.92}"}
+{"input": "drone go over to that statue uh", "output": "{\"steps\":[\"fly_to|statue\"],\"confidence\":0.98}"}
+{"input": "selfie then get a shot", "output": "{\"steps\":[\"selfie\",\"photo\"],\"confidence\":0.85}"}
+{"input": "snap a photo of the red tent uh", "output": "{\"steps\":[\"fly_to|red tent\",\"photo\"],\"confidence\":0.91}"}
+{"input": "capture a panorama and turn around and then take a picture of me", "output": "{\"steps\":[\"panorama\",\"rotate|right|180\",\"selfie\"],\"confidence\":0.86}"}
+{"input": "okay orbit the tree twice next spin right a bit, then fly towards that bench", "output": "{\"steps\":[\"orbit|tree|2\",\"rotate|right\",\"fly_to|bench\"],\"confidence\":0.84}"}
+{"input": "photograph the gazebo", "output": "{\"steps\":[\"fly_to|gazebo\",\"photo\"],\"confidence\":0.94}"}
+{"input": "fly in circles around the orange cone, and snap a selfie", "output": "{\"steps\":[\"orbit|orange cone\",\"selfie\"],\"confidence\":0.94}"}
+{"input": "hold for 8 seconds and yaw left 120 and then go right 10 meters", "output": "{\"steps\":[\"hover|8\",\"rotate|left|120\",\"fly_to|right|10\"],\"confidence\":0.95}"}
+{"input": "scoot back now", "output": "{\"steps\":[\"fly_to|back\"],\"confidence\":0.93}"}
+{"input": "drone keep the camera on the silver suv", "output": "{\"steps\":[\"look_at|silver suv\"],\"confidence\":0.94}"}
+{"input": "take off and then go up 3 meters after that take a panorama", "output": "{\"steps\":[\"takeoff\",\"change_altitude|+3\",\"panorama\"],\"confidence\":0.95}"}
+{"input": "snap a photo of da bush", "output": "{\"steps\":[\"fly_to|bush\",\"photo\"],\"confidence\":0.94}"}
+{"input": "head to the bush", "output": "{\"steps\":[\"fly_to|bush\"],\"confidence\":0.86}"}
+{"input": "go to the fountain", "output": "{\"steps\":[\"fly_to|fountain\"],\"confidence\":0.89}"}
+{"input": "hey drone rotate left 180 degrees", "output": "{\"steps\":[\"rotate|left|180\"],\"confidence\":0.87}"}
+{"input": "fly next to the gazebo, then turn to the left", "output": "{\"steps\":[\"fly_to|gazebo\",\"rotate|left\"],\"confidence\":0.88}"}
+{"input": "okay fly around the yellow backpack 3 times and stay with the person in the red jacket, and keep the camera on the umbrella", "output": "{\"steps\":[\"orbit|yellow backpack|3\",\"follow|person in the red jacket\",\"look_at|umbrella\"],\"confidence\":0.97}"}
+{"input": "turn right and get lower, and orbit the trash can", "output": "{\"steps\":[\"rotate|right\",\"change_altitude|-0.5\",\"orbit|trash can\"],\"confidence\":0.87}"}
+{"input": "drone take a pic, then scoot back for me", "output": "{\"steps\":[\"photo\",\"fly_to|back\"],\"confidence\":0.91}"}
+{"input": "track the golden retriever for 10 seconds", "output": "{\"steps\":[\"follow|golden retriever|10\"],\"confidence\":0.82}"}
+{"input": "go to the picnic table for me", "output": "{\"steps\":[\"fly_to|picnic table\"],\"confidence\":0.96}"}
+{"input": "drone circle around that person in the red jacket", "output": "{\"steps\":[\"orbit|person in the red jacket\"],\"confidence\":0.97}"}
+{"input": "point the camera at the food truck", "output": "{\"steps\":[\"look_at|food truck\"],\"confidence\":0.9}"}
+{"input": "fly next to the blanket on the grass", "output": "{\"steps\":[\"fly_to|blanket on the grass\"],\"confidence\":0.94}"}
+{"input": "hey orbit the building entrance, and then take a panorama", "output": "{\"steps\":[\"orbit|building entrance\",\"panorama\"],\"confidence\":0.88}"}
+{"input": "drone get behind the fire pit for me", "output": "{\"steps\":[\"fly_to|fire pit\"],\"confidence\":0.92}"}
+{"input": "drift right then rotate 360 degrees to the left then up you go a bit", "output": "{\"steps\":[\"fly_to|right\",\"rotate|left|360\",\"change_altitude\"],\"confidence\":0.98}"}
+{"input": "nimbus take off and climb 3 meters then take a panorama thanks", "output": "{\"steps\":[\"takeoff\",\"change_altitude|+3\",\"panorama\"],\"confidence\":0.97}"}
+{"input": "circle the parking lot, and then take a panorama then and come back", "output": "{\"steps\":[\"orbit|parking lot\",\"panorama\",\"return\"],\"confidence\":0.86}"}
+{"input": "um orbit the gazebo", "output": "{\"steps\":[\"orbit|gazebo\"],\"confidence\":0.99}"}
+{"input": "okay gain 1.5 meters of altitude", "output": "{\"steps\":[\"change_altitude|+1.5\"],\"confidence\":0.87}"}
+{"input": "nimbus look at the soccer goal, and fly lower", "output": "{\"steps\":[\"look_at|soccer goal\",\"change_altitude|-0.5\"],\"confidence\":0.95}"}
+{"input": "drone land now for me", "output": "{\"steps\":[\"land\"],\"confidence\":0.94}"}
+{"input": "focus on the big rock please", "output": "{\"steps\":[\"look_at|big rock\"],\"confidence\":0.95}"}
+{"input": "order me a pizza", "output": "{\"steps\":[\"say|I only handle flight commands.\"],\"confidence\":0.6}"}
+{"input": "up a bit, and land real quick", "output": "{\"steps\":[\"change_altitude\",\"land\"],\"confidence\":0.94}"}
+{"input": "okay snap a photo of the bench now", "output": "{\"steps\":[\"fly_to|bench\",\"photo\"],\"confidence\":0.84}"}
+{"input": "drone, move left 10 meters", "output": "{\"steps\":[\"fly_to|left|10\"],\"confidence\":0.84}"}
+{"input": "up a bit and launch and go through the umbrella", "output": "{\"steps\":[\"change_altitude\",\"takeoff\",\"fly_to|umbrella\"],\"confidence\":0.92}"}
+{"input": "go left 10 meters", "output": "{\"steps\":[\"fly_to|left|10\"],\"confidence\":0.9}"}
+{"input": "get some altitude and then focus on the bike uh", "output": "{\"steps\":[\"change_altitude\",\"look_at|bike\"],\"confidence\":0.98}"}
+{"input": "drone head to the big rock next follow the the skateboarder and fly behind the stage", "output": "{\"steps\":[\"fly_to|big rock\",\"follow|the skateboarder\",\"fly_to|stage\"],\"confidence\":0.95}"}
+{"input": "alrigut move toward the food truck, then capture a photo for me", "output": "{\"steps\":[\"fly_to|food truck\",\"photo\"],\"confidence\":0.85}"}
+{"input": "fly behind the stop sign", "output": "{\"steps\":[\"fly_to|stop sign\"],\"confidence\":0.93}"}
+{"input": "watch the black truck uh", "output": "{\"steps\":[\"look_at|black truck\"],\"confidence\":0.85}"}
+{"input": "circle the person in the red jacket", "output": "{\"steps\":[\"orbit|person in the red jacket\"],\"confidence\":0.83}"}
+{"input": "point the camera at the fire pit please", "output": "{\"steps\":[\"look_at|fire pit\"],\"confidence\":0.98}"}
+{"input": "shoot a picture real quick", "output": "{\"steps\":[\"photo\"],\"confidence\":0.89}"}
+{"input": "launch, then fly right 10 meters and then keep up with the person in the red jacket", "output": "{\"steps\":[\"takeoff\",\"fly_to|right|10\",\"follow|person in the red jacket\"],\"confidence\":0.93}"}
+{"input": "okay stay put", "output": "{\"steps\":[\"hover\"],\"confidence\":0.83}"}
+{"input": "okay take off next go up 3 meters then take a panorami", "output": "{\"steps\":[\"takeoff\",\"change_altitude|+3\",\"panorama\"],\"confidence\":0.84}"}
+{"input": "drone fly over to the tree for me", "output": "{\"steps\":[\"fly_to|tree\"],\"confidence\":0.83}"}
+{"input": "nimbus follow that that person then takeoff after that rotate 360", "output": "{\"steps\":[\"follow|that person\",\"takeoff\",\"rotate|right|360\"],\"confidence\":0.94}"}
+{"input": "uh go over to that bench, and drop 1.5 meters next spin up and take off then focus on the grill", "output": "{\"steps\":[\"fly_to|bench\",\"change_altitude|-1.5\",\"takeoff\",\"look_at|grill\"],\"confidence\":0.89}"}
+{"input": "track the me", "output": "{\"steps\":[\"follow|me\"],\"confidence\":0.95}"}
+{"input": "hey drone fly forward 5 meters", "output": "{\"steps\":[\"fly_to|forward|5\"],\"confidence\":0.84}"}
+{"input": "find the golden retriever and photograph it now", "output": "{\"steps\":[\"fly_to|golden retriever\",\"photo\"],\"confidence\":0.96}"}
+{"input": "take a picture of me uh", "output": "{\"steps\":[\"selfie\"],\"confidence\":0.95}"}
+{"input": "hey drone cancee", "output": "{\"steps\":[\"abort\"],\"confidence\":0.84}"}
+{"input": "take a pictuue of the bridge", "output": "{\"steps\":[\"fly_to|bridge\",\"photo\"],\"confidence\":0.89}"}
+{"input": "selfie after that follow that person in the red jacket for 3 seconds after that drop 2 feet", "output": "{\"steps\":[\"selfie\",\"follow|person in the red jacket|3\",\"change_altitude|-0.6\"],\"confidence\":0.86}"}
+{"input": "face the other way and then orbit the red tent once", "output": "{\"steps\":[\"rotate|right|180\",\"orbit|red tent|1\"],\"confidence\":0.9}"}
+{"input": "follow the that person, then move right 2 feet and then orbit the dog", "output": "{\"steps\":[\"follow|that person\",\"fly_to|right|0.6\",\"orbit|dog\"],\"confidence\":0.94}"}
+{"input": "snap a photo of the parking lot eow", "output": "{\"steps\":[\"fly_to|parking lot\",\"photo\"],\"confidence\":0.88}"}
+{"input": "follow the dog, then set down", "output": "{\"steps\":[\"follow|dog\",\"land\"],\"confidence\":0.83}"}
+{"input": "follow the golden retriever for 5 seconds", "output": "{\"steps\":[\"follow|golden retriever|5\"],\"confidence\":0.86}"}
+{"input": "find the parking lot and photograph it", "output": "{\"steps\":[\"fly_to|parking lot\",\"photo\"],\"confidence\":0.95}"}
+{"input": "nimbus go behind that bike, then orbit the yellow backpack then capture a panorama", "output": "{\"steps\":[\"fly_to|bike\",\"orbit|yellow backpack\",\"panorama\"],\"confidence\":0.84}"}
+{"input": "turn left 180 degrees", "output": "{\"steps\":[\"rotate|left|180\"],\"confidence\":0.92}"}
+{"input": "uh take a pana rama uh", "output": "{\"steps\":[\"panorama\"],\"confidence\":0.88}"}
+{"input": "fly around the cooler 2 times", "output": "{\"steps\":[\"orbit|cooler|2\"],\"confidence\":0.88}"}
+{"input": "nimbus fly around the bridge 2 times then tail the the skateboarder then descend 5 feet", "output": "{\"steps\":[\"orbit|bridge|2\",\"follow|the skateboarder\",\"change_altitude|-1.5\"],\"confidence\":0.88}"}
+{"input": "turn left now", "output": "{\"steps\":[\"rotate|left\"],\"confidence\":0.84}"}
+{"input": "rotate 180 degrees to the left", "output": "{\"steps\":[\"rotate|left|180\"],\"confidence\":0.96}"}
+{"input": "rotate left and hold for 2 seconds and then focas on da blue tent", "output": "{\"steps\":[\"rotate|left\",\"hover|2\",\"look_at|blue tent\"],\"confidence\":0.85}"}
+{"input": "nimbus orbit the orange cone next take a pano uh", "output": "{\"steps\":[\"orbit|orange cone\",\"panorama\"],\"confidence\":0.98}"}
+{"input": "hey fly in circles around the canopy, then forget it", "output": "{\"steps\":[\"orbit|canopy\",\"abort\"],\"confidence\":0.95}"}
+{"input": "drone orbit the fence once after that nudge forward after that come back to me", "output": "{\"steps\":[\"orbit|fence|1\",\"fly_to|forward\",\"return\"],\"confidence\":0.95}"}
+{"input": "stay with the group walking, and snap a pic and come home", "output": "{\"steps\":[\"follow|group walking\",\"photo\",\"return\"],\"confidence\":0.87}"}
+{"input": "good job", "output": "{\"steps\":[\"say|Thanks. What's next?\"],\"confidence\":0.55}"}
+{"input": "get me a picture of that people at the picnic table real ouick", "output": "{\"steps\":[\"fly_to|people at the picnic table\",\"photo\"],\"confidence\":0.91}"}
+{"input": "please look over at the kids on the playground", "output": "{\"steps\":[\"look_at|kids on the playground\"],\"confidence\":0.84}"}
+{"input": "go through the swing set now", "output": "{\"steps\":[\"fly_to|swing set\"],\"confidence\":0.85}"}
+{"input": "orbit the cooler once", "output": "{\"steps\":[\"orbit|cooler|1\"],\"confidence\":0.84}"}
+{"input": "um move toward the fire pit and focus on the crowd now", "output": "{\"steps\":[\"fly_to|fire pit\",\"look_at|crowd\"],\"confidence\":0.89}"}
+{"input": "take off next head to the boulder and take a photo", "output": "{\"steps\":[\"takeoff\",\"fly_to|boulder\",\"photo\"],\"confidence\":0.83}"}
+{"input": "come eack to me", "output": "{\"steps\":[\"return\"],\"confidence\":0.82}"}
+{"input": "fly over to the volleyball net", "output": "{\"steps\":[\"fly_to|volleyball net\"],\"confidence\":0.9}"}
+{"input": "snap a photo of the cooler", "output": "{\"steps\":[\"fly_to|cooler\",\"photo\"],\"confidence\":0.95}"}
+{"input": "bring it down and land please", "output": "{\"steps\":[\"land\"],\"confidence\":0.93}"}
+{"input": "yaw right 120", "output": "{\"steps\":[\"rotate|right|120\"],\"confidence\":0.96}"}
+{"input": "look over at the person in the red jacket and then go down 5 feet after that fly above the gate", "output": "{\"steps\":[\"look_at|person in the red jacket\",\"change_altitude|-1.5\",\"fly_to|gate\"],\"confidence\":0.99}"}
+{"input": "hey capture a foto", "output": "{\"steps\":[\"photo\"],\"confidence\":0.84}"}
+{"input": "spin 270 degrees right real quick", "output": "{\"steps\":[\"rotate|right|270\"],\"confidence\":0.89}"}
+{"input": "follow the bike, and take a photo, and lower by 2 meters", "output": "{\"steps\":[\"follow|bike\",\"photo\",\"change_altitude|-2\"],\"confidence\":0.83}"}
+{"input": "fly forward and then spin 30 degrees left then snap a photo then fly left real quick", "output": "{\"steps\":[\"fly_to|forward\",\"rotate|left|30\",\"photo\",\"fly_to|left\"],\"confidence\":0.97}"}
+{"input": "orbit the golden retriever, and then take a panorama, then and come back", "output": "{\"steps\":[\"orbit|golden retriever\",\"panorama\",\"return\"],\"confidence\":0.84}"}
+{"input": "hey drone tail the person in the red jacket then stay put", "output": "{\"steps\":[\"follow|person in the red jacket\",\"hover\"],\"confidence\":0.99}"}
+{"input": "go through the oak tree", "output": "{\"steps\":[\"fly_to|oak tree\"],\"confidence\":0.96}"}
+{"input": "spin up and take off, and take the shot, then track the guy in the blue shirt for 10 seconds thanks", "output": "{\"steps\":[\"takeoff\",\"photo\",\"follow|guy in the blue shirt|10\"],\"confidence\":0.98}"}
+{"input": "fly to the red trash can next take a picture, tuen come back and land thanks", "output": "{\"steps\":[\"fly_to|red trash can\",\"photo\",\"return\",\"land\"],\"confidence\":0.9}"}
+{"input": "please go left 2 meters", "output": "{\"steps\":[\"fly_to|left|2\"],\"confidence\":0.92}"}
+{"input": "nimbus fly under the flower bed", "output": "{\"steps\":[\"fly_to|flower bed\"],\"confidence\":0.92}"}
+{"input": "focus on the fire pit next get a shot of me after that move forward 5 feet and then cancel", "output": "{\"steps\":[\"look_at|fire pit\",\"selfie\",\"fly_to|forward|1.5\",\"abort\"],\"confidence\":0.86}"}
+{"input": "tail the runner", "output": "{\"steps\":[\"follow|runner\"],\"confidence\":0.96}"}
+{"input": "snap a photo, and hold station and then drone stop", "output": "{\"steps\":[\"photo\",\"hover\",\"abort\"],\"confidence\":0.94}"}
+{"input": "go right 10 meters", "output": "{\"steps\":[\"fly_to|right|10\"],\"confidence\":0.9}"}
+{"input": "hey drone go forward 1 foot, then focus on the lamp post thanks", "output": "{\"steps\":[\"fly_to|forward|0.3\",\"look_at|lamp post\"],\"confidence\":0.91}"}
+{"input": "turn to the right after that go up", "output": "{\"steps\":[\"rotate|right\",\"change_altitude\"],\"confidence\":0.98}"}
+{"input": "fly to the volleyball net and take a picture", "output": "{\"steps\":[\"fly_to|volleyball net\",\"photo\"],\"confidence\":0.88}"}
+{"input": "alright find the golden retriever ind photograph it", "output": "{\"steps\":[\"fly_to|golden retriever\",\"photo\"],\"confidence\":0.84}"}
+{"input": "move left 2 meters", "output": "{\"steps\":[\"fly_to|left|2\"],\"confidence\":0.82}"}
 {"input": "drone get me a picture of that gazebo uh", "output": "{\"steps\":[\"fly_to|gazebo\",\"photo\"],\"confidence\":0.98}"}
-{"input": "do a 360 panorama now", "output": "{\"steps\":[\"panorama\"],\"confidence\":0.95}"}
-{"input": "spin 180 degrees right", "output": "{\"steps\":[\"rotate|right|180\"],\"confidence\":0.97}"}
-{"input": "hey drone fly above the park bench after that take a picture", "output": "{\"steps\":[\"fly_above|park bench\",\"photo\"],\"confidence\":0.91}"}
-{"input": "turn right 45 degrees, and hold station please", "output": "{\"steps\":[\"rotate|right|45\",\"hover\"],\"confidence\":0.93}"}
-{"input": "turn right 90 degrees, and rise 2 meters next position yourself over the doorway next turn left 45 degrees", "output": "{\"steps\":[\"rotate|right|90\",\"fly_higher|2\",\"fly_above|doorway\",\"rotate|left|45\"],\"confidence\":0.87}"}
-{"input": "do 2 laps around the white car and then do a full spin", "output": "{\"steps\":[\"orbit|white car|2\",\"rotate|right|360\"],\"confidence\":0.92}"}
-{"input": "hover above the white car then gain some height, and hover above the statae and gain 3 meters of altitude real quick", "output": "{\"steps\":[\"fly_above|white car\",\"fly_higher\",\"fly_above|statue\",\"fly_higher|3\"],\"confidence\":0.96}"}
-{"input": "nimbus look over at the lamp post then do 2 laps around the yellow backpack next photo of me please", "output": "{\"steps\":[\"look_at|lamp post\",\"orbit|yellow backpack|2\",\"selfie\"],\"confidence\":0.87}"}
-{"input": "spin 30 degrees right then point at that soccer goal", "output": "{\"steps\":[\"rotate|right|30\",\"look_at|soccer goal\"],\"confidence\":0.87}"}
-{"input": "okay circle the soccer goal and fly to the white van", "output": "{\"steps\":[\"orbit|soccer goal\",\"fly_to|white van\"],\"confidence\":0.85}"}
-{"input": "drone point at that cooler after that keep up with the person waving", "output": "{\"steps\":[\"look_at|cooler\",\"follow|person waving\"],\"confidence\":0.96}"}
-{"input": "fly to the picnic table and go up and orbit the blue tent, and fly over to the lamp post", "output": "{\"steps\":[\"fly_to|picnic table\",\"fly_higher\",\"orbit|blue tent\",\"fly_to|lamp post\"],\"confidence\":0.83}"}
-{"input": "fly above the canopy then take a picture and then come back and land", "output": "{\"steps\":[\"fly_above|canopy\",\"photo\",\"return\",\"land\"],\"confidence\":0.97}"}
-{"input": "take off and head to the yellow backpack", "output": "{\"steps\":[\"takeoff\",\"fly_to|yellow backpack\"],\"confidence\":0.85}"}
-{"input": "nimbus yaw left", "output": "{\"steps\":[\"rotate|left\"],\"confidence\":0.91}"}
-{"input": "take a selfie, and go to the bush after that lower by 2 meters", "output": "{\"steps\":[\"selfie\",\"fly_to|bush\",\"fly_lower|2\"],\"confidence\":0.84}"}
-{"input": "look at the bouldor", "output": "{\"steps\":[\"look_at|boulder\"],\"confidence\":0.92}"}
-{"input": "go eirectly over the doorway", "output": "{\"steps\":[\"fly_above|doorway\"],\"confidence\":0.87}"}
-{"input": "do a 360 panorama after that descend 3 meters next orbit the tree once real quick", "output": "{\"steps\":[\"panorama\",\"fly_lower|3\",\"orbit|tree|1\"],\"confidence\":0.89}"}
-{"input": "find the lamp post and photograph it", "output": "{\"steps\":[\"fly_to|lamp post\",\"photo\"],\"confidence\":0.9}"}
-{"input": "go lower and just hoover after that abort", "output": "{\"steps\":[\"fly_lower\",\"hover\",\"abort\"],\"confidence\":0.9}"}
-{"input": "yaw right 180 uh", "output": "{\"steps\":[\"rotate|right|180\"],\"confidence\":0.83}"}
-{"input": "fly to the group of people", "output": "{\"steps\":[\"fly_to|group of people\"],\"confidence\":0.92}"}
-{"input": "okay fly around the blanket on the grass", "output": "{\"steps\":[\"orbit|blanket on the grass\"],\"confidence\":0.93}"}
-{"input": "follow the bike for 8 seconds aad snap a photo", "output": "{\"steps\":[\"follow|bike|8\",\"photo\"],\"confidence\":0.93}"}
-{"input": "drone land now", "output": "{\"steps\":[\"land\"],\"confidence\":0.82}"}
-{"input": "hey get some altitude real quick", "output": "{\"steps\":[\"fly_higher\"],\"confidence\":0.96}"}
-{"input": "take off, and head to the person waving and take a photo for me", "output": "{\"steps\":[\"takeoff\",\"fly_to|person waving\",\"photo\"],\"confidence\":0.97}"}
-{"input": "do a lap around the picnic table then fly over to the canopy then go up and then tail the kid on the scooter", "output": "{\"steps\":[\"orbit|picnic table|1\",\"fly_to|canopy\",\"fly_higher\",\"follow|kid on the scooter\"],\"confidence\":0.93}"}
-{"input": "drone, circle the food truck, then then take a panorama, then and come back", "output": "{\"steps\":[\"orbit|food truck\",\"panorama\",\"return\"],\"confidence\":0.87}"}
-{"input": "alright find the people at the picnic table and photograph it thanks", "output": "{\"steps\":[\"fly_to|people at the picnic table\",\"photo\"],\"confidence\":0.86}"}
-{"input": "fly around the person waving", "output": "{\"steps\":[\"orbit|person waving\"],\"confidence\":0.86}"}
-{"input": "hold for 2 seconds next fly over the food truck and stay there, then look at the people at the picnic table", "output": "{\"steps\":[\"hover|2\",\"fly_above|food truck\",\"look_at|people at the picnic table\"],\"confidence\":0.86}"}
-{"input": "fly in circles aeound the building entrance and go directly over the big rock now", "output": "{\"steps\":[\"orbit|building entrance\",\"fly_above|big rock\"],\"confidence\":0.84}"}
-{"input": "gain 1 meters of altitude and point at that doorway thanks", "output": "{\"steps\":[\"fly_higher|1\",\"look_at|doorway\"],\"confidence\":0.95}"}
-{"input": "hey drone circle the kids on the playground once, then spin up and take off and then track the golden retriever for 5 seconds", "output": "{\"steps\":[\"orbit|kids on the playground|1\",\"takeoff\",\"follow|golden retriever|5\"],\"confidence\":0.87}"}
-{"input": "photo of me please, and come back", "output": "{\"steps\":[\"selfie\",\"return\"],\"confidence\":0.97}"}
-{"input": "wait 8 seconds, then fly towards that person in the red jacket after that look over at the red tent", "output": "{\"steps\":[\"hover|8\",\"fly_to|person in the red jacket\",\"look_at|red tent\"],\"confidence\":0.84}"}
-{"input": "alright snap a photo of the lamp post thanks", "output": "{\"steps\":[\"fly_to|lamp post\",\"photo\"],\"confidence\":0.9}"}
-{"input": "go to the trail then take a picture, then do a 360 after that uome back", "output": "{\"steps\":[\"fly_to|trail\",\"photo\",\"rotate|right|360\",\"return\"],\"confidence\":0.87}"}
-{"input": "please face the other way", "output": "{\"steps\":[\"rotate|right|180\"],\"confidence\":0.93}"}
-{"input": "circle around that trash can, then get lower, then track the runner after that go directly over the pond", "output": "{\"steps\":[\"orbit|trash can\",\"fly_lower\",\"follow|runner\",\"fly_above|pond\"],\"confidence\":0.95}"}
-{"input": "move toward the dog, and stay with the group walking", "output": "{\"steps\":[\"fly_to|dog\",\"follow|group walking\"],\"confidence\":0.96}"}
-{"input": "nimbus gain some height and up you go then take a selfie", "output": "{\"steps\":[\"fly_higher\",\"takeoff\",\"selfie\"],\"confidence\":0.86}"}
-{"input": "snap a pic, and follow the white car for 3 seconds after that face the other way", "output": "{\"steps\":[\"photo\",\"follow|white car|3\",\"rotate|right|180\"],\"confidence\":0.93}"}
-{"input": "take off after that head to the gate, then take a photo", "output": "{\"steps\":[\"takeoff\",\"fly_to|gate\",\"photo\"],\"confidence\":0.9}"}
-{"input": "fly to the food truck and take a picture", "output": "{\"steps\":[\"fly_to|food truck\",\"photo\"],\"confidence\":0.95}"}
-{"input": "uh fly over to the bench, and hover, then fly around the doorway once for me", "output": "{\"steps\":[\"fly_to|bench\",\"hover\",\"orbit|doorway|1\"],\"confidence\":0.84}"}
-{"input": "stay put for 10 seconds and lower by 3 meters", "output": "{\"steps\":[\"hover|10\",\"fly_lower|3\"],\"confidence\":0.91}"}
-{"input": "take a panorama now", "output": "{\"steps\":[\"panorama\"],\"confidence\":0.87}"}
-{"input": "spin 360 degrees right now", "output": "{\"steps\":[\"rotate|right|360\"],\"confidence\":0.99}"}
-{"input": "move toward the person in the red jacket", "output": "{\"steps\":[\"fly_to|person in the red jacket\"],\"confidence\":0.94}"}
+{"input": "hover for 10 seconds and fly left for me", "output": "{\"steps\":[\"hover|10\",\"fly_to|left\"],\"confidence\":0.88}"}
+{"input": "shoot a picture and then get to the dog", "output": "{\"steps\":[\"photo\",\"fly_to|dog\"],\"confidence\":0.97}"}
+{"input": "take a selfae", "output": "{\"steps\":[\"selfie\"],\"confidence\":0.88}"}
+{"input": "go through the big rock now", "output": "{\"steps\":[\"fly_to|big rock\"],\"confidence\":0.98}"}
+{"input": "please go find the blanket on the grass ind take a picture", "output": "{\"steps\":[\"fly_to|blanket on the grass\",\"photo\"],\"confidence\":0.89}"}
+{"input": "nimbus shoot a picture next fly right", "output": "{\"steps\":[\"photo\",\"fly_to|right\"],\"confidence\":0.93}"}
+{"input": "please point the camera at the umbrella", "output": "{\"steps\":[\"look_at|umbrella\"],\"confidence\":0.94}"}
+{"input": "hang there for 2 seconds, and watch the stage and circoe the fire pit twice", "output": "{\"steps\":[\"hover|2\",\"look_at|stage\",\"orbit|fire pit|2\"],\"confidence\":0.87}"}
+{"input": "fly forward thanks", "output": "{\"steps\":[\"fly_to|forward\"],\"confidence\":0.83}"}
+{"input": "please do a full spin", "output": "{\"steps\":[\"rotate|right|360\"],\"confidence\":0.9}"}
+{"input": "do 2 laps around the flagpole", "output": "{\"steps\":[\"orbit|flagpole|2\"],\"confidence\":0.94}"}
+{"input": "hold station after that take the shot, then fly next to the boulder next go higher thanks", "output": "{\"steps\":[\"hover\",\"photo\",\"fly_to|boulder\",\"change_altitude\"],\"confidence\":0.94}"}
+{"input": "drone shoot a 360 and fly in circles around the bush then lower by 2 meters", "output": "{\"steps\":[\"panorama\",\"orbit|bush\",\"change_altitude|-2\"],\"confidence\":0.85}"}
+{"input": "nimbus go find the dog", "output": "{\"steps\":[\"fly_to|dog\"],\"confidence\":0.95}"}
+{"input": "go higher after that fly next to the trail, and point the camera at the pine tree", "output": "{\"steps\":[\"change_altitude\",\"fly_to|trail\",\"look_at|pine tree\"],\"confidence\":0.87}"}
+{"input": "take off, then fly to the yellow backpack then take a photo", "output": "{\"steps\":[\"takeoff\",\"fly_to|yellow backpack\",\"photo\"],\"confidence\":0.93}"}
+{"input": "okay capture a photo", "output": "{\"steps\":[\"photo\"],\"confidence\":0.89}"}
+{"input": "get me a picture of that bike now", "output": "{\"steps\":[\"fly_to|bike\",\"photo\"],\"confidence\":0.98}"}
+{"input": "descend 5 meters then fly forward 3 meters", "output": "{\"steps\":[\"change_altitude|-5\",\"fly_to|forward|3\"],\"confidence\":0.92}"}
+{"input": "nimbus up you go then hold position then spin 90 degrees right next stay with the dog", "output": "{\"steps\":[\"takeoff\",\"hover\",\"rotate|right|90\",\"follow|dog\"],\"confidence\":0.87}"}
+{"input": "photograph the bench", "output": "{\"steps\":[\"fly_to|bench\",\"photo\"],\"confidence\":0.92}"}
+{"input": "fly to the kids on the playground and take a picture", "output": "{\"steps\":[\"fly_to|kids on the playground\",\"photo\"],\"confidence\":0.93}"}
+{"input": "move right 1 meters, then grab a photo then hold position", "output": "{\"steps\":[\"fly_to|right|1\",\"photo\",\"hover\"],\"confidence\":0.92}"}
+{"input": "fly in circles around the picnic table", "output": "{\"steps\":[\"orbit|picnic table\"],\"confidence\":0.94}"}
+{"input": "watch the grill, then rotate right 90 degrees", "output": "{\"steps\":[\"look_at|grill\",\"rotate|right|90\"],\"confidence\":0.92}"}
+{"input": "fly under the pond next fly in circles around the pond, then move left 5 feet", "output": "{\"steps\":[\"fly_to|pond\",\"orbit|pond\",\"fly_to|left|1.5\"],\"confidence\":0.86}"}
+{"input": "snap a pic and ascend 2 meters", "output": "{\"steps\":[\"photo\",\"change_altitude|+2\"],\"confidence\":0.89}"}
+{"input": "okay fly to the kids on the playground and take a picture", "output": "{\"steps\":[\"fly_to|kids on the playground\",\"photo\"],\"confidence\":0.91}"}
+{"input": "get to the big roik please", "output": "{\"steps\":[\"fly_to|big rock\"],\"confidence\":0.98}"}
+{"input": "drone, move forward 5 meters then lower by 2 meters and then stop now", "output": "{\"steps\":[\"fly_to|forward|5\",\"change_altitude|-2\",\"abort\"],\"confidence\":0.92}"}
+{"input": "nudge left after that point at that red tent and hold position and do a spin", "output": "{\"steps\":[\"fly_to|left\",\"look_at|red tent\",\"hover\",\"rotate|right|360\"],\"confidence\":0.94}"}
+{"input": "take a selfie of me now", "output": "{\"steps\":[\"selfie\"],\"confidence\":0.85}"}
+{"input": "fly to the gate and take a picture", "output": "{\"steps\":[\"fly_to|gate\",\"photo\"],\"confidence\":0.98}"}
+{"input": "keep up with the that person then do 2 laps around the red tent for me", "output": "{\"steps\":[\"follow|that person\",\"orbit|red tent|2\"],\"confidence\":0.84}"}
+{"input": "get in the air and then move right", "output": "{\"steps\":[\"takeoff\",\"fly_to|right\"],\"confidence\":0.91}"}
+{"input": "nimbus aim at the silver suv", "output": "{\"steps\":[\"look_at|silver suv\"],\"confidence\":0.96}"}
+{"input": "take a selfie after that then da a panorama", "output": "{\"steps\":[\"selfie\",\"panorama\"],\"confidence\":0.98}"}
+{"input": "orbit the red trash can then then take a panorama", "output": "{\"steps\":[\"orbit|red trash can\",\"panorama\"],\"confidence\":0.85}"}
+{"input": "nimbus selfie, and descend", "output": "{\"steps\":[\"selfie\",\"change_altitude|-0.5\"],\"confidence\":0.9}"}
+{"input": "um touch down", "output": "{\"steps\":[\"land\"],\"confidence\":0.83}"}
+{"input": "go to the canopy and take a photo uh", "output": "{\"steps\":[\"fly_to|canopy\",\"photo\"],\"confidence\":0.99}"}
+{"input": "stay on the person waving for 15 seconds uh", "output": "{\"steps\":[\"follow|person waving|15\"],\"confidence\":0.87}"}
+{"input": "nimbus orbit the crowd", "output": "{\"steps\":[\"orbit|crowd\"],\"confidence\":0.89}"}
+{"input": "yaw left then return", "output": "{\"steps\":[\"rotate|left\",\"return\"],\"confidence\":0.9}"}
+{"input": "keep the camera on the food truck", "output": "{\"steps\":[\"look_at|food truck\"],\"confidence\":0.94}"}
+{"input": "take a picture of the fence", "output": "{\"steps\":[\"fly_to|fence\",\"photo\"],\"confidence\":0.9}"}
+{"input": "fly to the park bench next take a picture after that spin around after that return", "output": "{\"steps\":[\"fly_to|park bench\",\"photo\",\"rotate|right|360\",\"return\"],\"confidence\":0.87}"}
+{"input": "stay on the that person for 60 seconds after that turn to the right then take a pano", "output": "{\"steps\":[\"follow|that person|60\",\"rotate|right\",\"panorama\"],\"confidence\":0.85}"}
+{"input": "go to the tree, then take a picture, and do a 360 after that return", "output": "{\"steps\":[\"fly_to|tree\",\"photo\",\"rotate|right|360\",\"return\"],\"confidence\":0.82}"}
+{"input": "um get in the aer", "output": "{\"steps\":[\"takeoff\"],\"confidence\":0.97}"}
+{"input": "circle the picnic table twice, and shoot a picture and find the people at the picnic table and then turn left", "output": "{\"steps\":[\"orbit|picnic table|2\",\"photo\",\"fly_to|people at the picnic table\",\"rotate|left\"],\"confidence\":0.88}"}
+{"input": "take off and then go up 3 meters next take a panorama", "output": "{\"steps\":[\"takeoff\",\"change_altitude|+3\",\"panorama\"],\"confidence\":0.97}"}
+{"input": "find tha park bench and photograph it now", "output": "{\"steps\":[\"fly_to|park bench\",\"photo\"],\"confidence\":0.88}"}
+{"input": "turn to the left then approach the red tent next spin right a bit and grab a photo now", "output": "{\"steps\":[\"rotate|left\",\"fly_to|red tent\",\"rotate|right\",\"photo\"],\"confidence\":0.98}"}
+{"input": "um just hover thanks", "output": "{\"steps\":[\"hover\"],\"confidence\":0.88}"}
+{"input": "fly higher real quick", "output": "{\"steps\":[\"change_altitude\"],\"confidence\":0.97}"}
+{"input": "hey wait stop oow", "output": "{\"steps\":[\"abort\"],\"confidence\":0.87}"}
+{"input": "nimbus spin up and taku off then circle the boulder, and look over at the trail then orbit the motorcycle once", "output": "{\"steps\":[\"takeoff\",\"orbit|boulder\",\"look_at|trail\",\"orbit|motorcycle|1\"],\"confidence\":0.84}"}
+{"input": "nimbus get me a picture of that grill", "output": "{\"steps\":[\"fly_to|grill\",\"photo\"],\"confidence\":0.88}"}
+{"input": "okay fly to the person in the red jacket and take a picture", "output": "{\"steps\":[\"fly_to|person in the red jacket\",\"photo\"],\"confidence\":0.84}"}
+{"input": "point at that flower bed", "output": "{\"steps\":[\"look_at|flower bed\"],\"confidence\":0.91}"}
+{"input": "move right thanks", "output": "{\"steps\":[\"fly_to|right\"],\"confidence\":0.93}"}
+{"input": "take a pic thanks", "output": "{\"steps\":[\"photo\"],\"confidence\":0.95}"}
+{"input": "don't move after that do a full panorama then launch after that shoot a picture", "output": "{\"steps\":[\"hover\",\"panorama\",\"takeoff\",\"photo\"],\"confidence\":0.91}"}
+{"input": "gain some height next circle the stage three times and capture a photo", "output": "{\"steps\":[\"change_altitude\",\"orbit|stage|3\",\"photo\"],\"confidence\":0.96}"}
+{"input": "stay put for 60 seconds", "output": "{\"steps\":[\"hover|60\"],\"confidence\":0.91}"}
+{"input": "um launch after that return home", "output": "{\"steps\":[\"takeoff\",\"return\"],\"confidence\":0.84}"}
+{"input": "fly to the basketball hoop and take a picture", "output": "{\"steps\":[\"fly_to|basketball hoop\",\"photo\"],\"confidence\":0.88}"}
+{"input": "descend 3 feet", "output": "{\"steps\":[\"change_altitude|-0.9\"],\"confidence\":0.89}"}
+{"input": "hold it after that take a photo, then come back to me", "output": "{\"steps\":[\"hover\",\"photo\",\"return\"],\"confidence\":0.99}"}
+{"input": "take off then go up 3 meters", "output": "{\"steps\":[\"takeoff\",\"change_altitude|+3\"],\"confidence\":0.96}"}
+{"input": "point the camera at the blanket on the grass", "output": "{\"steps\":[\"look_at|blanket on the grass\"],\"confidence\":0.86}"}
+{"input": "aim at the golden retriever", "output": "{\"steps\":[\"look_at|golden retriever\"],\"confidence\":0.92}"}
+{"input": "photograph the stop sign please", "output": "{\"steps\":[\"fly_to|stop sign\",\"photo\"],\"confidence\":0.93}"}
+{"input": "follow the group walking for 60 seconds and then go higher", "output": "{\"steps\":[\"follow|group walking|60\",\"change_altitude\"],\"confidence\":0.9}"}
+{"input": "go behind that motorcycle and take a picture of me after that abort mission", "output": "{\"steps\":[\"fly_to|motorcycle\",\"selfie\",\"abort\"],\"confidence\":0.83}"}
+{"input": "uh fly next to the fence", "output": "{\"steps\":[\"fly_to|fence\"],\"confidence\":0.99}"}
+{"input": "fly to the building entrance, then take a picture, and spin around next return uh", "output": "{\"steps\":[\"fly_to|building entrance\",\"photo\",\"rotate|right|360\",\"return\"],\"confidence\":0.84}"}
+{"input": "photoiraph the silver suv", "output": "{\"steps\":[\"fly_to|silver suv\",\"photo\"],\"confidence\":0.92}"}
+{"input": "hold for 60 seconds, and go behind that picnic table", "output": "{\"steps\":[\"hover|60\",\"fly_to|picnic table\"],\"confidence\":0.9}"}
+{"input": "nimbus get to the hill, and yaw right 270", "output": "{\"steps\":[\"fly_to|hill\",\"rotate|right|270\"],\"confidence\":0.94}"}
+{"input": "photograph the fountain", "output": "{\"steps\":[\"fly_to|fountain\",\"photo\"],\"confidence\":0.9}"}
+{"input": "go up now", "output": "{\"steps\":[\"change_altitude\"],\"confidence\":0.91}"}
+{"input": "uh rotate right", "output": "{\"steps\":[\"rotate|right\"],\"confidence\":0.86}"}
+{"input": "snap a foto", "output": "{\"steps\":[\"photo\"],\"confidence\":0.96}"}
+{"input": "fly towards that basketball hoop after that capture a photo and then go over to that pine tree", "output": "{\"steps\":[\"fly_to|basketball hoop\",\"photo\",\"fly_to|pine tree\"],\"confidence\":0.87}"}
+{"input": "get me a picture of that golden retriever", "output": "{\"steps\":[\"fly_to|golden retriever\",\"photo\"],\"confidence\":0.96}"}
+{"input": "aim at the blue tent thanks", "output": "{\"steps\":[\"look_at|blue tent\"],\"confidence\":0.82}"}
+{"input": "drone orbit the trail three times real quick", "output": "{\"steps\":[\"orbit|trail|3\"],\"confidence\":0.92}"}
+{"input": "hey drone take off next fly to the swing set and take a photo please", "output": "{\"steps\":[\"takeoff\",\"fly_to|swing set\",\"photo\"],\"confidence\":0.85}"}
+{"input": "um go down after that hold it, and circle the kius on the playground", "output": "{\"steps\":[\"change_altitude|-0.5\",\"hover\",\"orbit|kids on the playground\"],\"confidence\":0.95}"}
+{"input": "nimbus follow the that person for 60 seconds then hold position then land the drone", "output": "{\"steps\":[\"follow|that person|60\",\"hover\",\"land\"],\"confidence\":0.91}"}
+{"input": "fly left 10 meters", "output": "{\"steps\":[\"fly_to|left|10\"],\"confidence\":0.95}"}
+{"input": "watch the guy in the blue shirt and hover 10 seconds and then fly under the red tent", "output": "{\"steps\":[\"look_at|guy in the blue shirt\",\"hover|10\",\"fly_to|red tent\"],\"confidence\":0.96}"}
+{"input": "alright approach the basketball hoop, and tail the white car", "output": "{\"steps\":[\"fly_to|basketball hoop\",\"follow|white car\"],\"confidence\":0.98}"}
+{"input": "go to the basketball hoop then take a picture and do a 360 after that come back", "output": "{\"steps\":[\"fly_to|basketball hoop\",\"photo\",\"rotate|right|360\",\"return\"],\"confidence\":0.88}"}
+{"input": "take a photo next get a shot of me, then find the tree next spin 360 degrees right", "output": "{\"steps\":[\"photo\",\"selfie\",\"fly_to|tree\",\"rotate|right|360\"],\"confidence\":0.94}"}
+{"input": "circle around that stop sign then spin all the way around please", "output": "{\"steps\":[\"orbit|stop sign\",\"rotate|right|360\"],\"confidence\":0.91}"}
+{"input": "get a shot of me, then head over to the park bench, and abort mission", "output": "{\"steps\":[\"selfie\",\"fly_to|park bench\",\"abort\"],\"confidence\":0.93}"}
+{"input": "tail the jogger and then move toward the pine tree", "output": "{\"steps\":[\"follow|jogger\",\"fly_to|pine tree\"],\"confidence\":0.95}"}
+{"input": "take off and fly to the grill for me", "output": "{\"steps\":[\"takeoff\",\"fly_to|grill\"],\"confidence\":0.96}"}
+{"input": "track the white car then head over to the gate real quick", "output": "{\"steps\":[\"follow|white car\",\"fly_to|gate\"],\"confidence\":0.84}"}
+{"input": "uh fly to the trail and take a picture", "output": "{\"steps\":[\"fly_to|trail\",\"photo\"],\"confidence\":0.98}"}
+{"input": "uh fly to the fence and take a picture, and come back and land thanks", "output": "{\"steps\":[\"fly_to|fence\",\"photo\",\"return\",\"land\"],\"confidence\":0.88}"}
+{"input": "launch next turn right", "output": "{\"steps\":[\"takeoff\",\"rotate|right\"],\"confidence\":0.85}"}
+{"input": "look over at the gazebo", "output": "{\"steps\":[\"look_at|gazebo\"],\"confidence\":0.83}"}
+{"input": "move backward 10 m", "output": "{\"steps\":[\"fly_to|back|10\"],\"confidence\":0.98}"}
+{"input": "up a bit and then stay put for 8 seconds please", "output": "{\"steps\":[\"change_altitude\",\"hover|8\"],\"confidence\":0.89}"}
+{"input": "find the gate and photograph it", "output": "{\"steps\":[\"fly_to|gate\",\"photo\"],\"confidence\":0.97}"}
+{"input": "take a selfie", "output": "{\"steps\":[\"selfie\"],\"confidence\":0.88}"}
+{"input": "point at that golden retriever next panorama shot please", "output": "{\"steps\":[\"look_at|golden retriever\",\"panorama\"],\"confidence\":0.84}"}
+{"input": "fly backward 10 feet, and fly in circles around the doorway after that nudge left", "output": "{\"steps\":[\"fly_to|back|3\",\"orbit|doorway\",\"fly_to|left\"],\"confidence\":0.84}"}
+{"input": "shoot a 360 and go behind that fire pit", "output": "{\"steps\":[\"panorama\",\"fly_to|fire pit\"],\"confidence\":0.92}"}
+{"input": "track the jogger for 5 seconds, and we're done, land", "output": "{\"steps\":[\"follow|jogger|5\",\"land\"],\"confidence\":0.95}"}
+{"input": "panorama shot thanks", "output": "{\"steps\":[\"panorama\"],\"confidence\":0.97}"}
+{"input": "drone, circle the building entrance", "output": "{\"steps\":[\"orbit|building entrance\"],\"confidence\":0.97}"}
+{"input": "fly to the motorcycle and take a picture", "output": "{\"steps\":[\"fly_to|motorcycle\",\"photo\"],\"confidence\":0.97}"}
+{"input": "okay take a selfie and then do a panorama", "output": "{\"steps\":[\"selfie\",\"panorama\"],\"confidence\":0.83}"}
+{"input": "take off next climb 3 meters, then take a panorama uh", "output": "{\"steps\":[\"takeoff\",\"change_altitude|+3\",\"panorama\"],\"confidence\":0.89}"}
+{"input": "alright fly to the people at the picnic table, then take a picture", "output": "{\"steps\":[\"fly_to|people at the picnic table\",\"photo\"],\"confidence\":0.91}"}
+{"input": "stay on da me for 30 seconds, then take a pano", "output": "{\"steps\":[\"follow|me|30\",\"panorama\"],\"confidence\":0.97}"}
+{"input": "keep the camera on the person in the red jacket thanks", "output": "{\"steps\":[\"look_at|person in the red jacket\"],\"confidence\":0.84}"}
+{"input": "drone fly behind the hill and start flying", "output": "{\"steps\":[\"fly_to|hill\",\"takeoff\"],\"confidence\":0.97}"}
+{"input": "climb 2 meters", "output": "{\"steps\":[\"change_altitude|+2\"],\"confidence\":0.87}"}
+{"input": "get me a picture of that tree", "output": "{\"steps\":[\"fly_to|tree\",\"photo\"],\"confidence\":0.89}"}
+{"input": "get a panorama of this place for me", "output": "{\"steps\":[\"panorama\"],\"confidence\":0.84}"}
+{"input": "start flying for me", "output": "{\"steps\":[\"takeoff\"],\"confidence\":0.89}"}
+{"input": "um take a selfie next then do a paiorama", "output": "{\"steps\":[\"selfie\",\"panorama\"],\"confidence\":0.95}"}
+{"input": "hey drone fly around the statue 2 times", "output": "{\"steps\":[\"orbit|statue|2\"],\"confidence\":0.93}"}
+{"input": "yaw left 360", "output": "{\"steps\":[\"rotate|left|360\"],\"confidence\":0.97}"}
+{"input": "fly above the gazebo", "output": "{\"steps\":[\"fly_to|gazebo\"],\"confidence\":0.97}"}
+{"input": "fly to the group of people and take a picture thanks", "output": "{\"steps\":[\"fly_to|group of people\",\"photo\"],\"confidence\":0.95}"}
+{"input": "um go to the person in the red jacket and take a photo", "output": "{\"steps\":[\"fly_to|person in the red jacket\",\"photo\"],\"confidence\":0.88}"}
+{"input": "point at that golden retriever next go backward 10 meters, and hold for 5 seconds", "output": "{\"steps\":[\"look_at|golden retriever\",\"fly_to|back|10\",\"hover|5\"],\"confidence\":0.9}"}
+{"input": "photograph the grill for me", "output": "{\"steps\":[\"fly_to|grill\",\"photo\"],\"confidence\":0.88}"}
+{"input": "hey drone lower by 3 meters and get back over here", "output": "{\"steps\":[\"change_altitude|-3\",\"return\"],\"confidence\":0.89}"}
+{"input": "takeoff and then get to the pine tree, then take a photo for me", "output": "{\"steps\":[\"takeoff\",\"fly_to|pine tree\",\"photo\"],\"confidence\":0.97}"}
+{"input": "take a picture of the pond", "output": "{\"steps\":[\"fly_to|pond\",\"photo\"],\"confidence\":0.84}"}
+{"input": "ro tate left 45 degrees real quick", "output": "{\"steps\":[\"rotate|left|45\"],\"confidence\":0.83}"}
+{"input": "fly next to the basketball hoop then fly around the gazebo 2 times", "output": "{\"steps\":[\"fly_to|basketball hoop\",\"orbit|gazebo|2\"],\"confidence\":0.87}"}
+{"input": "go find the flagpole and come down a bit then stay with the runner", "output": "{\"steps\":[\"fly_to|flagpole\",\"change_altitude|-0.5\",\"follow|runner\"],\"confidence\":0.9}"}
+{"input": "drone take a picture of me, then capture a panorama", "output": "{\"steps\":[\"selfie\",\"panorama\"],\"confidence\":0.87}"}
+{"input": "stop uh", "output": "{\"steps\":[\"abort\"],\"confidence\":0.87}"}
+{"input": "aim at the pond, and go right 5m", "output": "{\"steps\":[\"look_at|pond\",\"fly_to|right|5\"],\"confidence\":0.83}"}
+{"input": "take a selfie and then do a panorama please", "output": "{\"steps\":[\"selfie\",\"panorama\"],\"confidence\":0.89}"}
+{"input": "okay take off and then go up 3 meters next take a panorama", "output": "{\"steps\":[\"takeoff\",\"change_altitude|+3\",\"panorama\"],\"confidence\":0.83}"}
+{"input": "get behind the white car and hang there for 2 seconds next turn left 120 degrees", "output": "{\"steps\":[\"fly_to|white car\",\"hover|2\",\"rotate|left|120\"],\"confidence\":0.95}"}
+{"input": "hey take a picture of the fence uh", "output": "{\"steps\":[\"fly_to|fence\",\"photo\"],\"confidence\":0.92}"}
+{"input": "shoot a pic for me", "output": "{\"steps\":[\"photo\"],\"confidence\":0.84}"}
+{"input": "photograph the hill", "output": "{\"steps\":[\"fly_to|hill\",\"photo\"],\"confidence\":0.86}"}
+{"input": "get behind the white car", "output": "{\"steps\":[\"fly_to|white car\"],\"confidence\":0.86}"}
+{"input": "fly right 1 meters", "output": "{\"steps\":[\"fly_to|right|1\"],\"confidence\":0.93}"}
+{"input": "fly next to the gazebo", "output": "{\"steps\":[\"fly_to|gazebo\"],\"confidence\":0.87}"}
+{"input": "drone come back to me please", "output": "{\"steps\":[\"return\"],\"confidence\":0.84}"}
+{"input": "okay return", "output": "{\"steps\":[\"return\"],\"confidence\":0.92}"}
+{"input": "rotate 120 degrees to the right and head to the big rock", "output": "{\"steps\":[\"rotate|right|120\",\"fly_to|big rock\"],\"confidence\":0.97}"}
+{"input": "hey drone get back over here", "output": "{\"steps\":[\"return\"],\"confidence\":0.97}"}
+{"input": "um spin up and take off and then go through the umbrella then start flying", "output": "{\"steps\":[\"takeoff\",\"fly_to|umbrella\",\"takeoff\"],\"confidence\":0.93}"}
+{"input": "take a selfie, then stay with the me then return home", "output": "{\"steps\":[\"selfie\",\"follow|me\",\"return\"],\"confidence\":0.92}"}
+{"input": "rotate left, then get close to the flagpole, then spin up and take off", "output": "{\"steps\":[\"rotate|left\",\"fly_to|flagpole\",\"takeoff\"],\"confidence\":0.97}"}
+{"input": "follow that runner for 10 seconds, then fly around the black truck 2 times, then stay on the white car for 3 seconds then lift off", "output": "{\"steps\":[\"follow|runner|10\",\"orbit|black truck|2\",\"follow|white car|3\",\"takeoff\"],\"confidence\":0.96}"}
+{"input": "okay fly behind the guy in the blue shirt next end the flight real quick", "output": "{\"steps\":[\"fly_to|guy in the blue shirt\",\"land\"],\"confidence\":0.85}"}
+{"input": "uh find the people at the picnic table and photograph it", "output": "{\"steps\":[\"fly_to|people at the picnic table\",\"photo\"],\"confidence\":0.86}"}
+{"input": "take off, then head to the red trash can", "output": "{\"steps\":[\"takeoff\",\"fly_to|red trash can\"],\"confidence\":0.94}"}
+{"input": "come back here", "output": "{\"steps\":[\"return\"],\"confidence\":0.86}"}
+{"input": "hey get me a picture of that stage for me", "output": "{\"steps\":[\"fly_to|stage\",\"photo\"],\"confidence\":0.86}"}
+{"input": "rotate righi", "output": "{\"steps\":[\"rotate|right\"],\"confidence\":0.9}"}
+{"input": "follow that dog for 2 seconds", "output": "{\"steps\":[\"follow|dog|2\"],\"confidence\":0.95}"}
+{"input": "uh fly over to the white car", "output": "{\"steps\":[\"fly_to|white car\"],\"confidence\":0.85}"}
+{"input": "up you go a bit, then scoot left, and capture a panorama and then turn to the left", "output": "{\"steps\":[\"change_altitude\",\"fly_to|left\",\"panorama\",\"rotate|left\"],\"confidence\":0.98}"}
+{"input": "okay get a shot of the flower bed", "output": "{\"steps\":[\"fly_to|flower bed\",\"photo\"],\"confidence\":0.93}"}
+{"input": "get close to the bush", "output": "{\"steps\":[\"fly_to|bush\"],\"confidence\":0.88}"}
+{"input": "teke flight", "output": "{\"steps\":[\"takeoff\"],\"confidence\":0.93}"}
+{"input": "find the bush and photograph it", "output": "{\"steps\":[\"fly_to|bush\",\"photo\"],\"confidence\":0.9}"}
+{"input": "uh fly towards that blue tent next snap a photo", "output": "{\"steps\":[\"fly_to|blue tent\",\"photo\"],\"confidence\":0.95}"}
+{"input": "find the white car and photograph it", "output": "{\"steps\":[\"fly_to|white car\",\"photo\"],\"confidence\":0.92}"}
+{"input": "get a shot of the motorcycle", "output": "{\"steps\":[\"fly_to|motorcycle\",\"photo\"],\"confidence\":0.86}"}
+{"input": "grab a photo", "output": "{\"steps\":[\"photo\"],\"confidence\":0.93}"}
+{"input": "yaw right 270 then take flight", "output": "{\"steps\":[\"rotate|right|270\",\"takeoff\"],\"confidence\":0.97}"}
+{"input": "uh photo of me please", "output": "{\"steps\":[\"selfie\"],\"confidence\":0.99}"}
+{"input": "uh orbit the playground three times and get behind the bench, then hover 30 seconds", "output": "{\"steps\":[\"orbit|playground|3\",\"fly_to|bench\",\"hover|30\"],\"confidence\":0.87}"}
+{"input": "point at that boulder real quick", "output": "{\"steps\":[\"look_at|boulder\"],\"confidence\":0.95}"}
+{"input": "get me a picture of that gazeeo", "output": "{\"steps\":[\"fly_to|gazebo\",\"photo\"],\"confidence\":0.9}"}
+{"input": "follow the golden retriever for 20 seconds", "output": "{\"steps\":[\"follow|golden retriever|20\"],\"confidence\":0.94}"}
+{"input": "fly to the group of people, and take a picture after that come back and land", "output": "{\"steps\":[\"fly_to|group of people\",\"photo\",\"return\",\"land\"],\"confidence\":0.94}"}
+{"input": "drone, circle the boulder", "output": "{\"steps\":[\"orbit|boulder\"],\"confidence\":0.84}"}
+{"input": "fly around the gazebo after that stop thanks", "output": "{\"steps\":[\"orbit|gazebo\",\"abort\"],\"confidence\":0.82}"}
+{"input": "uh snap a selfie", "output": "{\"steps\":[\"selfie\"],\"confidence\":0.91}"}
+{"input": "fly left after that fly down 3 meters, then never mind", "output": "{\"steps\":[\"fly_to|left\",\"change_altitude|-3\",\"abort\"],\"confidence\":0.85}"}
+{"input": "orbit the crowd once after that move backward 5 meters", "output": "{\"steps\":[\"orbit|crowd|1\",\"fly_to|back|5\"],\"confidence\":0.97}"}
+{"input": "go forward, then take a dronie", "output": "{\"steps\":[\"fly_to|forward\",\"selfie\"],\"confidence\":0.93}"}
+{"input": "hold station next sciot right after that orbit the flower bed three times", "output": "{\"steps\":[\"hover\",\"fly_to|right\",\"orbit|flower bed|3\"],\"confidence\":0.83}"}
+{"input": "lower by 3 meters, then fly towards that building entrance next orbit da canopy once, and take a pic", "output": "{\"steps\":[\"change_altitude|-3\",\"fly_to|building entrance\",\"orbit|canopy|1\",\"photo\"],\"confidence\":0.93}"}
+{"input": "do a lap around the gate and then take a panorama uh", "output": "{\"steps\":[\"orbit|gate\",\"panorama\"],\"confidence\":0.92}"}
+{"input": "drone, capture a panorama then move toward the lamp post and then orbit the guy in the blue shirt three times", "output": "{\"steps\":[\"panorama\",\"fly_to|lamp post\",\"orbit|guy in the blue shirt|3\"],\"confidence\":0.91}"}
+{"input": "fly to the food truck and take a picture", "output": "{\"steps\":[\"fly_to|food truck\",\"photo\"],\"confidence\":0.83}"}
+{"input": "snap a photoo of the flagpole", "output": "{\"steps\":[\"fly_to|flagpole\",\"photo\"],\"confidence\":0.96}"}
+{"input": "go left 2 meters thanks", "output": "{\"steps\":[\"fly_to|left|2\"],\"confidence\":0.89}"}
+{"input": "take a dronie, and up you go a bit and then do a 180 after that up yoo go a bit", "output": "{\"steps\":[\"selfie\",\"change_altitude\",\"rotate|right|180\",\"change_altitude\"],\"confidence\":0.91}"}
+{"input": "nimbus get a shot of the gate", "output": "{\"steps\":[\"fly_to|gate\",\"photo\"],\"confidence\":0.94}"}
+{"input": "ascend 2 meters then cancel that uh", "output": "{\"steps\":[\"change_altitude|+2\",\"abort\"],\"confidence\":0.96}"}
+{"input": "come home now", "output": "{\"steps\":[\"return\"],\"confidence\":0.89}"}
+{"input": "hey drone fly to the orange cone and take a picture", "output": "{\"steps\":[\"fly_to|orange cone\",\"photo\"],\"confidence\":0.92}"}
+{"input": "okay gain 0.5 meters of altitude and then circle da white van twice real quick", "output": "{\"steps\":[\"change_altitude|+0.5\",\"orbit|white van|2\"],\"confidence\":0.91}"}
+{"input": "go backward 3 meters", "output": "{\"steps\":[\"fly_to|back|3\"],\"confidence\":0.91}"}
+{"input": "panorama shot, then get a shot and then circle the food truck twice", "output": "{\"steps\":[\"panorama\",\"photo\",\"orbit|food truck|2\"],\"confidence\":0.99}"}
+{"input": "please follow the that person for 30 seconds", "output": "{\"steps\":[\"follow|that person|30\"],\"confidence\":0.89}"}
+{"input": "do a lap around the playground next get in the air after that land the drone", "output": "{\"steps\":[\"orbit|playground|1\",\"takeoff\",\"land\"],\"confidence\":0.83}"}
+{"input": "point at that yellow backpack and fly behind the hill after that snap a pic, then drone stop", "output": "{\"steps\":[\"look_at|yellow backpack\",\"fly_to|hill\",\"photo\",\"abort\"],\"confidence\":0.85}"}
+{"input": "point at that cooler and then do 3 laps around the gate after that do a full spin after that fly left please", "output": "{\"steps\":[\"look_at|cooler\",\"orbit|gate|3\",\"rotate|right|360\",\"fly_to|left\"],\"confidence\":0.97}"}
+{"input": "orbit the canopy next then take a panorama", "output": "{\"steps\":[\"orbit|canopy\",\"panorama\"],\"confidence\":0.83}"}
+{"input": "orbit the lamp post and then then take a panorama real quick", "output": "{\"steps\":[\"orbit|lamp post\",\"panorama\"],\"confidence\":0.92}"}
+{"input": "fly behind the mailbox after that rise 2 meters", "output": "{\"steps\":[\"fly_to|mailbox\",\"change_altitude|+2\"],\"confidence\":0.82}"}
+{"input": "look at the red tent", "output": "{\"steps\":[\"look_at|red tent\"],\"confidence\":0.98}"}
+{"input": "track the person in the red jacket for 60 seconds", "output": "{\"steps\":[\"follow|person in the red jacket|60\"],\"confidence\":0.88}"}
+{"input": "fly uuder the boulder please", "output": "{\"steps\":[\"fly_to|boulder\"],\"confidence\":0.84}"}
+{"input": "drone scoot right, then fly around the tree once after that yaw right", "output": "{\"steps\":[\"fly_to|right\",\"orbit|tree|1\",\"rotate|right\"],\"confidence\":0.98}"}
+{"input": "stay with the bike, and grab a photo", "output": "{\"steps\":[\"follow|bike\",\"photo\"],\"confidence\":0.83}"}
+{"input": "end the flight", "output": "{\"steps\":[\"land\"],\"confidence\":0.87}"}
+{"input": "fly to the silver suv and take a picture", "output": "{\"steps\":[\"fly_to|silver suv\",\"photo\"],\"confidence\":0.91}"}
+{"input": "fly past the parking lot then tail the the skateboarder", "output": "{\"steps\":[\"fly_to|parking lot\",\"follow|the skateboarder\"],\"confidence\":0.85}"}
+{"input": "take off after that head to the blue tent, and take a photo", "output": "{\"steps\":[\"takeoff\",\"fly_to|blue tent\",\"photo\"],\"confidence\":0.89}"}
+{"input": "fly to the blue tent after that take a picture next do a 360 and come back", "output": "{\"steps\":[\"fly_to|blue tent\",\"photo\",\"rotate|right|360\",\"return\"],\"confidence\":0.98}"}
+{"input": "um grab a photo", "output": "{\"steps\":[\"photo\"],\"confidence\":0.96}"}
+{"input": "aim at the bench and then take a pano", "output": "{\"steps\":[\"look_at|bench\",\"panorama\"],\"confidence\":0.87}"}
+{"input": "uh aim at the food truck uh", "output": "{\"steps\":[\"look_at|food truck\"],\"confidence\":0.87}"}
+{"input": "get me a picture of that picnic table", "output": "{\"steps\":[\"fly_to|picnic table\",\"photo\"],\"confidence\":0.86}"}
+{"input": "go through the big rock", "output": "{\"steps\":[\"fly_to|big rock\"],\"confidence\":0.88}"}
+{"input": "drone up you go now", "output": "{\"steps\":[\"takeoff\"],\"confidence\":0.9}"}
+{"input": "orbit the blue tent and then wait stop", "output": "{\"steps\":[\"orbit|blue tent\",\"abort\"],\"confidence\":0.96}"}
+{"input": "fly in circles around the hill after that come to me", "output": "{\"steps\":[\"orbit|hill\",\"return\"],\"confidence\":0.92}"}
+{"input": "drone, return home", "output": "{\"steps\":[\"return\"],\"confidence\":0.98}"}
+{"input": "drop 0.5 meters", "output": "{\"steps\":[\"change_altitude|-0.5\"],\"confidence\":0.88}"}
+{"input": "move toward the blanket on the grass and snap a photo then fly around the playground", "output": "{\"steps\":[\"fly_to|blanket on the grass\",\"photo\",\"orbit|playground\"],\"confidence\":0.94}"}
+{"input": "um", "output": "{\"steps\":[\"say|Sorry, I didn't catch that. Try a flight command.\"],\"confidence\":0.67}"}
+{"input": "spin left a bit next a little lower", "output": "{\"steps\":[\"rotate|left\",\"change_altitude|-0.5\"],\"confidence\":0.93}"}
+{"input": "find the playground and photograph it for me", "output": "{\"steps\":[\"fly_to|playground\",\"photo\"],\"confidence\":0.92}"}
+{"input": "um fly under the red trash can", "output": "{\"steps\":[\"fly_to|red trash can\"],\"confidence\":0.91}"}
+{"input": "shoot a 360, and do 3 laps around the people at the picnic table", "output": "{\"steps\":[\"panorama\",\"orbit|people at the picnic table|3\"],\"confidence\":0.83}"}
+{"input": "okay take off then fly to the pond, then take a photo", "output": "{\"steps\":[\"takeoff\",\"fly_to|pond\",\"photo\"],\"confidence\":0.89}"}
+{"input": "get a shot of the tree", "output": "{\"steps\":[\"fly_to|tree\",\"photo\"],\"confidence\":0.92}"}
+{"input": "uaw left 45", "output": "{\"steps\":[\"rotate|left|45\"],\"confidence\":0.83}"}
+{"input": "fly around the dog once", "output": "{\"steps\":[\"orbit|dog|1\"],\"confidence\":0.94}"}
+{"input": "uh hold for 2 seconds", "output": "{\"steps\":[\"hover|2\"],\"confidence\":0.93}"}
+{"input": "snap a photo of the group of people thanks", "output": "{\"steps\":[\"fly_to|group of people\",\"photo\"],\"confidence\":0.89}"}
+{"input": "find the soccer goal and photograph it uh", "output": "{\"steps\":[\"fly_to|soccer goal\",\"photo\"],\"confidence\":0.97}"}
+{"input": "track the the skateboarder for 2 seconds", "output": "{\"steps\":[\"follow|the skateboarder|2\"],\"confidence\":0.89}"}
+{"input": "get a shot of the fence", "output": "{\"steps\":[\"fly_to|fence\",\"photo\"],\"confidence\":0.98}"}
+{"input": "okay take off and then fly to the lamp post then take a photo", "output": "{\"steps\":[\"takeoff\",\"fly_to|lamp post\",\"photo\"],\"confidence\":0.89}"}
+{"input": "head to the park bench, and turn left, then take a dronie", "output": "{\"steps\":[\"fly_to|park bench\",\"rotate|left\",\"selfie\"],\"confidence\":0.97}"}
+{"input": "get some altitude now", "output": "{\"steps\":[\"change_altitude\"],\"confidence\":0.87}"}
+{"input": "go to the guy in the blue shirt and take a photo", "output": "{\"steps\":[\"fly_to|guy in the blue shirt\",\"photo\"],\"confidence\":0.97}"}
+{"input": "okay go through the motorcycle then turn right, and drift left", "output": "{\"steps\":[\"fly_to|motorcycle\",\"rotate|right\",\"fly_to|left\"],\"confidence\":0.86}"}
+{"input": "take a picture of the person in the red jacket", "output": "{\"steps\":[\"fly_to|person in the red jacket\",\"photo\"],\"confidence\":0.95}"}

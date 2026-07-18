@@ -10,18 +10,20 @@ structured action dicts consumed by the Gemini mission planner
 Step grammar (args after the op, `?` = optional):
   takeoff
   land
-  fly_to|<target>
-  fly_higher|<meters?>          default 2
-  fly_lower|<meters?>           default 2
-  fly_above|<target>
-  rotate|<left|right>|<deg?>    default 90
-  orbit|<target>|<revolutions?> default 1
-  hover|<seconds?>              default 5
-  look_at|<target>
+  fly_to|<target>                 visual approach to a named object/place
+  fly_to|forward|<meters?>        relative nudge forward   (default 0.5 m)
+  fly_to|back|<meters?>           relative nudge backward
+  fly_to|left|<meters?>           relative nudge left
+  fly_to|right|<meters?>          relative nudge right
+  change_altitude|<+/-meters?>    + = climb, - = descend   (default +0.5 m)
+  rotate|<left|right>|<deg?>      yaw in place             (default right|90)
+  orbit|<target>|<revolutions?>   circle target            (default 1 rev)
+  hover|<seconds?>                hold position            (default 5 s)
+  look_at|<target>                aim gimbal at target
   photo
   selfie
   panorama
-  follow|<target>|<seconds?>    default 10
+  follow|<target>|<seconds?>      track target             (default 30 s)
   return
   abort
   say|<text>
@@ -38,9 +40,7 @@ OPS = frozenset(
         "takeoff",
         "land",
         "fly_to",
-        "fly_higher",
-        "fly_lower",
-        "fly_above",
+        "change_altitude",
         "rotate",
         "orbit",
         "hover",
@@ -59,9 +59,45 @@ OPS = frozenset(
 NO_ARG_OPS = frozenset({"takeoff", "land", "photo", "selfie", "panorama", "return", "abort"})
 
 # Ops whose first argument is a visual target the planner must ground
-TARGET_OPS = frozenset({"fly_to", "fly_above", "orbit", "look_at", "follow"})
+# (these get Gemini visual annotation). fly_to relative directions do NOT.
+TARGET_OPS = frozenset({"fly_to", "orbit", "look_at", "follow"})
 
 ROTATE_DIRECTIONS = frozenset({"left", "right"})
+
+# Direction words that signal a relative horizontal move (no visual target).
+# Used in parse_step when fly_to|<dir>|N or a directional alias is seen.
+_RELATIVE_DIRECTIONS = frozenset({"forward", "back", "backward", "left", "right"})
+
+# Directional alias op → canonical direction string (all resolve to fly_to).
+_DIRECTION_ALIASES: dict[str, str] = {
+    "fly_forward":   "forward",
+    "move_forward":  "forward",
+    "go_forward":    "forward",
+    "fly_backward":  "back",
+    "fly_back":      "back",
+    "move_backward": "back",
+    "go_backward":   "back",
+    "move_back":     "back",
+    "fly_left":      "left",
+    "move_left":     "left",
+    "go_left":       "left",
+    "strafe_left":   "left",
+    "fly_right":     "right",
+    "move_right":    "right",
+    "go_right":      "right",
+    "strafe_right":  "right",
+}
+
+# Altitude alias op → sign (+1 climb / -1 descend). All resolve to change_altitude.
+_ALTITUDE_ALIASES: dict[str, int] = {
+    "fly_higher": +1,
+    "fly_up":     +1,
+    "ascend":     +1,
+    "climb":      +1,
+    "fly_lower":  -1,
+    "fly_down":   -1,
+    "descend":    -1,
+}
 
 # Near-miss ops the model may invent → closest valid op. Used only in
 # lenient (inference) mode — training rewards stay strict.
@@ -70,16 +106,11 @@ OP_ALIASES: dict[str, str] = {
     "fly_past": "fly_to",
     "fly_toward": "fly_to",
     "fly_towards": "fly_to",
-    "fly_over": "fly_above",
+    "fly_over": "fly_to",
     "fly_under": "fly_to",
     "fly_through": "fly_to",
     "go_to": "fly_to",
     "approach": "fly_to",
-    "fly_up": "fly_higher",
-    "fly_down": "fly_lower",
-    "ascend": "fly_higher",
-    "descend": "fly_lower",
-    "climb": "fly_higher",
     "spin": "rotate",
     "turn": "rotate",
     "yaw": "rotate",
@@ -109,53 +140,60 @@ OP_ALIASES: dict[str, str] = {
     "wait": "hover",
     "hold": "hover",
     "hover_station": "hover",
+    # Directional relative moves (all → fly_to; parse_step injects direction)
+    **{k: "fly_to" for k in _DIRECTION_ALIASES},
+    # Altitude moves (all → change_altitude; parse_step injects sign)
+    **{k: "change_altitude" for k in _ALTITUDE_ALIASES},
 }
 
-DEFAULT_ALTITUDE_M = 2.0
-DEFAULT_ROTATE_DEG = 90.0
+DEFAULT_NUDGE_M = 0.5
+DEFAULT_ALTITUDE_M = 0.5
 DEFAULT_HOVER_S = 5.0
 DEFAULT_ORBIT_REVS = 1.0
-DEFAULT_FOLLOW_S = 10.0
+DEFAULT_FOLLOW_S = 30.0
+DEFAULT_ROTATE_DEG = 90.0
 
 SYSTEM_PROMPT = """Convert the spoken drone command into OBJECTIVE JSON only. No markdown. No extra text.
 
 Format:
-{"steps":["op|arg","..."],"confidence":0.0-1.0}
+{"steps":["op","op|arg","op|arg|arg2"],"confidence":0.0-1.0}
 
-steps is a JSON array of STRINGS: op, op|arg, or op|arg|arg2.
-
-Valid ops and their args:
+Valid ops:
   takeoff
   land
-  fly_to|<target>
-  fly_higher|<meters>       (meters optional)
-  fly_lower|<meters>        (meters optional)
-  fly_above|<target>
-  rotate|left|<degrees>     (degrees optional; direction is left or right)
+  fly_to|<target>                 target = visible object or place
+  fly_to|forward|<meters>         relative nudge (omit meters for 0.5 m default)
+  fly_to|back|<meters>
+  fly_to|left|<meters>
+  fly_to|right|<meters>
+  change_altitude|<+/-meters>     + climb, - descend (omit for ±0.5 m default)
+  rotate|left|<degrees>           (omit degrees for 90)
   rotate|right|<degrees>
-  orbit|<target>|<times>    (times optional)
-  hover|<seconds>           (seconds optional)
+  orbit|<target>|<revolutions>    (omit revolutions for 1)
+  hover|<seconds>                 (omit for 5)
   look_at|<target>
   photo
   selfie
   panorama
-  follow|<target>|<seconds> (seconds optional)
+  follow|<target>|<seconds>       (omit for 30)
   return
   abort
-  say|<reply text>
+  say|<reply>
 
 Rules:
 - Split compound commands into ordered steps.
-- "come back / return / fly home" -> return
-- "stop / cancel / abort" -> abort
-- "take a picture of X" -> fly_to|X then photo.
-- "look at X / point the camera at X" -> look_at|X
-- "go up / higher" -> fly_higher, "go down / lower" -> fly_lower
-- "turn/spin around" -> rotate|right|360 unless a direction/amount is given.
-- Non-flight or unintelligible input -> single say step with a short reply.
-- confidence reflects how sure you are of the whole plan.
+- "come back/return/fly home" → return
+- "stop/cancel/abort" → abort
+- "take a picture of X" → fly_to|X then photo
+- "look at X/point camera at X" → look_at|X
+- "go up/higher [N]" → change_altitude|+N (convert feet: 1 ft = 0.3 m)
+- "go down/lower [N]" → change_altitude|-N
+- "fly forward/back/left/right [N feet/meters]" → fly_to|forward|N (convert feet to meters)
+- "turn/spin around" → rotate|right|360 unless direction given
+- When no distance given for nudge/altitude: omit the value (app defaults to 0.5 m)
+- Non-flight or unintelligible → say|<short reply>
 
-Example output:
+Example:
 {"steps":["fly_to|red tent","photo","rotate|right|360","return"],"confidence":0.95}
 """
 
@@ -212,9 +250,22 @@ def parse_step(step: str, lenient: bool = False) -> dict[str, Any] | None:
     if op not in OPS:
         if not lenient:
             return None
+        orig_op = op  # preserve before alias lookup
         op = OP_ALIASES.get(op, "")
         if op not in OPS:
             return None
+        # Directional alias (fly_forward|2 etc.) → fly_to with direction + distance
+        if op == "fly_to" and orig_op in _DIRECTION_ALIASES:
+            direction = _DIRECTION_ALIASES[orig_op]
+            dist = _float_or_none(parts[1]) if len(parts) > 1 else None
+            dist = dist if (dist is not None and dist > 0) else DEFAULT_NUDGE_M
+            return {"op": "fly_to", "direction": direction, "distance_m": dist}
+        # Altitude alias (fly_higher|2 etc.) → change_altitude with signed delta
+        if op == "change_altitude" and orig_op in _ALTITUDE_ALIASES:
+            sign = _ALTITUDE_ALIASES[orig_op]
+            mag = _float_or_none(parts[1]) if len(parts) > 1 else None
+            mag = abs(mag) if mag is not None else DEFAULT_ALTITUDE_M
+            return {"op": "change_altitude", "delta_m": sign * mag}
         # special case: bare "spin|360" style args parse as rotate deg
         if op == "rotate" and parts[1:] and parts[1].lower() not in ROTATE_DIRECTIONS:
             parts = [op, "right"] + parts[1:]
@@ -226,14 +277,21 @@ def parse_step(step: str, lenient: bool = False) -> dict[str, Any] | None:
     if op in NO_ARG_OPS:
         return out
 
-    if op in {"fly_to", "fly_above", "look_at"}:
+    if op in {"fly_to", "look_at"}:
         if not args or not args[0]:
             return None
-        out["target"] = args[0]
+        target = args[0].strip()
+        # fly_to|forward|N — relative move with no visual target
+        if op == "fly_to" and target.lower() in _RELATIVE_DIRECTIONS:
+            direction = "back" if target.lower() == "backward" else target.lower()
+            dist = _float_or_none(args[1]) if len(args) > 1 else None
+            dist = dist if (dist is not None and dist > 0) else DEFAULT_NUDGE_M
+            return {"op": "fly_to", "direction": direction, "distance_m": dist}
+        out["target"] = target
 
-    elif op in {"fly_higher", "fly_lower"}:
-        meters = _float_or_none(args[0]) if args else None
-        out["altitude_delta_m"] = abs(meters) if meters is not None else DEFAULT_ALTITUDE_M
+    elif op == "change_altitude":
+        delta = _float_or_none(args[0]) if args else None
+        out["delta_m"] = delta if delta is not None else DEFAULT_ALTITUDE_M
 
     elif op == "rotate":
         if not args or args[0].lower() not in ROTATE_DIRECTIONS:

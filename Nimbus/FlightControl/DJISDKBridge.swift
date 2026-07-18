@@ -36,8 +36,13 @@ final class DJISDKBridge: NSObject {
 
     private weak var flightController: DJIFlightController?
     private var deadManTimer: Timer?
+    /// One-shot 6-second timer; reset on every telemetry update.
+    /// Fires a notification if the flight controller goes silent while connected.
+    @ObservationIgnored private var telemetryWatchdog: Timer?
     private let safety = SafetySupervisor()
     private var lastGimbalCommandAt = Date.distantPast
+    /// Counter for VS heartbeat logging (logs once per 100 sendVelocity calls in DEBUG).
+    @ObservationIgnored private var vsHeartbeatCounter = 0
     @ObservationIgnored private lazy var liveFeedManager = DJILiveVideoFeedManager(bridge: self)
 
     private override init() { super.init() }
@@ -53,15 +58,25 @@ final class DJISDKBridge: NSObject {
         flightController      = fc
         fc.delegate           = self
         isAircraftConnected   = true
-        configureVirtualStick(fc)
+        // Deferred VS init: wait 1.5 s for the DJI SDK to fully initialise the
+        // flight controller after a reconnect before enabling Virtual Stick mode.
+        // Calling configureVirtualStick() immediately after a reconnect can cause
+        // a spurious enable-error that leaves VS permanently disabled.
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(1.5))
+            guard let fc = self?.flightController else { return }
+            self?.configureVirtualStick(fc)
+        }
         Task { @MainActor [weak self] in
             self?.liveFeedManager.onAircraftConnectionChanged(connected: true)
         }
-        print("DJISDKBridge: aircraft '\(product?.model ?? "unknown")' connected, Virtual Stick ready.")
+        print("DJISDKBridge: aircraft '\(product?.model ?? "unknown")' connected — Virtual Stick init deferred 1.5 s.")
     }
 
     func onProductDisconnected() {
         stopDeadMan()
+        telemetryWatchdog?.invalidate()
+        telemetryWatchdog = nil
         flightController    = nil
         isAircraftConnected = false
         cameraFrame         = nil
@@ -93,6 +108,31 @@ final class DJISDKBridge: NSObject {
         fc.verticalControlMode       = DJIVirtualStickVerticalControlMode.velocity
     }
 
+    /// Re-apply Virtual Stick configuration after a reconnect has settled.
+    /// Call from DJIManager once a successful reconnect is confirmed.
+    func recheckVirtualStick() {
+        guard let fc = flightController else { return }
+        print("DJISDKBridge: recheckVirtualStick() — re-applying VS configuration.")
+        configureVirtualStick(fc)
+    }
+
+    // MARK: - Telemetry Watchdog
+
+    /// Arm a 6-second one-shot timer that resets on every flight-controller telemetry
+    /// update. If it fires while the aircraft is connected, the flight controller has
+    /// gone silent and the connection is probably stale — post a notification so
+    /// DJIManager can trigger a forced reconnect.
+    private func startTelemetryWatchdog() {
+        telemetryWatchdog?.invalidate()
+        let t = Timer(timeInterval: 6.0, repeats: false) { [weak self] _ in
+            guard self?.isAircraftConnected == true else { return }
+            print("DJISDKBridge: telemetry silent 6s — signalling stale connection")
+            NotificationCenter.default.post(name: .djiTelemetryStalled, object: nil)
+        }
+        RunLoop.main.add(t, forMode: .common)
+        self.telemetryWatchdog = t
+    }
+
     // MARK: - Virtual Stick Commands
 
     /// Send a velocity command. Values are safety-clamped before transmission.
@@ -110,6 +150,13 @@ final class DJISDKBridge: NSObject {
 
         fc.send(data, withCompletion: nil)
         resetDeadMan()
+
+        #if DEBUG
+        vsHeartbeatCounter += 1
+        if vsHeartbeatCounter % 100 == 0 {
+            print("DJISDKBridge: VS heartbeat — \(vsHeartbeatCounter) cmds sent (p:\(data.pitch) r:\(data.roll) y:\(data.yaw) t:\(data.verticalThrottle)).")
+        }
+        #endif
     }
 
     /// Zero all axes — hover in place.
@@ -535,6 +582,13 @@ extension DJISDKBridge: DJIFlightControllerDelegate {
         )
         Task { @MainActor [weak self] in
             self?.telemetry = snap
+            self?.startTelemetryWatchdog()
         }
     }
+}
+
+// MARK: - Notification Names
+
+extension Notification.Name {
+    static let djiTelemetryStalled = Notification.Name("DJITelemetryStalled")
 }

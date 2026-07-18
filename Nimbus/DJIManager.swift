@@ -23,6 +23,17 @@ final class DJIManager: NSObject {
     /// True while `startConnectionToProduct()` is pending.
     var isConnecting = false
 
+    // MARK: - Connection Watchdog
+
+    /// Timestamp of the last productConnected or productDisconnected event.
+    /// Expose to the UI debug panel to surface stale-connection age.
+    var lastConnectionEvent = Date()
+
+    /// Seconds elapsed since the last productConnected or productDisconnected event.
+    var secondsSinceLastEvent: Double {
+        Date().timeIntervalSince(lastConnectionEvent)
+    }
+
     // MARK: - RC State
 
     /// True when the remote controller is physically connected to the phone.
@@ -43,8 +54,22 @@ final class DJIManager: NSObject {
     /// Set before calling disconnectFromProduct() so the auto-reconnect logic
     /// knows not to immediately reconnect after an explicit user-initiated teardown.
     private var userRequestedDisconnect = false
+    /// Counts consecutive reconnect attempts; reset to 0 on successful connect.
+    private var reconnectAttempt = 0
 
-    private override init() { super.init() }
+    private override init() {
+        super.init()
+        // Listen for the telemetry-stall signal from DJISDKBridge and force a
+        // fresh reconnect cycle when the flight-controller goes silent.
+        NotificationCenter.default.addObserver(
+            forName: .djiTelemetryStalled,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            print("DJIManager: received djiTelemetryStalled — forcing reconnect.")
+            self?.forceReconnect()
+        }
+    }
 
     // MARK: - Registration
 
@@ -71,6 +96,21 @@ final class DJIManager: NSObject {
         DJISDKManager.stopConnectionToProduct()
         isConnecting = false
         print("DJIManager: disconnectFromProduct() called.")
+    }
+
+    /// Force a fresh reconnect cycle — stops any in-progress connection, resets
+    /// the backoff counter, and starts a new connection scan.
+    /// Safe to call from the UI debug panel or from the telemetry-stall watchdog.
+    func forceReconnect() {
+        print("DJIManager: forceReconnect() — stopping connection, resetting backoff counter.")
+        DJISDKManager.stopConnectionToProduct()
+        reconnectAttempt = 0
+        userRequestedDisconnect = false
+        if isRegistered {
+            startConnectionToProduct()
+        } else {
+            registerApp()
+        }
     }
 
     // MARK: - RC Pairing
@@ -113,6 +153,7 @@ final class DJIManager: NSObject {
     // MARK: - Private helpers
 
     private func handleProductChange(_ product: DJIBaseProduct?) {
+        lastConnectionEvent = Date()
         if let product {
             let modelName = product.model ?? "unknown"
 
@@ -130,7 +171,8 @@ final class DJIManager: NSObject {
             }
 
             // ── Full aircraft + RC ──
-            print("DJIManager: product connected — \(modelName)")
+            reconnectAttempt = 0   // reset backoff on successful connect
+            print("DJIManager: product connected — model: \(modelName).")
             DJISDKBridge.shared.onProductConnected(product)
             isConnecting = false
             userRequestedDisconnect = false  // clear any previous explicit-disconnect flag
@@ -144,10 +186,11 @@ final class DJIManager: NSObject {
                 remoteController = rc
                 rc.delegate      = self
                 isRCConnected    = true
+                print("DJIManager: RC connected to aircraft \(modelName).")
             }
 
         } else {
-            print("DJIManager: product disconnected.")
+            print("DJIManager: product disconnected — scheduling auto-reconnect (attempt #\(reconnectAttempt + 1)).")
             DJISDKBridge.shared.onProductDisconnected()
             remoteController = nil
             isRCConnected    = false
@@ -161,20 +204,26 @@ final class DJIManager: NSObject {
         }
     }
 
-    /// Schedules a single reconnect attempt after a brief settling delay.
-    /// No-ops if the user explicitly disconnected or if already connected.
+    /// Schedules a reconnect attempt with exponential backoff (2 s, 4 s, 8 s … capped at 30 s).
+    /// Calls `stopConnectionToProduct()` before each retry to flush stale DJI SDK state
+    /// that accumulates when DJI Fly is power-cycled or closed.
     private func scheduleReconnect() {
         guard !userRequestedDisconnect else {
             print("DJIManager: skipping auto-reconnect (user-initiated disconnect).")
             return
         }
+        let delay = min(2.0 * pow(2.0, Double(reconnectAttempt)), 30.0)
+        reconnectAttempt += 1
+        print("DJIManager: scheduling reconnect attempt #\(reconnectAttempt) in \(String(format: "%.1f", delay)) s.")
         Task { @MainActor [weak self] in
             guard let self else { return }
-            try? await Task.sleep(for: .seconds(2.0))
+            try? await Task.sleep(for: .seconds(delay))
             guard self.isRegistered,
                   !DJISDKBridge.shared.isAircraftConnected,
                   !self.userRequestedDisconnect else { return }
-            print("DJIManager: auto-reconnecting…")
+            print("DJIManager: auto-reconnecting (attempt #\(self.reconnectAttempt))…")
+            // Stop first to flush any stale SDK state from DJI Fly.
+            DJISDKManager.stopConnectionToProduct()
             self.startConnectionToProduct()
         }
     }
@@ -246,6 +295,9 @@ extension DJIManager: DJIAirLinkDelegate {
         let pct = Int(quality)
         Task { @MainActor in
             self.rcSignalPercent = pct
+            if pct < 20, DJISDKBridge.shared.isAircraftConnected {
+                print("DJIManager: WARNING — RC uplink signal low: \(pct)%")
+            }
         }
     }
 }

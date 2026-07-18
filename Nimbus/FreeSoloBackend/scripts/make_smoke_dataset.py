@@ -21,23 +21,23 @@ EXAMPLES = [
     ("take a selfie", ["selfie"]),
     ("do a 360 panorama", ["panorama"]),
     ("just hover", ["hover"]),
-    ("hover for 5 seconds", ["hover|5"]),
+    ("hover for 10 seconds", ["hover|10"]),
     ("fly to the tree", ["fly_to|tree"]),
-    ("fly higher", ["fly_higher"]),
-    ("go down 3 meters", ["fly_lower|3"]),
-    ("fly above the picnic table", ["fly_above|picnic table"]),
+    ("go up", ["change_altitude"]),
+    ("go down 3 meters", ["change_altitude|-3"]),
+    ("fly forward", ["fly_to|forward"]),
+    ("move left 2 meters", ["fly_to|left|2"]),
     ("rotate left", ["rotate|left"]),
     ("turn right 90 degrees", ["rotate|right|90"]),
     ("spin around", ["rotate|right|360"]),
     ("look at the fountain", ["look_at|fountain"]),
     ("orbit the picnic table twice", ["orbit|picnic table|2"]),
     ("follow the dog for 10 seconds", ["follow|dog|10"]),
-    ("fly to the red tent and take a picture", ["fly_to|red tent", "photo"]),
-    (
-        "fly to that tree, take a picture, then spin around and come back",
-        ["fly_to|tree", "photo", "rotate|right|360", "return"],
-    ),
     ("hello", ["say|Ready. Say a flight command."]),
+    (
+        "fly to the red tent, take a picture, then spin around and come back",
+        ["fly_to|red tent", "photo", "rotate|right|360", "return"],
+    ),
 ]
 
 

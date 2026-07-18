@@ -75,6 +75,11 @@ _OP_ALIASES: dict[str, str] = {
     "take_photo": "photo",
     "picture": "photo",
     "pano": "panorama",
+    # Directional relative moves → fly_to (direction/distance_m set by objective parser)
+    "fly_forward": "fly_to",  "move_forward": "fly_to",  "go_forward": "fly_to",
+    "fly_backward": "fly_to", "fly_back": "fly_to",     "move_backward": "fly_to",
+    "fly_left": "fly_to",    "move_left": "fly_to",     "strafe_left": "fly_to",
+    "fly_right": "fly_to",   "move_right": "fly_to",    "strafe_right": "fly_to",
 }
 
 
@@ -148,6 +153,8 @@ Vision rules:
   if NOT visible → found=false, box_2d=[], needs_grounding=true.
 - photo / takeoff / land / hover / rotate / fly_higher / fly_lower / panorama:
   usually no box unless a target is named.
+- fly_to with direction ("forward"/"back"/"left"/"right") and NO target → relative move;
+  found=false, needs_grounding=false, preserve distance_m from the objective.
 
 Expansion rules:
 - OBJECTIVE actions use the SAME op names as your steps (plus "return").
@@ -223,7 +230,14 @@ def expand_objective_skeleton(objective: dict[str, Any]) -> list[InstructionStep
         direction = action.get("direction") if isinstance(action.get("direction"), str) else None
 
         if raw == "fly_to":
-            push(op="fly_to", target=target, standoff_m=3.0)
+            # Relative directional move if no visual target but direction is set
+            direction = action.get("direction") if isinstance(action.get("direction"), str) else None
+            dist = _as_float(action.get("distance_m"))
+            if direction and not target:
+                push(op="fly_to", direction=direction, distance_m=dist)
+            else:
+                push(op="fly_to", target=target, standoff_m=3.0,
+                     direction=direction, distance_m=dist)
 
         elif raw == "fly_above":
             push(op="fly_above", target=target, standoff_m=3.0)

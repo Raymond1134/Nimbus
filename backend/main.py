@@ -1,25 +1,22 @@
-"""Nimbus Grounding + Mission Planner API.
+"""Nimbus v2 Voice Command API.
 
 Pipeline:
-  Voice → ElevenLabs STT → FreeSolo OBJECTIVE → Gemini plan_mission
-  → mid-level InstructionStep[] (with box_2d) → app implements each op.
-
-Ops: fly_to, fly_higher, fly_lower, fly_above, rotate, orbit, hover,
-look_at, photo, takeoff, land, selfie, panorama, follow, return
-(+ abort/say).
+  Voice → FreeSolo OBJECTIVE (pipe-delimited 14-op grammar)
+  → annotate_steps (Gemini visual grounding)
+  → NimbusStep[] (with box_2d per visual target)
+  → app implements each op.
 
 FreeSolo (fine-tuned intent model, OpenAI-compatible endpoint) owns
-text → OBJECTIVE. Gemini owns vision grounding + sequencing. The iOS
-app owns Virtual Stick execution for each op.
+text → OBJECTIVE. The annotator owns vision grounding. The iOS app
+owns Virtual Stick execution for each op.
 """
 
-import json
 import logging
 import os
 import re
-import time
 import traceback
 from pathlib import Path
+from typing import Any
 
 import httpx
 import uvicorn
@@ -28,14 +25,13 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from grounding import GroundingResult, ground_target
+from annotator import annotate_steps
 from objective import (
     SYSTEM_PROMPT,
     make_objective,
     normalize_objective,
     parse_and_normalize,
 )
-from planner import InstructionStep, MissionPlan, plan_mission, resolve_step
 
 _BACKEND_ROOT = Path(__file__).resolve().parent
 load_dotenv(_BACKEND_ROOT / ".env")
@@ -56,7 +52,7 @@ _FREESOLO_MODEL = os.getenv("FREESOLO_MODEL", "")
 _FREESOLO_TIMEOUT = 15.0
 _USE_MOCK = os.getenv("USE_FREESOLO_MOCK", "true").lower() == "true"
 
-app = FastAPI(title="Nimbus Grounding API")
+app = FastAPI(title="Nimbus v2 API")
 
 app.add_middleware(
     CORSMiddleware,
@@ -66,14 +62,13 @@ app.add_middleware(
 )
 
 # ---------------------------------------------------------------------------
-# FreeSolo helpers — returns OBJECTIVE {actions, confidence}
+# FreeSolo helpers — returns OBJECTIVE {steps, actions, confidence}
 # ---------------------------------------------------------------------------
 
 _TARGET_TRIGGERS = (
     "fly to", "go to", "head to", "find", "approach", "fly towards", "fly toward",
     "orbit", "circle", "fly around", "look at", "point the camera at", "aim at",
-    "follow", "track", "fly above", "get above", "hover above",
-    "picture of", "photo of", "shot of", "photograph",
+    "follow", "track", "picture of", "photo of", "shot of", "photograph",
 )
 _FILLER = frozenset({"a", "an", "the", "that", "this", "me", "please", "some"})
 _STOP = frozenset({
@@ -129,9 +124,9 @@ def _mock_freesolo_objective(transcript: str) -> dict:
     if re.search(r"\b(hover|hold position|stay put|hold station)\b", text) and not target:
         return obj(["hover"], 0.9)
     if re.search(r"\b(higher|go up|climb|fly up)\b", text) and not target:
-        return obj(["fly_higher"], 0.85)
+        return obj(["change_altitude"], 0.85)           # default +0.5 m climb
     if re.search(r"\b(lower|go down|descend|fly down)\b", text) and not target:
-        return obj(["fly_lower"], 0.85)
+        return obj(["change_altitude|-2"], 0.85)        # descend 2 m
 
     steps: list[str] = []
     wants_photo = bool(re.search(r"\b(photo|picture|pic|photograph|snap|shot)\b", text))
@@ -176,14 +171,12 @@ def _normalize_freesolo_payload(data: dict) -> dict:
     except (TypeError, ValueError):
         conf = 0.8
 
-    # Canonical: {"steps": ["op|arg", ...]}
     if isinstance(data.get("steps"), list):
         normalized = normalize_objective(data, lenient=True)
         if normalized is not None:
             return normalized
         logger.warning("Invalid steps in OBJECTIVE payload: %s", data.get("steps"))
 
-    # Already-structured actions (e.g. from plan_mission callers)
     if isinstance(data.get("actions"), list):
         return {"actions": data["actions"], "confidence": conf}
 
@@ -256,66 +249,7 @@ async def _get_objective(transcript: str) -> dict:
     return objective
 
 
-def _first_target(objective: dict) -> str | None:
-    for action in objective.get("actions") or []:
-        if isinstance(action, dict):
-            t = action.get("target")
-            if isinstance(t, str) and t.strip():
-                return t.strip()
-    return None
-
-
-def _legacy_intent_fields(objective: dict, plan: MissionPlan) -> dict:
-    """Compat fields for the current iOS BackendVoiceCommandResponse decoder."""
-    actions = objective.get("actions") or []
-    ops = [a.get("op") for a in actions if isinstance(a, dict)]
-
-    if "abort" in ops:
-        intent = "abort"
-    elif len(ops) == 1 and ops[0] == "land":
-        intent = "land"
-    elif len(ops) == 1 and ops[0] == "return":
-        intent = "return_to_station"
-    elif len(ops) == 1 and ops[0] == "hover":
-        intent = "hover_station"
-    elif ops and ops[0] == "say":
-        intent = "say"
-    else:
-        intent = "seek_and_photo"
-
-    say_text = None
-    for a in actions:
-        if isinstance(a, dict) and a.get("op") == "say":
-            say_text = a.get("text")
-            break
-
-    # Prefer first grounded visual step for legacy box fields
-    found = False
-    box_2d: list[int] = []
-    label = ""
-    gconf = 0.0
-    for step in plan.steps:
-        if step.found and step.box_2d:
-            found = True
-            box_2d = step.box_2d
-            label = step.target or ""
-            gconf = step.grounding_confidence
-            break
-
-    return {
-        "intent": intent,
-        "target": _first_target(objective),
-        "say_text": say_text,
-        "constraints": {"max_seconds": 45.0, "max_radius_m": 30.0},
-        "confidence": objective.get("confidence", plan.confidence),
-        "found": found,
-        "box_2d": box_2d,
-        "label": label,
-        "grounding_confidence": gconf,
-    }
-
-
-async def _read_image(image: UploadFile) -> tuple[bytes, str]:
+async def _read_image(image: UploadFile) -> bytes:
     content_type = image.content_type or ""
     if not content_type.startswith("image/"):
         raise HTTPException(
@@ -325,7 +259,31 @@ async def _read_image(image: UploadFile) -> tuple[bytes, str]:
     image_bytes = await image.read()
     if len(image_bytes) > _MAX_BYTES:
         raise HTTPException(status_code=413, detail="Image too large. Maximum size is 10 MB.")
-    return image_bytes, content_type
+    return image_bytes
+
+
+# ---------------------------------------------------------------------------
+# NimbusStep builder
+# ---------------------------------------------------------------------------
+
+def _action_to_nimbus_step(action: dict[str, Any]) -> dict[str, Any]:
+    """Convert an annotated action dict to a NimbusStep dict."""
+    op = action.get("op", "")
+    yaw_deg = action.get("yaw_deg")
+    return {
+        "op": op,
+        "target": action.get("target"),
+        "box_2d": action.get("box_2d", []),
+        "found": action.get("found", False),
+        "distance_m": action.get("distance_m"),
+        "confidence": action.get("confidence", 0.0),
+        "delta_m": action.get("delta_m"),
+        "direction": action.get("direction"),
+        "degrees": abs(yaw_deg) if yaw_deg is not None else None,
+        "revolutions": action.get("revolutions"),
+        "seconds": action.get("duration_s"),
+        "text": action.get("text"),
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -337,117 +295,22 @@ async def health() -> dict:
     return {"status": "ok"}
 
 
-@app.post("/ground_target", response_model=GroundingResult)
-async def ground_target_route(
-    image: UploadFile = File(...),
-    target_description: str = Form(...),
-) -> GroundingResult:
-    try:
-        image_bytes, content_type = await _read_image(image)
-
-        if not target_description.strip():
-            raise HTTPException(status_code=400, detail="target_description must not be empty.")
-
-        t0 = time.time()
-        result = ground_target(image_bytes, target_description, content_type)
-        elapsed_ms = (time.time() - t0) * 1000
-
-        logger.info(
-            "Request complete | target=%r found=%s confidence=%.2f total_latency=%.0fms",
-            target_description,
-            result.found,
-            result.confidence,
-            elapsed_ms,
-        )
-        return result
-
-    except HTTPException:
-        raise
-    except Exception:
-        logger.error("Unhandled error in /ground_target:\n%s", traceback.format_exc())
-        return GroundingResult(found=False, box_2d=[], label="", confidence=0.0)
-
-
-@app.post("/plan_mission", response_model=MissionPlan)
-async def plan_mission_route(
-    image: UploadFile = File(...),
-    objective_json: str = Form(..., description="FreeSolo OBJECTIVE JSON string"),
-) -> MissionPlan:
-    """OBJECTIVE + current frame → sequential InstructionStep plan.
-
-    Use this when the app already has OBJECTIVE from FreeSolo and just needs
-    Gemini to ground targets and emit executable steps.
-    """
-    try:
-        image_bytes, _ = await _read_image(image)
-        try:
-            objective = json.loads(objective_json)
-        except json.JSONDecodeError as exc:
-            raise HTTPException(status_code=400, detail=f"Invalid objective_json: {exc}") from exc
-        if not isinstance(objective, dict):
-            raise HTTPException(status_code=400, detail="objective_json must be a JSON object")
-
-        objective = _normalize_freesolo_payload(objective)
-        t0 = time.time()
-        plan = plan_mission(objective, image_bytes)
-        logger.info(
-            "plan_mission | steps=%d blocked=%s planner=%s latency=%.0fms",
-            len(plan.steps),
-            plan.blocked,
-            plan.planner,
-            (time.time() - t0) * 1000,
-        )
-        return plan
-    except HTTPException:
-        raise
-    except Exception:
-        logger.error("Unhandled error in /plan_mission:\n%s", traceback.format_exc())
-        raise HTTPException(status_code=500, detail="plan_mission failed") from None
-
-
-@app.post("/resolve_step", response_model=InstructionStep)
-async def resolve_step_route(
-    image: UploadFile = File(...),
-    step_json: str = Form(..., description="InstructionStep JSON to re-ground"),
-) -> InstructionStep:
-    """Re-ground one step against a fresh frame (deferred / tracker-lost)."""
-    try:
-        image_bytes, _ = await _read_image(image)
-        try:
-            step_data = json.loads(step_json)
-        except json.JSONDecodeError as exc:
-            raise HTTPException(status_code=400, detail=f"Invalid step_json: {exc}") from exc
-
-        t0 = time.time()
-        resolved = resolve_step(step_data, image_bytes)
-        logger.info(
-            "resolve_step | id=%s op=%s found=%s conf=%.2f latency=%.0fms",
-            resolved.id,
-            resolved.op,
-            resolved.found,
-            resolved.grounding_confidence,
-            (time.time() - t0) * 1000,
-        )
-        return resolved
-    except HTTPException:
-        raise
-    except Exception:
-        logger.error("Unhandled error in /resolve_step:\n%s", traceback.format_exc())
-        raise HTTPException(status_code=500, detail="resolve_step failed") from None
-
-
 @app.post("/voice_command")
 async def voice_command_route(
     transcript: str = Form(...),
     image: UploadFile = File(...),
 ) -> JSONResponse:
-    """Full pipeline: transcript → FreeSolo OBJECTIVE → Gemini MissionPlan.
+    """Full pipeline: transcript → FreeSolo OBJECTIVE → Gemini annotation → NimbusSteps.
 
-    Response includes both the new `objective` + `plan` fields and legacy
-    intent/grounding fields so the current iOS client keeps working.
+    Response:
+      {
+        "steps": [NimbusStep, ...],
+        "confidence": float,
+        "transcript": str
+      }
     """
     try:
-        image_bytes, _ = await _read_image(image)
+        image_bytes = await _read_image(image)
 
         logger.info(
             "voice_command | mode=%s transcript=%r",
@@ -461,23 +324,22 @@ async def voice_command_route(
             detail = exc.detail if isinstance(exc.detail, dict) else {"error": str(exc.detail)}
             return JSONResponse(status_code=exc.status_code, content=detail)
 
-        t0 = time.time()
-        plan = plan_mission(objective, image_bytes)
-        elapsed_ms = (time.time() - t0) * 1000
+        actions = objective.get("actions") or []
+        annotated = await annotate_steps(actions, image_bytes)
+
+        steps = [_action_to_nimbus_step(a) for a in annotated]
+        confidence = float(objective.get("confidence", 0.0))
 
         logger.info(
-            "Plan complete | steps=%d blocked=%s planner=%s latency=%.0fms",
-            len(plan.steps),
-            plan.blocked,
-            plan.planner,
-            elapsed_ms,
+            "voice_command done | steps=%d confidence=%.2f",
+            len(steps),
+            confidence,
         )
 
-        legacy = _legacy_intent_fields(objective, plan)
         return JSONResponse(content={
-            **legacy,
-            "objective": objective,
-            "plan": plan.model_dump(),
+            "steps": steps,
+            "confidence": confidence,
+            "transcript": transcript,
         })
 
     except HTTPException:
