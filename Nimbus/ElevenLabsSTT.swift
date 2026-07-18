@@ -67,7 +67,7 @@ enum ElevenLabsSTT {
         Bundle.main.object(forInfoDictionaryKey: "ELEVENLABS_API_KEY") as? String ?? ""
     }()
 
-    static let endpoint = URL(string: "https://elevenlabs.io")!
+    static let endpoint = URL(string: "https://api.elevenlabs.io/v1/speech-to-text")!
 
     static func transcribe(fileURL: URL) async throws -> String {
         var request = URLRequest(url: endpoint)
@@ -80,7 +80,7 @@ enum ElevenLabsSTT {
         var body = Data()
         body.appendStr("--\(boundary)\r\n")
         body.appendStr("Content-Disposition: form-data; name=\"model_id\"\r\n\r\n")
-        body.appendStr("scribe_v2\r\n")
+        body.appendStr("scribe_v1\r\n")
         
         let audioData = try Data(contentsOf: fileURL)
         body.appendStr("--\(boundary)\r\n")
