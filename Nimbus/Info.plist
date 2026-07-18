@@ -2,10 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>BACKEND_BASE_URL</key>
-	<string>http://192.168.1.100:8000</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>This app needs speech recognition to detect when you say &apos;Ok/Hey Nimbus&apos; to launch drone control commands.</string>
 	<key>DJISDKAppKey</key>
-	<string>dd41f343bf432b0adcc41965</string>
+	<string>$(DJISDKAppKey)</string>
 	<key>ELEVENLABS_API_KEY</key>
 	<string>a565fc97fe1f3cc5570bd0c7f822d9882b10588e1a9016386079984967aa2ad4</string>
 	<key>NSAppTransportSecurity</key>
