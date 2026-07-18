@@ -1,22 +1,18 @@
-//
-//  NimbusApp.swift
-//  Nimbus
-//
-//  Created by Andrew Dai on 2026-07-17.
-//
+// NimbusApp.swift — Nimbus
+// App entry point. Creates the single Orchestrator instance and injects it
+// into the SwiftUI environment for all views to access.
 
 import SwiftUI
 
 @main
 struct NimbusApp: App {
-    
-    init() {
-        print("🚀 Nimbus Configuration Pipeline Initialized.")
-    }
-    
+
+    private let orchestrator = Orchestrator()
+
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environment(orchestrator)
         }
     }
 }

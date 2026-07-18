@@ -1,13 +1,8 @@
-"""FreeSolo single-turn environment: transcript → OBJECTIVE JSON."""
-
 from __future__ import annotations
-
 from pathlib import Path
-
 from freesolo.datasets import TaskExample
 from freesolo.datasets.records import load_task_examples
 from freesolo.environments import EnvironmentSingleTurn, RewardResult
-
 from objective import SYSTEM_PROMPT, parse_and_normalize, score_objectives
 
 ROOT = Path(__file__).parent
@@ -29,7 +24,15 @@ class VoiceDroneObjectiveEnv(EnvironmentSingleTurn):
 
     def score_response(self, example: TaskExample, response_text: str) -> RewardResult:
         predicted = parse_and_normalize(str(response_text))
-        expected = parse_and_normalize(str(example.output or ""))
+        expected_raw = example.output
+        if isinstance(expected_raw, dict) and "messages" in expected_raw:
+            msgs = expected_raw["messages"]
+            content = ""
+            if msgs:
+                content = str(msgs[-1].get("content") or "")
+            expected = parse_and_normalize(content)
+        else:
+            expected = parse_and_normalize(str(expected_raw or ""))
         score = score_objectives(predicted, expected)
         return RewardResult(score=score, threshold=1.0)
 

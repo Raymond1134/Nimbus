@@ -1,13 +1,21 @@
-///
-//  ContentView.swift
-//  Nimbus
-//
-//  Created by Andrew Dai on 2026-07-17.
-//
+// ContentView.swift — Nimbus
+// Root view: Tab 1 = OperationalView (product UI), Tab 2 = DebugView.
+// The Orchestrator is injected from NimbusApp and read via @Environment.
 
 import SwiftUI
 
 struct ContentView: View {
+
+    @Environment(Orchestrator.self) private var orc
+
+    var body: some View {
+        TabView {
+            Tab("Fly", systemImage: "airplane") {
+                OperationalView()
+            }
+            Tab("Debug", systemImage: "wrench.and.screwdriver") {
+                DebugView()
+            }
     @StateObject private var djiManager = DJIManager.shared
     
     // 🚀 MEMORY PROTECTION FIX: Encase your custom classes in @State memory wrappers
@@ -44,8 +52,26 @@ struct ContentView: View {
             .background(Color(.systemGray6))
             .cornerRadius(16)
         }
-        .padding()
         .onAppear {
+            orc.djiManager.registerApp()
+        }
+        .alert("DJI SDK",
+               isPresented: Binding(
+                get: { orc.djiManager.showRegistrationAlert },
+                set: { orc.djiManager.showRegistrationAlert = $0 }
+               )
+        ) {
+            Button("OK") { }
+        } message: {
+            Text(orc.djiManager.registrationMessage)
+        }
+    }
+}
+
+#Preview {
+    ContentView()
+        .environment(Orchestrator())
+}
             DJIManager.shared.registerApp()
             setupHandsFreeLoop()
         }
