@@ -141,9 +141,12 @@ enum ElevenLabsSTT {
 
 // MARK: - 3. Forward to freesolo
 
+// MARK: - 3. Forward to freesolo
+
 enum FreeSoloClient {
 
-    static let endpoint = URL(string: "https://example.com")!
+    // 💡 Replace with your exact Mac IP address found in Step 1
+    static let endpoint = URL(string: "https://slit-humorless-subatomic.ngrok-free.dev")!
 
     static func send(transcript: String) async throws {
         var request = URLRequest(url: endpoint)
@@ -151,12 +154,22 @@ enum FreeSoloClient {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONEncoder().encode(["text": transcript])
 
-        let (_, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
         guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
             throw NSError(domain: "FreeSoloClient", code: 1, userInfo: [NSLocalizedDescriptionKey: "freesolo request failed"])
         }
+        
+        // ✅ Success Logger: Prints out what your Qwen LLM model replied back to your phone!
+        if let jsonString = String(data: data, encoding: .utf8) {
+            print("\n🛸 ==================================================")
+            print("🤖 FREESOLO BACKEND LLM RESPONSE:")
+            print(jsonString)
+            print("==================================================\n")
+        }
     }
 }
+
 
 // MARK: - 4. Voice Pipeline Setup
 

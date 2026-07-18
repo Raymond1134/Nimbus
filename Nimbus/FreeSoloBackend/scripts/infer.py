@@ -6,6 +6,7 @@
   set FREESOLO_MODEL=<run-id>
   python scripts/infer.py "take a picture of the red tent"
   python scripts/infer.py --repl
+python3 scripts/infer.py --repl
 """
 
 from __future__ import annotations

@@ -79,7 +79,7 @@ final class WakewordListener {
             let latestTranscription = result.bestTranscription.formattedString.lowercased()
             print("Local buffer raw text: \(latestTranscription)")
             
-            if latestTranscription.contains("nimbus") {
+            if latestTranscription.contains("nimbus") || latestTranscription.contains("hey numbers") {
                 print("🎯 Wakeword 'Nimbus' Detected locally!")
                 self.stopListening()
                 
