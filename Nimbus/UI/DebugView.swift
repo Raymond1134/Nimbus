@@ -171,21 +171,16 @@ struct DebugView: View {
             } else {
                 row("Transcript", orc.lastTranscript)
 
-                if let i = orc.lastIntent {
-                    Divider()
-                    row("Intent",     i.intent)
-                    row("Target",     i.target ?? "—")
-                    row("Confidence", "\(Int(i.confidence * 100))%")
-                }
-
                 if let r = orc.lastResponse {
                     Divider()
-                    row("Grounding",  r.found ? "Found ✓" : "Not found",
-                        color: r.found ? .green : .secondary)
-                    if r.found {
-                        row("Label",     r.label)
-                        row("Box2D",     r.box2d.map(String.init).joined(separator: " "))
-                        row("Gnd conf.", String(format: "%.2f", r.groundingConfidence))
+                    row("Steps",      "\(r.steps.count)")
+                    row("Confidence", String(format: "%.0f%%", r.confidence * 100))
+                    ForEach(Array(r.steps.enumerated()), id: \.offset) { idx, step in
+                        let found  = step.found ? " ✓" : ""
+                        let target = step.target.map { " → \($0)" } ?? ""
+                        row("#\(idx) \(step.op)\(target)",
+                            found.isEmpty ? "—" : "found\(found)",
+                            color: step.found ? .green : .secondary)
                     }
                 }
             }
