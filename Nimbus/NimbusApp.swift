@@ -9,6 +9,11 @@ import SwiftUI
 
 @main
 struct NimbusApp: App {
+    
+    init() {
+        print("🚀 Nimbus Configuration Pipeline Initialized.")
+    }
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
