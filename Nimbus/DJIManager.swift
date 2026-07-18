@@ -50,6 +50,10 @@ extension DJIManager: DJISDKManagerDelegate {
             DroneState.shared.isConnected = true
             DroneState.shared.productName = product?.model ?? "Unknown"
             DroneState.shared.setupListeners()
+            // Register the previewer with the live video feed now that the
+            // product is connected. start() hooks DJIVideoPreviewer into
+            // DJISDKManager.videoFeeder().primaryVideoFeed automatically.
+            DJIVideoPreviewer.instance()?.start()
         }
     }
 

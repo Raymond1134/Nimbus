@@ -5,6 +5,7 @@ struct DroneControlView: View {
     @StateObject private var drone    = DroneState.shared
     @StateObject private var fc       = FlightControlManager.shared
     @StateObject private var wp       = WaypointManager.shared
+    @StateObject private var ht       = HeadTrackingManager.shared
 
     // Alert
     @State private var alertTitle   = ""
@@ -30,6 +31,9 @@ struct DroneControlView: View {
 
             missionTab
                 .tabItem { Label("Mission", systemImage: "map") }
+
+            headTrackTab
+                .tabItem { Label("Head", systemImage: "airpodspro") }
 
             connectTab
                 .tabItem { Label("Connect", systemImage: "cable.connector") }
@@ -103,7 +107,7 @@ extension DroneControlView {
             VStack(spacing: 2) {
                 HStack {
                     Image(systemName: "speedometer").foregroundStyle(.secondary)
-                    Slider(value: $fc.maxSpeed, in: 0.5...10, step: 0.5)
+                    Slider(value: $fc.maxSpeed, in: 0.5...10, step: 0.5) // Mini 2 max 10 m/s
                     Text(String(format: "%.1f m/s", fc.maxSpeed))
                         .monospacedDigit()
                         .frame(width: 58)
@@ -130,15 +134,13 @@ extension DroneControlView {
             .padding(.vertical, 8)
 
             // ── Action Buttons ──────────────────────────────────────────────
-            HStack(spacing: 10) {
-                actionButton("Takeoff", icon: "arrow.up.circle.fill", tint: .green) {
-                    fc.takeOff { handleResult("Take Off", $0) }
+            // Row 1 — motor + VS toggles
+            HStack(spacing: 8) {
+                actionButton("Arm", icon: "bolt.fill", tint: .yellow) {
+                    fc.armMotors { handleResult("Arm Motors", $0) }
                 }
-                actionButton("Land", icon: "arrow.down.circle.fill", tint: .orange) {
-                    fc.land { handleResult("Land", $0) }
-                }
-                actionButton("RTH", icon: "house.fill", tint: .blue) {
-                    fc.returnToHome { handleResult("Return to Home", $0) }
+                actionButton("Disarm", icon: "bolt.slash.fill", tint: .gray) {
+                    fc.disarmMotors { handleResult("Disarm Motors", $0) }
                 }
                 actionButton(
                     fc.isVirtualStickEnabled ? "VS ON" : "VS OFF",
@@ -146,6 +148,18 @@ extension DroneControlView {
                     tint: fc.isVirtualStickEnabled ? .purple : .secondary
                 ) {
                     toggleVirtualSticks()
+                }
+            }
+            // Row 2 — flight
+            HStack(spacing: 8) {
+                actionButton("Takeoff", icon: "arrow.up.square.fill", tint: .green) {
+                    fc.manualTakeoff { handleResult("Takeoff", $0) }
+                }
+                actionButton("Land", icon: "arrow.down.square.fill", tint: .orange) {
+                    fc.vsLand { handleResult("Land", $0) }
+                }
+                actionButton("RTH", icon: "house.fill", tint: .blue) {
+                    fc.returnToHome { handleResult("Return to Home", $0) }
                 }
             }
             .padding(.horizontal)
@@ -396,6 +410,179 @@ extension DroneControlView {
     }
 }
 
+// MARK: - HEAD TRACK TAB
+
+extension DroneControlView {
+
+    var headTrackTab: some View {
+        NavigationStack {
+            Form {
+
+                // ── AirPods Status ──────────────────────────────────────────
+                Section("AirPods") {
+                    HStack {
+                        Text("Sensor")
+                        Spacer()
+                        Label(
+                            ht.isAvailable ? "Available" : "Not Available",
+                            systemImage: ht.isAvailable ? "checkmark.circle.fill" : "xmark.circle.fill"
+                        )
+                        .foregroundStyle(ht.isAvailable ? .green : .red)
+                        .font(.caption)
+                    }
+                    HStack {
+                        Text("AirPods")
+                        Spacer()
+                        Label(
+                            ht.isConnected ? "Connected" : "Not Connected",
+                            systemImage: ht.isConnected ? "airpodspro" : "airpodspro"
+                        )
+                        .foregroundStyle(ht.isConnected ? .green : .secondary)
+                        .font(.caption)
+                    }
+                    HStack {
+                        Text("Permission")
+                        Spacer()
+                        Text(ht.authStatus)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.trailing)
+                    }
+                    HStack {
+                        Text("Motion Active")
+                        Spacer()
+                        Text(ht.isTracking ? "Yes" : "No")
+                            .foregroundStyle(ht.isTracking ? .green : .secondary)
+                            .font(.caption)
+                    }
+                    if !ht.isAvailable {
+                        Text("Requires AirPods Pro (1st/2nd gen), AirPods 3rd gen, AirPods 4 ANC, or AirPods Max.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                // ── Enable & Align ──────────────────────────────────────────
+                Section("Control") {
+                    if !fc.isVirtualStickEnabled {
+                        Text("Enable Virtual Sticks (VS) on the Fly tab first.")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                    }
+
+                    Toggle("Head Tracking Active", isOn: Binding(
+                        get: { ht.isTracking },
+                        set: { on in
+                            if on { ht.startTracking() } else { ht.stopTracking() }
+                        }
+                    ))
+                    .disabled(!ht.isAvailable || !fc.isVirtualStickEnabled)
+
+                    Button {
+                        ht.align()
+                    } label: {
+                        Label("Align to Current Head Position", systemImage: "scope")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.indigo)
+                    .disabled(!ht.isAvailable)
+
+                    Text("Tip: sit or stand looking straight at your drone, then tap Align. This sets your neutral reference point. Tap Align again any time to re-centre.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                // ── Live Head Angles ────────────────────────────────────────
+                Section("Live Head Angles (relative to alignment)") {
+                    headAngleRow("Pitch",
+                                 value: ht.relPitch,
+                                 icon: "arrow.up.and.down",
+                                 meaning: ht.pitchToGimbal ? "→ Gimbal" : "→ Forward/Back")
+                    headAngleRow("Yaw",
+                                 value: ht.relYaw,
+                                 icon: "arrow.left.and.right",
+                                 meaning: ht.yawToDrone ? "→ Rotate" : "Inactive")
+                    headAngleRow("Roll",
+                                 value: ht.relRoll,
+                                 icon: "arrow.clockwise",
+                                 meaning: ht.rollToDrone ? "→ Strafe" : "Inactive")
+                }
+
+                // ── Axis Mapping ────────────────────────────────────────────
+                Section("Axis Mapping") {
+                    Picker("Head Pitch controls", selection: $ht.pitchToGimbal) {
+                        Text("Gimbal tilt").tag(true)
+                        Text("Fly forward/back").tag(false)
+                    }
+                    .pickerStyle(.segmented)
+
+                    Toggle("Yaw → Rotate drone",   isOn: $ht.yawToDrone)
+                    Toggle("Roll → Strafe drone",   isOn: $ht.rollToDrone)
+                }
+
+                // ── Sensitivity & Dead Zone ─────────────────────────────────
+                Section("Tuning") {
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text("Sensitivity")
+                            Spacer()
+                            Text(String(format: "%.2f×", ht.sensitivity)).monospacedDigit()
+                        }
+                        Slider(value: $ht.sensitivity, in: 0.25...2.0, step: 0.05)
+                    }
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text("Dead Zone")
+                            Spacer()
+                            Text(String(format: "±%.1f°", ht.deadZoneDeg)).monospacedDigit()
+                        }
+                        Slider(value: $ht.deadZoneDeg, in: 0...15, step: 0.5)
+                        Text("Head movements smaller than this are ignored")
+                            .font(.caption2).foregroundStyle(.tertiary)
+                    }
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text("Pitch full-scale")
+                            Spacer()
+                            Text(String(format: "±%.0f°", ht.pitchMaxDeg)).monospacedDigit()
+                        }
+                        Slider(value: $ht.pitchMaxDeg, in: 10...60, step: 5)
+                        Text("Head angle that produces maximum output")
+                            .font(.caption2).foregroundStyle(.tertiary)
+                    }
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text("Yaw full-scale")
+                            Spacer()
+                            Text(String(format: "±%.0f°", ht.yawMaxDeg)).monospacedDigit()
+                        }
+                        Slider(value: $ht.yawMaxDeg, in: 15...90, step: 5)
+                    }
+                }
+            }
+            .navigationTitle("Head Tracking")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+
+    private func headAngleRow(_ label: String, value: Double, icon: String, meaning: String) -> some View {
+        HStack {
+            Image(systemName: icon)
+                .frame(width: 20)
+                .foregroundStyle(.secondary)
+            Text(label)
+            Spacer()
+            Text(meaning)
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+            Text(String(format: "%+.1f°", value))
+                .monospacedDigit()
+                .foregroundStyle(abs(value) > 5 ? Color.accentColor : .secondary)
+                .frame(width: 58, alignment: .trailing)
+        }
+    }
+}
+
 // MARK: - CONNECT TAB
 
 extension DroneControlView {
@@ -482,7 +669,16 @@ extension DroneControlView {
                     .tint(.indigo)
                 }
 
-                // ── Velocity readout ────────────────────────────────────────
+                // ── Firmware versions ────────────────────────────────────────
+                Section("Firmware") {
+                    fwRow("Aircraft",   drone.aircraftFirmware)
+                    fwRow("RC",         drone.rcFirmware)
+                    fwRow("Camera",     drone.cameraFirmware)
+                    fwRow("Gimbal",     drone.gimbalFirmware)
+                    fwRow("Mobile SDK", drone.sdkVersion)
+                }
+
+                // ── Velocity readout ──────────────────────────────────────────
                 Section("Velocities") {
                     velRow("North (X)", value: drone.velocityX)
                     velRow("East (Y)",  value: drone.velocityY)
@@ -491,6 +687,17 @@ extension DroneControlView {
             }
             .navigationTitle("Connection")
             .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+
+    private func fwRow(_ label: String, _ version: String) -> some View {
+        HStack {
+            Text(label)
+            Spacer()
+            Text(version.isEmpty ? "—" : version)
+                .monospacedDigit()
+                .foregroundStyle(.secondary)
+                .font(.caption)
         }
     }
 

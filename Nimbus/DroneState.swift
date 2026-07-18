@@ -30,6 +30,13 @@ final class DroneState: NSObject, ObservableObject {
     // MARK: - Gimbal
     @Published var gimbalPitchDegrees: Float = 0
 
+    // MARK: - Firmware
+    @Published var aircraftFirmware   = ""
+    @Published var rcFirmware         = ""
+    @Published var cameraFirmware     = ""
+    @Published var gimbalFirmware     = ""
+    let sdkVersion                    = DJISDKManager.sdkVersion()
+
     private override init() { super.init() }
 
     /// Call after product connects to receive delegate updates.
@@ -38,6 +45,22 @@ final class DroneState: NSObject, ObservableObject {
         aircraft.flightController?.delegate = self
         aircraft.battery?.delegate = self
         aircraft.gimbal?.delegate = self
+        fetchFirmwareVersions(aircraft: aircraft)
+    }
+
+    private func fetchFirmwareVersions(aircraft: DJIAircraft) {
+        // Safe KVC: checks the selector exists before calling value(forKey:)
+        // to avoid NSUnknownKeyException crashes on SDK 4.16.2 where some
+        // firmware version properties are not exposed.
+        func kvc(_ obj: NSObject?, _ key: String) -> String {
+            guard let obj,
+                  obj.responds(to: NSSelectorFromString(key)) else { return "N/A" }
+            return (obj.value(forKey: key) as? String) ?? "N/A"
+        }
+        aircraftFirmware = kvc(DJISDKManager.product(), "firmwarePackageVersion")
+        rcFirmware       = kvc(aircraft.remoteController, "firmwareVersion")
+        cameraFirmware   = kvc(aircraft.camera,           "firmwareVersion")
+        gimbalFirmware   = kvc(aircraft.gimbal,           "firmwareVersion")
     }
 
     /// Call on product disconnect to release delegates.

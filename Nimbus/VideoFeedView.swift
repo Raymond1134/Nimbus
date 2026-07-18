@@ -10,17 +10,21 @@ struct VideoFeedView: UIViewRepresentable {
         view.clipsToBounds   = true
 
         if let previewer = DJIVideoPreviewer.instance() {
-            previewer.start()
             previewer.enableHardwareDecode = true
             previewer.setView(view)
+            // start() registers with DJISDKManager.videoFeeder().primaryVideoFeed.
+            // Called again in DJIManager.productConnected for correct timing.
+            previewer.start()
         }
 
         return view
     }
 
     func updateUIView(_ uiView: UIView, context: Context) {
-        // Re-assign in case the view was recycled by SwiftUI
-        DJIVideoPreviewer.instance()?.setView(uiView)
+        // Keep the target view current whenever SwiftUI re-renders this node.
+        if let previewer = DJIVideoPreviewer.instance() {
+            previewer.setView(uiView)
+        }
     }
 
     static func dismantleUIView(_ uiView: UIView, coordinator: Coordinator) {
