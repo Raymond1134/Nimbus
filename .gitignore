@@ -76,7 +76,7 @@ fastlane/test_output
 *.swo
 *~
 
-# Environment & secrets
+# ironment & secrets
 .env
 .env.local
 .env.*.local
