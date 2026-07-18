@@ -75,7 +75,7 @@ final class DJIManager: NSObject {
             pairingStatus = "No RC detected — connect to aircraft first."
             return
         }
-        rc.startPairingDevice { [weak self] error in
+        rc.startPairingWithCompletion { [weak self] (error: Error?) in
             Task { @MainActor in
                 if let error {
                     self?.pairingStatus = "Pairing error: \(error.localizedDescription)"
@@ -91,7 +91,7 @@ final class DJIManager: NSObject {
     /// Exit RC pairing mode.
     func stopPairing() {
         guard let rc = remoteController else { return }
-        rc.stopPairingDevice { [weak self] error in
+        rc.stopPairingWithCompletion { [weak self] (error: Error?) in
             Task { @MainActor in
                 self?.isPairing = false
                 if let error {
@@ -107,16 +107,21 @@ final class DJIManager: NSObject {
 
     private func handleProductChange(_ product: DJIBaseProduct?) {
         if let product {
-            print("DJIManager: product connected — \(product.model ?? \"unknown\")")
+            let modelName = product.model ?? "unknown"
+            print("DJIManager: product connected — \(modelName)")
             DJISDKBridge.shared.onProductConnected(product)
             isConnecting = false
 
-            // Wire RC delegate to receive signal / pairing callbacks.
-            if let aircraft = product as? DJIAircraft,
-               let rc = aircraft.remoteController {
-                remoteController   = rc
-                rc.delegate        = self
-                isRCConnected      = true
+            // Wire AirLink delegate for uplink signal quality updates.
+            product.airLink?.delegate = self
+
+            // Wire RC delegate and mark RC present.
+            if let aircraft = product as? DJIAircraft {
+                if let rc = aircraft.remoteController {
+                    remoteController = rc
+                    rc.delegate      = self
+                    isRCConnected    = true
+                }
             }
         } else {
             print("DJIManager: product disconnected.")
@@ -168,19 +173,19 @@ extension DJIManager: DJISDKManagerDelegate {
 
 // MARK: - DJIRemoteControllerDelegate
 
-extension DJIManager: DJIRemoteControllerDelegate {
+/// Conform to receive optional RC callbacks (e.g. battery on Smart Controller).
+extension DJIManager: DJIRemoteControllerDelegate { }
 
-    func remoteController(_ rc: DJIRemoteController,
-                          didUpdate state: DJIRemoteControllerState) {
-        let signal  = Int(state.uplinkSignalQuality)
-        let pairing = state.isPairingDevice
+// MARK: - DJIAirLinkDelegate
+
+/// Uplink = RC → aircraft link.  Updates every ~0.5 s while connected.
+extension DJIManager: DJIAirLinkDelegate {
+
+    func airLink(_ airLink: DJIAirLink,
+                 didUpdateUplinkSignalQuality quality: UInt) {
+        let pct = Int(quality)
         Task { @MainActor in
-            self.rcSignalPercent = signal
-            // Keep isPairing in sync; clear status message when pairing finishes.
-            if self.isPairing && !pairing {
-                self.pairingStatus = "Pairing complete."
-            }
-            self.isPairing = pairing
+            self.rcSignalPercent = pct
         }
     }
 }
