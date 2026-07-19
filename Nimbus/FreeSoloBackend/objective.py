@@ -182,6 +182,8 @@ Valid ops:
 
 Rules:
 - Split compound commands into ordered steps.
+- "launch/take off/lift off/go up and hover/liftoff" → takeoff  (NEVER land)
+- "land/touch down/come down/set down/put it down" → land  (NEVER takeoff)
 - "come back/return/fly home" → return
 - "stop/cancel/abort" → abort
 - "take a picture of X" → fly_to|X then photo

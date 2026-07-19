@@ -31,20 +31,28 @@ final class DJISDKBridge: NSObject {
     var cameraFrame: UIImage?
     /// True once at least one live H264 packet has been received from DJI feed.
     var hasLiveVideoData = false
+    /// Frame captured by the most recent photo op — shown in the UI.
+    var lastCapturedPhoto: UIImage?
+    /// True while an SDK Hotpoint (POI orbit) mission is running.
+    private(set) var isHotpointActive = false
 
     // MARK: - Private
 
     private weak var flightController: DJIFlightController?
     private var deadManTimer: Timer?
-    /// One-shot 6-second timer; reset on every telemetry update.
-    /// Fires a notification if the flight controller goes silent while connected.
-    @ObservationIgnored private var telemetryWatchdog: Timer?
     private let safety = SafetySupervisor()
     private var lastGimbalCommandAt = Date.distantPast
     /// Counter for VS heartbeat logging (logs once per 100 sendVelocity calls in DEBUG).
     @ObservationIgnored private var vsHeartbeatCounter = 0
     @ObservationIgnored private lazy var liveFeedManager = DJILiveVideoFeedManager(bridge: self)
-    @ObservationIgnored private var videoStallTimer: Timer?
+
+    // Health monitoring (single repeating timer; timestamp-based).
+    @ObservationIgnored private var healthMonitorTimer: Timer?
+    @ObservationIgnored private var lastTelemetryAt = Date.distantPast
+    @ObservationIgnored private var lastStallSignalAt = Date.distantPast
+    /// True while the app is backgrounded — health checks are ignored so that
+    /// time spent suspended never counts as a telemetry/video stall.
+    @ObservationIgnored private var isHealthMonitoringSuspended = false
     @ObservationIgnored private var lastVideoPacketAt = Date.distantPast
     @ObservationIgnored private var feedStartupAt = Date.distantPast
     @ObservationIgnored private var lastFeedRecoveryAt = Date.distantPast
@@ -53,35 +61,47 @@ final class DJISDKBridge: NSObject {
 
     // MARK: - Product Connection (called by DJIManager)
 
+    /// Idempotent: calling this again for the flight controller we are already
+    /// set up with only re-arms delegates and refreshes health monitoring —
+    /// it never restarts Virtual Stick config or the video feed on a live link.
     func onProductConnected(_ product: DJIBaseProduct?) {
         guard let aircraft = product as? DJIAircraft,
               let fc       = aircraft.flightController else {
             print("DJISDKBridge: connected product is not a supported aircraft.")
             return
         }
-        flightController      = fc
-        fc.delegate           = self
-        isAircraftConnected   = true
-        // Deferred VS init: wait 1.5 s for the DJI SDK to fully initialise the
-        // flight controller after a reconnect before enabling Virtual Stick mode.
-        // Calling configureVirtualStick() immediately after a reconnect can cause
-        // a spurious enable-error that leaves VS permanently disabled.
+
+        let sameController = (fc === flightController) && isAircraftConnected
+        flightController = fc
+        fc.delegate      = self          // always re-arm (recovers silently dropped delegates)
+
+        if sameController {
+            resumeHealthMonitoring()
+            print("DJISDKBridge: connection confirmed — existing setup kept.")
+            return
+        }
+
+        isAircraftConnected = true
+        // Deferred init: wait 1.5 s for the DJI SDK to fully initialise the
+        // flight controller after a (re)connect before enabling Virtual Stick
+        // and indoor-stabilisation features.
         Task { @MainActor [weak self] in
+            guard let self else { return }
             try? await Task.sleep(for: .seconds(1.5))
-            guard let fc = self?.flightController else { return }
-            self?.configureVirtualStick(fc)
+            guard let fc = self.flightController else { return }
+            self.configureVirtualStick(fc)
+            self.enableIndoorStabilisation(fc, aircraft: aircraft)
         }
         Task { @MainActor [weak self] in
             self?.liveFeedManager.onAircraftConnectionChanged(connected: true)
         }
-        startVideoStallWatchdog()
-        print("DJISDKBridge: aircraft '\(product?.model ?? "unknown")' connected — Virtual Stick init deferred 1.5 s.")
+        startHealthMonitor()
+        print("DJISDKBridge: aircraft '\(aircraft.model ?? "unknown")' connected — Virtual Stick init deferred 1.5 s.")
     }
 
     func onProductDisconnected() {
         stopDeadMan()
-        telemetryWatchdog?.invalidate()
-        telemetryWatchdog = nil
+        stopHealthMonitor()
         flightController    = nil
         isAircraftConnected = false
         cameraFrame         = nil
@@ -89,9 +109,6 @@ final class DJISDKBridge: NSObject {
         Task { @MainActor [weak self] in
             self?.liveFeedManager.onAircraftConnectionChanged(connected: false)
         }
-        stopVideoStallWatchdog()
-        feedStartupAt = Date.distantPast
-        lastFeedRecoveryAt = Date.distantPast
         print("DJISDKBridge: aircraft disconnected.")
     }
 
@@ -105,40 +122,189 @@ final class DJISDKBridge: NSObject {
                 print("DJISDKBridge: Virtual Stick enabled.")
             }
         }
-        // Body-frame velocity control (spec §2):
-        // pitch  = forward (+) / backward (–)  m/s
-        // roll   = right  (+) / left     (–)  m/s
-        // yaw    = clockwise (+)               deg/s
-        // throttle = up (+) / down (–)         m/s
+        applyVirtualStickControlModes(fc)
+    }
+
+    private func applyVirtualStickControlModes(_ fc: DJIFlightController) {
+        // BODY-frame velocity control with Home Lock flight orientation mode:
+        // - pitch + = forward, pitch − = backward
+        // - roll  + = right,   roll  − = left
+        // - in Home Lock, forward/back are radial to home and left/right arc
+        //   around home at current radius.
+        //
+        // Notes:
+        // - Home Lock availability still depends on aircraft/GPS/mode constraints.
+        // - If Home Lock is unavailable the SDK falls back to aircraft-heading
+        //   behavior while keeping pitch-as-forward semantics.
         fc.rollPitchCoordinateSystem = DJIVirtualStickFlightCoordinateSystem.body
         fc.rollPitchControlMode      = DJIVirtualStickRollPitchControlMode.velocity
         fc.yawControlMode            = DJIVirtualStickYawControlMode.angularVelocity
         fc.verticalControlMode       = DJIVirtualStickVerticalControlMode.velocity
+        fc.setFlightOrientationMode(.homeLock) { error in
+            if let error {
+                print("DJISDKBridge: Home Lock orientation enable error: \(error.localizedDescription)")
+            } else {
+                print("DJISDKBridge: Home Lock orientation enabled.")
+            }
+        }
+    }
+
+    /// Async enable/disable of Virtual Stick. Hotpoint missions and VS are
+    /// mutually exclusive, so the orbit path toggles this around the mission.
+    private func setVirtualStickEnabled(_ enabled: Bool) async {
+        guard let fc = flightController else { return }
+        await withCheckedContinuation { (cont: CheckedContinuation<Void, Never>) in
+            fc.setVirtualStickModeEnabled(enabled) { error in
+                if let error {
+                    print("DJISDKBridge: VS \(enabled ? "enable" : "disable") error: \(error.localizedDescription)")
+                }
+                cont.resume()
+            }
+        }
+        if enabled { applyVirtualStickControlModes(fc) }
     }
 
     /// Re-apply Virtual Stick configuration after a reconnect has settled.
     /// Call from DJIManager once a successful reconnect is confirmed.
     func recheckVirtualStick() {
-        guard let fc = flightController else { return }
+        guard let fc = flightController,
+              let aircraft = DJISDKManager.product() as? DJIAircraft else { return }
         print("DJISDKBridge: recheckVirtualStick() — re-applying VS configuration.")
         configureVirtualStick(fc)
+        enableIndoorStabilisation(fc, aircraft: aircraft)
     }
 
-    // MARK: - Telemetry Watchdog
+    // MARK: - Indoor Stabilisation (no-GPS / cramped-space mode)
 
-    /// Arm a 6-second one-shot timer that resets on every flight-controller telemetry
-    /// update. If it fires while the aircraft is connected, the flight controller has
-    /// gone silent and the connection is probably stale — post a notification so
-    /// DJIManager can trigger a forced reconnect.
-    private func startTelemetryWatchdog() {
-        telemetryWatchdog?.invalidate()
-        let t = Timer(timeInterval: 6.0, repeats: false) { [weak self] _ in
-            guard self?.isAircraftConnected == true else { return }
-            print("DJISDKBridge: telemetry silent 6s — signalling stale connection")
+    /// Enable the SDK's downward-vision position hold and collision avoidance.
+    /// Both are software features — they don't change the physical sensor suite,
+    /// but tell the flight controller to use the optical-flow / TOF data it
+    /// already has to replace GPS position hold.
+    ///
+    /// Called automatically on every connect/reconnect after the VS init delay.
+    private func enableIndoorStabilisation(_ fc: DJIFlightController,
+                                           aircraft: DJIAircraft) {
+        // 0) Disable novice mode so the aircraft uses its full flight envelope.
+        fc.setNoviceModeEnabled(false) { error in
+            if let error {
+                print("DJISDKBridge: novice-mode disable error: \(error.localizedDescription)")
+            } else {
+                print("DJISDKBridge: Novice mode disabled — full flight envelope active.")
+            }
+        }
+
+        // 1) Vision-assisted positioning: optical-flow / downward-camera position
+        //    hold without GPS. This is the primary indoor stability mechanism.
+        fc.setVisionAssistedPositioningEnabled(true) { error in
+            if let error {
+                print("DJISDKBridge: VPS enable error: \(error.localizedDescription)")
+            } else {
+                print("DJISDKBridge: Vision-assisted positioning enabled.")
+            }
+        }
+
+        // 2) Collision avoidance (obstacle sensors): active braking in cramped
+        //    spaces. flightAssistant lives on DJIFlightController, not DJIAircraft.
+        //    Some airframes may not have forward sensors; the SDK no-ops silently
+        //    on unsupported hardware.
+        fc.flightAssistant?.setCollisionAvoidanceEnabled(true) { error in
+            if let error {
+                print("DJISDKBridge: collision avoidance enable error: \(error.localizedDescription)")
+            } else {
+                print("DJISDKBridge: Collision avoidance enabled.")
+            }
+        }
+    }
+
+    // MARK: - Health Monitoring
+    // One repeating 2 s timer compares timestamps instead of re-arming one-shot
+    // timers on every telemetry packet. It is fully suspended while the app is
+    // backgrounded and gets fresh baselines on resume, so time spent suspended
+    // never masquerades as a stall.
+
+    /// Pause health checks (app going to background). The connection, video
+    /// feed, and decoder are left completely untouched.
+    func suspendHealthMonitoring() {
+        isHealthMonitoringSuspended = true
+    }
+
+    /// Resume health checks with fresh baselines (app returning to foreground,
+    /// or a connection re-confirmation). Grace period included by design: all
+    /// timestamps reset to now.
+    func resumeHealthMonitoring() {
+        isHealthMonitoringSuspended = false
+        guard isAircraftConnected else { return }
+        let now = Date()
+        lastTelemetryAt    = now
+        lastVideoPacketAt  = now
+        feedStartupAt      = now
+        lastStallSignalAt  = .distantPast
+        lastFeedRecoveryAt = .distantPast
+        if healthMonitorTimer == nil { startHealthMonitor() }
+    }
+
+    private func startHealthMonitor() {
+        stopHealthMonitor()
+        let now = Date()
+        lastTelemetryAt    = now
+        lastVideoPacketAt  = now
+        feedStartupAt      = now
+        lastStallSignalAt  = .distantPast
+        lastFeedRecoveryAt = .distantPast
+        let timer = Timer(timeInterval: 2.0, repeats: true) { [weak self] _ in
+            self?.evaluateConnectionHealth()
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        healthMonitorTimer = timer
+    }
+
+    private func stopHealthMonitor() {
+        healthMonitorTimer?.invalidate()
+        healthMonitorTimer  = nil
+        lastTelemetryAt     = .distantPast
+        lastVideoPacketAt   = .distantPast
+        feedStartupAt       = .distantPast
+        lastStallSignalAt   = .distantPast
+        lastFeedRecoveryAt  = .distantPast
+    }
+
+    private func evaluateConnectionHealth() {
+        guard isAircraftConnected, !isHealthMonitoringSuspended else { return }
+        let now = Date()
+
+        // 1) Telemetry: a silent flight controller is only a *signal* —
+        //    DJIManager verifies against SDK ground truth before acting, and a
+        //    live link is kept (delegates re-armed) rather than torn down.
+        let telemetryAge = now.timeIntervalSince(lastTelemetryAt)
+        if telemetryAge > 6.0, now.timeIntervalSince(lastStallSignalAt) > 6.0 {
+            print("DJISDKBridge: telemetry silent \(String(format: "%.1f", telemetryAge))s — requesting link verification.")
+            lastStallSignalAt = now
             NotificationCenter.default.post(name: .djiTelemetryStalled, object: nil)
         }
-        RunLoop.main.add(t, forMode: .common)
-        self.telemetryWatchdog = t
+
+        // 2) Video feed: escalation is limited to restarting the feed listener
+        //    — never the connection.
+        let canRecover = now.timeIntervalSince(lastFeedRecoveryAt) > 3.0
+        if !hasLiveVideoData {
+            // Connected but no packets yet: recover the feed startup path.
+            if now.timeIntervalSince(feedStartupAt) > 5.0, canRecover {
+                print("DJISDKBridge: no video packets since startup — restarting feed.")
+                Task { @MainActor [weak self] in
+                    self?.liveFeedManager.recoverFromVideoStall()
+                }
+                lastFeedRecoveryAt = now
+            }
+        } else {
+            let packetAge = now.timeIntervalSince(lastVideoPacketAt)
+            if packetAge > 3.0, canRecover {
+                print("DJISDKBridge: video packet stall (\(String(format: "%.1f", packetAge))s) — restarting feed.")
+                Task { @MainActor [weak self] in
+                    self?.liveFeedManager.recoverFromVideoStall()
+                }
+                lastVideoPacketAt  = now
+                lastFeedRecoveryAt = now
+            }
+        }
     }
 
     // MARK: - Virtual Stick Commands
@@ -153,7 +319,7 @@ final class DJISDKBridge: NSObject {
         var data = DJIVirtualStickFlightControlData()
         data.pitch            = safety.clamp(pitch)
         data.roll             = safety.clamp(roll)
-        data.yaw              = Float(safety.clampYawDps(Double(yaw)))
+        data.yaw              = Float(safety.clampYawDps(Double(yaw)))  // capped at safety.maxYawDps
         data.verticalThrottle = safety.clamp(throttle)
 
         fc.send(data, withCompletion: nil)
@@ -245,9 +411,17 @@ final class DJISDKBridge: NSObject {
     }
 
     /// Auto-land. Returns true on success.
+    ///
+    /// Virtual Stick must be disabled before the SDK will accept the landing
+    /// command (error -1008 otherwise). We disable VS, land, then rely on the
+    /// next reconnect/recheckVirtualStick call to re-enable it if needed.
     @discardableResult
     func startLanding() async -> Bool {
         guard let fc = flightController else { return false }
+        // Disable Virtual Stick — SDK rejects startLanding while VS is active.
+        await setVirtualStickEnabled(false)
+        // Brief settle so the flight controller acknowledges the mode change.
+        try? await Task.sleep(for: .seconds(0.3))
         return await withCheckedContinuation { cont in
             fc.startLanding { error in
                 if let error {
@@ -293,6 +467,83 @@ final class DJISDKBridge: NSObject {
         try? await Task.sleep(for: .seconds(0.8))
         print("DJISDKBridge: capturePhoto \(shotOK ? "ok" : "failed").")
         return shotOK
+    }
+
+    /// Photo op used by missions: grabs the live frame for UI display + camera
+    /// roll, then fires the SDK shutter (full-res still goes to the drone's SD
+    /// card as usual).
+    @discardableResult
+    func capturePhotoAndSave() async -> Bool {
+        // Snapshot the frame BEFORE the mode switch — the live feed can hiccup
+        // while the camera flips into shoot-photo mode.
+        let frame = cameraFrame
+        let ok = await capturePhoto()
+        if let frame {
+            await MainActor.run {
+                self.lastCapturedPhoto = frame
+                if ActionTuning.shared.photoSaveToCameraRoll {
+                    UIImageWriteToSavedPhotosAlbum(frame, nil, nil, nil)
+                }
+            }
+        }
+        return ok
+    }
+
+    // MARK: - Hotpoint Orbit (SDK POI mission)
+
+    /// Start an SDK-native Hotpoint mission circling `center`.
+    /// Virtual Stick is disabled for the duration (they are mutually
+    /// exclusive); call `stopHotpointOrbit()` to end and restore VS.
+    @discardableResult
+    func startHotpointOrbit(center: GPSCoordinate,
+                            radiusM: Double,
+                            angularVelocityDps: Double,
+                            clockwise: Bool = true) async -> Bool {
+        guard let op = DJISDKManager.missionControl()?.hotpointMissionOperator() else {
+            print("DJISDKBridge: hotpoint operator unavailable.")
+            return false
+        }
+        let mission = DJIHotpointMission()
+        mission.hotpoint = center.clLocationCoordinate2D
+        mission.altitude = Float(max(5.0, telemetry.altitudeM))     // SDK minimum 5 m
+        mission.radius = Float(max(5.0, radiusM))                   // SDK minimum 5 m
+        mission.angularVelocity = Float(clockwise ? abs(angularVelocityDps)
+                                                  : -abs(angularVelocityDps))
+        mission.startPoint = .nearest
+        mission.heading = .towardHotpoint
+
+        await setVirtualStickEnabled(false)
+        let ok: Bool = await withCheckedContinuation { cont in
+            op.start(mission) { error in
+                if let error {
+                    print("DJISDKBridge: hotpoint start error: \(error.localizedDescription)")
+                }
+                cont.resume(returning: error == nil)
+            }
+        }
+        if ok {
+            isHotpointActive = true
+        } else {
+            await setVirtualStickEnabled(true)   // restore control path
+        }
+        return ok
+    }
+
+    /// Stop a running Hotpoint mission and re-enable Virtual Stick.
+    func stopHotpointOrbit() async {
+        guard isHotpointActive else { return }
+        if let op = DJISDKManager.missionControl()?.hotpointMissionOperator() {
+            await withCheckedContinuation { (cont: CheckedContinuation<Void, Never>) in
+                op.stopMission { error in
+                    if let error {
+                        print("DJISDKBridge: hotpoint stop error: \(error.localizedDescription)")
+                    }
+                    cont.resume()
+                }
+            }
+        }
+        isHotpointActive = false
+        await setVirtualStickEnabled(true)
     }
 
     // MARK: - Gimbal
@@ -401,49 +652,6 @@ final class DJISDKBridge: NSObject {
                 cont.resume(returning: error == nil)
             }
         }
-    }
-
-    private func startVideoStallWatchdog() {
-        stopVideoStallWatchdog()
-        lastVideoPacketAt = Date()
-        feedStartupAt = Date()
-        lastFeedRecoveryAt = Date.distantPast
-        let timer = Timer(timeInterval: 2.0, repeats: true) { [weak self] _ in
-            guard let self else { return }
-            guard self.isAircraftConnected else { return }
-            let now = Date()
-            let canRecover = now.timeIntervalSince(self.lastFeedRecoveryAt) > 3.0
-            if !self.hasLiveVideoData {
-                // Connected but no packets yet: recover feed startup path.
-                if now.timeIntervalSince(self.feedStartupAt) > 5.0, canRecover {
-                    print("DJISDKBridge: no video packets since startup — restarting feed.")
-                    Task { @MainActor [weak self] in
-                        self?.liveFeedManager.recoverFromVideoStall()
-                    }
-                    self.lastFeedRecoveryAt = now
-                }
-                return
-            }
-            let age = Date().timeIntervalSince(self.lastVideoPacketAt)
-            if age > 3.0, canRecover {
-                print("DJISDKBridge: video packet stall (\(String(format: "%.1f", age))s) — restarting feed.")
-                Task { @MainActor [weak self] in
-                    self?.liveFeedManager.recoverFromVideoStall()
-                }
-                self.lastVideoPacketAt = now
-                self.lastFeedRecoveryAt = now
-            }
-        }
-        RunLoop.main.add(timer, forMode: .common)
-        videoStallTimer = timer
-    }
-
-    private func stopVideoStallWatchdog() {
-        videoStallTimer?.invalidate()
-        videoStallTimer = nil
-        lastVideoPacketAt = Date.distantPast
-        feedStartupAt = Date.distantPast
-        lastFeedRecoveryAt = Date.distantPast
     }
 
     func markVideoPacketReceived() {
@@ -561,6 +769,12 @@ final class DJILiveVideoFeedManager: NSObject {
         #if canImport(DJIWidget)
         DJIVideoPreviewer.instance()?.setView(view)
         if !previewerStarted {
+            // Use VideoToolbox hardware H264 decode instead of FFmpeg software decode.
+            // This eliminates the continuous "missing picture in access unit" / SEI-truncated
+            // stderr spam from DJIWidget's bundled FFmpeg, reduces CPU usage, and lowers
+            // decode latency. FFmpeg is still available as an internal fallback if hw decode
+            // fails for a given frame format.
+            DJIVideoPreviewer.instance()?.enableHardwareDecode = true
             DJIVideoPreviewer.instance()?.start()
             previewerStarted = true
         }
@@ -582,7 +796,8 @@ final class DJILiveVideoFeedManager: NSObject {
     private func startSnapshotTimer() {
         stopSnapshotTimer()
         let timer = Timer(timeInterval: 0.5, repeats: true) { [weak self] _ in
-            self?.capturePreviewSnapshot()
+            guard let self else { return }
+            Task { @MainActor in self.capturePreviewSnapshot() }
         }
         RunLoop.main.add(timer, forMode: .common)
         snapshotTimer = timer
@@ -669,11 +884,12 @@ extension DJISDKBridge: DJIFlightControllerDelegate {
             satelliteCount: Int(state.satelliteCount),
             isFlying:       state.isFlying,
             currentLocation: currentLocation,
-            homeLocation:   homeLocation
+            homeLocation:   homeLocation,
+            isVisionPositioningActive: state.isVisionPositioningSensorBeingUsed
         )
         Task { @MainActor [weak self] in
             self?.telemetry = snap
-            self?.startTelemetryWatchdog()
+            self?.lastTelemetryAt = Date()
         }
     }
 }

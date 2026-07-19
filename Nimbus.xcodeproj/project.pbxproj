@@ -38,8 +38,6 @@
 		};
 		4BBA9A2A300BD99E00216B73 /* backend */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = backend;
 			sourceTree = "<group>";
 		};
@@ -172,9 +170,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Nimbus/Pods-Nimbus-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Nimbus/Pods-Nimbus-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -347,7 +349,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = FG5PAGCHB8;
+				DEVELOPMENT_TEAM = N8N9GMMH66;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
@@ -356,11 +358,11 @@
 				);
 				INFOPLIST_FILE = Nimbus/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Nimbus;
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Transcript speech to instructions to the drone";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "This app requires microphone access to record your voice flight commands for ElevenLabs.";
 				INFOPLIST_KEY_NSMotionUsageDescription = "Head tracking via AirPods gyroscope steers the drone camera to follow where you look.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "This app needs speech recognition to detect when you say 'Ok/Hey Nimbus' or 'Ok/Hey Numbers' to launch drone control commands.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -373,7 +375,7 @@
 					"$(PROJECT_DIR)/Nimbus/backend\\ 2/.venv/lib/python3.9/site-packages/jiter",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.juliachen.nimbus.hackthe6;
+				PRODUCT_BUNDLE_IDENTIFIER = penguinpush.Nimbus;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -398,7 +400,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = FG5PAGCHB8;
+				DEVELOPMENT_TEAM = N8N9GMMH66;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
@@ -407,11 +409,11 @@
 				);
 				INFOPLIST_FILE = Nimbus/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Nimbus;
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Transcript speech to instructions to the drone";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "This app requires microphone access to record your voice flight commands for ElevenLabs.";
 				INFOPLIST_KEY_NSMotionUsageDescription = "Head tracking via AirPods gyroscope steers the drone camera to follow where you look.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "This app needs speech recognition to detect when you say 'Ok/Hey Nimbus' or 'Ok/Hey Numbers' to launch drone control commands.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -424,7 +426,7 @@
 					"$(PROJECT_DIR)/Nimbus/backend\\ 2/.venv/lib/python3.9/site-packages/jiter",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.juliachen.nimbus.hackthe6;
+				PRODUCT_BUNDLE_IDENTIFIER = penguinpush.Nimbus;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;

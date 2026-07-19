@@ -21,9 +21,31 @@ struct ManualFlightControlView: View {
 
     @State private var orbitRadius = "5.0"
     @State private var orbitDuration = "30.0"
+    @State private var selectedBehavior: BehaviorType = .approach
+    @State private var rotateAngle = "90.0"
+    @State private var rotateClockwise = true
+    @State private var altitudeDelta = "1.0"
     @State private var feedbackMessage = "No manual command sent yet."
     @State private var feedbackLevel: FeedbackLevel = .info
     @State private var feedbackTimestamp = Date()
+
+    private enum BehaviorType: String, CaseIterable, Identifiable {
+        case approach = "Approach"
+        case orbit    = "Orbit"
+        case follow   = "Follow"
+        case rotate   = "Rotate"
+        case altitude = "Altitude"
+        var id: String { rawValue }
+        var icon: String {
+            switch self {
+            case .approach: return "arrow.forward.circle.fill"
+            case .orbit:    return "arrow.triangle.2.circlepath"
+            case .follow:   return "figure.walk.motion"
+            case .rotate:   return "arrow.clockwise"
+            case .altitude: return "arrow.up.arrow.down"
+            }
+        }
+    }
 
     private enum FeedbackLevel {
         case info
@@ -362,188 +384,170 @@ struct ManualFlightControlView: View {
 
     private var behaviorCommandsSection: some View {
         Section("Flight Behaviors") {
-            // Approach behavior
-            VStack(spacing: 12) {
-                Text("Approach (Visual Servo)")
-                    .font(.subheadline.weight(.semibold))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                HStack(spacing: 12) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Box [ymin,xmin,ymax,xmax]")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        TextField("0,0,1000,1000", text: $approachBoxInput)
-                            .font(.caption.monospacedDigit())
-                            .textFieldStyle(.roundedBorder)
-                    }
+            // Behavior picker (scrollable menu dropdown)
+            Picker("Behavior", selection: $selectedBehavior) {
+                ForEach(BehaviorType.allCases) { b in
+                    Label(b.rawValue, systemImage: b.icon).tag(b)
                 }
+            }
+            .pickerStyle(.menu)
 
-                HStack(spacing: 12) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Standoff (m)")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        TextField("3.0", text: $approachStandoff)
-                            .font(.caption.monospacedDigit())
-                            .textFieldStyle(.roundedBorder)
-                            .keyboardType(.decimalPad)
-                    }
-
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Timeout (s)")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        TextField("45.0", text: $approachMaxSec)
-                            .font(.caption.monospacedDigit())
-                            .textFieldStyle(.roundedBorder)
-                            .keyboardType(.decimalPad)
-                    }
+            // Parameters for selected behavior
+            Group {
+                switch selectedBehavior {
+                case .approach: approachParameters
+                case .orbit:    orbitParameters
+                case .follow:   followParameters
+                case .rotate:   rotateParameters
+                case .altitude: altitudeParameters
                 }
+            }
+            .padding(.vertical, 4)
 
-                Button(action: startApproach) {
-                    Label {
-                        Text("Start Approach")
-                    } icon: {
-                        Image(systemName: "arrow.forward.circle.fill")
-                    }
+            // Execute
+            Button(action: executeBehavior) {
+                Label("Execute \(selectedBehavior.rawValue)",
+                      systemImage: selectedBehavior.icon)
                     .font(.subheadline.weight(.semibold))
                     .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.cyan)
-                .disabled(!orc.bridge.isAircraftConnected)
             }
-            .padding(.vertical, 8)
+            .buttonStyle(.borderedProminent)
+            .disabled(!orc.bridge.isAircraftConnected)
 
-            Divider()
-
-            // Orbit behavior
-            VStack(spacing: 12) {
-                Text("Orbit (Horizontal Circle)")
-                    .font(.subheadline.weight(.semibold))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                HStack(spacing: 12) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Radius (m)")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        TextField("5.0", text: $orbitRadius)
-                            .font(.caption.monospacedDigit())
-                            .textFieldStyle(.roundedBorder)
-                            .keyboardType(.decimalPad)
-                    }
-
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Duration (s)")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        TextField("30.0", text: $orbitDuration)
-                            .font(.caption.monospacedDigit())
-                            .textFieldStyle(.roundedBorder)
-                            .keyboardType(.decimalPad)
-                    }
-                }
-
-                Button(action: startOrbit) {
-                    Label {
-                        Text("Start Orbit")
-                    } icon: {
-                        Image(systemName: "arrow.triangle.2.circlepath")
-                    }
-                    .font(.subheadline.weight(.semibold))
-                    .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.green)
-                .disabled(!orc.bridge.isAircraftConnected)
-            }
-            .padding(.vertical, 8)
-
-            Divider()
-
-            // Person follow behavior
-            VStack(spacing: 12) {
-                Text("Person Follow")
-                    .font(.subheadline.weight(.semibold))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                Toggle(isOn: Binding(
-                    get: { orc.isOverheadFollowModeEnabled },
-                    set: { orc.isOverheadFollowModeEnabled = $0 }
-                )) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Overhead Tracking")
-                            .font(.subheadline)
-                        Text(orc.isOverheadFollowModeEnabled
-                             ? "Top-down above person (AirPods yaw-synced)"
-                             : "Legacy heading-follow profile")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    }
-                }
-                .toggleStyle(.switch)
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(String(format: "AirPods Yaw/Pitch/Roll: %.1f / %.1f / %.1f°",
-                                          orc.headTracking.effectiveAttitude.yawDeg,
-                                          orc.headTracking.effectiveAttitude.pitchDeg,
-                                          orc.headTracking.effectiveAttitude.rollDeg))
-                        .font(.caption.monospacedDigit())
-                        .foregroundStyle(.secondary)
-                    Text(String(format: "Drone-Head Yaw Δ: %.1f°",
-                                          shortestAngleDelta(target: orc.headTracking.effectiveAttitude.yawDeg,
-                                                            current: orc.bridge.telemetry.headingDeg)))
-                        .font(.caption.monospacedDigit())
-                        .foregroundStyle(.secondary)
-                }
-
-                Button(action: startPersonFollow) {
-                    Label {
-                        Text("Start Person Follow")
-                    } icon: {
-                        Image(systemName: "figure.walk.motion")
-                    }
-                    .font(.subheadline.weight(.semibold))
-                    .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.mint)
-                .disabled(!orc.bridge.isAircraftConnected)
-            }
-            .padding(.vertical, 8)
-
-            Divider()
-
-            // Quick behavior buttons
+            // Quick stop / hover
             HStack(spacing: 10) {
                 Button(action: stopCommand) {
-                    Label {
-                        Text("Stop Behavior")
-                    } icon: {
-                        Image(systemName: "stop.fill")
-                    }
-                    .font(.caption.weight(.semibold))
-                    .frame(maxWidth: .infinity)
+                    Label("Stop", systemImage: "stop.fill")
+                        .font(.caption.weight(.semibold))
+                        .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
                 .tint(.orange)
-                .disabled(!orc.bridge.isAircraftConnected)
 
                 Button(action: hoverCommand) {
-                    Label {
-                        Text("Hover")
-                    } icon: {
-                        Image(systemName: "pause.circle.fill")
-                    }
-                    .font(.caption.weight(.semibold))
-                    .frame(maxWidth: .infinity)
+                    Label("Hover", systemImage: "pause.circle.fill")
+                        .font(.caption.weight(.semibold))
+                        .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
                 .tint(.yellow)
-                .disabled(!orc.bridge.isAircraftConnected)
             }
+            .disabled(!orc.bridge.isAircraftConnected)
+        }
+    }
+
+    @ViewBuilder private var approachParameters: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Box [ymin,xmin,ymax,xmax]")
+                .font(.caption).foregroundStyle(.secondary)
+            TextField("0,0,1000,1000", text: $approachBoxInput)
+                .font(.caption.monospacedDigit())
+                .textFieldStyle(.roundedBorder)
+        }
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Standoff (m)")
+                    .font(.caption).foregroundStyle(.secondary)
+                TextField("3.0", text: $approachStandoff)
+                    .font(.caption.monospacedDigit())
+                    .textFieldStyle(.roundedBorder)
+                    .keyboardType(.decimalPad)
+            }
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Timeout (s)")
+                    .font(.caption).foregroundStyle(.secondary)
+                TextField("45.0", text: $approachMaxSec)
+                    .font(.caption.monospacedDigit())
+                    .textFieldStyle(.roundedBorder)
+                    .keyboardType(.decimalPad)
+            }
+        }
+    }
+
+    @ViewBuilder private var orbitParameters: some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Radius (m)")
+                    .font(.caption).foregroundStyle(.secondary)
+                TextField("5.0", text: $orbitRadius)
+                    .font(.caption.monospacedDigit())
+                    .textFieldStyle(.roundedBorder)
+                    .keyboardType(.decimalPad)
+            }
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Duration (s)")
+                    .font(.caption).foregroundStyle(.secondary)
+                TextField("30.0", text: $orbitDuration)
+                    .font(.caption.monospacedDigit())
+                    .textFieldStyle(.roundedBorder)
+                    .keyboardType(.decimalPad)
+            }
+        }
+    }
+
+    @ViewBuilder private var followParameters: some View {
+        Toggle(isOn: Binding(
+            get: { orc.isOverheadFollowModeEnabled },
+            set: { orc.isOverheadFollowModeEnabled = $0 }
+        )) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Overhead Mode")
+                    .font(.subheadline)
+                Text(orc.isOverheadFollowModeEnabled
+                     ? "Top-down above person (AirPods yaw-synced)"
+                     : "Legacy heading-follow profile")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .toggleStyle(.switch)
+        VStack(alignment: .leading, spacing: 4) {
+            Text(String(format: "AirPods Yaw/Pitch/Roll: %.1f / %.1f / %.1f°",
+                        orc.headTracking.effectiveAttitude.yawDeg,
+                        orc.headTracking.effectiveAttitude.pitchDeg,
+                        orc.headTracking.effectiveAttitude.rollDeg))
+                .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+            Text(String(format: "Drone-Head Yaw Δ: %.1f°",
+                        shortestAngleDelta(target: orc.headTracking.effectiveAttitude.yawDeg,
+                                          current: orc.bridge.telemetry.headingDeg)))
+                .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+        }
+    }
+
+    @ViewBuilder private var rotateParameters: some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Angle (°)")
+                    .font(.caption).foregroundStyle(.secondary)
+                TextField("90.0", text: $rotateAngle)
+                    .font(.caption.monospacedDigit())
+                    .textFieldStyle(.roundedBorder)
+                    .keyboardType(.decimalPad)
+            }
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Direction")
+                    .font(.caption).foregroundStyle(.secondary)
+                Picker("", selection: $rotateClockwise) {
+                    Text("CW ↻").tag(true)
+                    Text("CCW ↺").tag(false)
+                }
+                .pickerStyle(.segmented)
+                .fixedSize()
+            }
+        }
+    }
+
+    @ViewBuilder private var altitudeParameters: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Delta (m) — positive = up, negative = down")
+                .font(.caption).foregroundStyle(.secondary)
+            TextField("1.0", text: $altitudeDelta)
+                .font(.caption.monospacedDigit())
+                .textFieldStyle(.roundedBorder)
+                .keyboardType(.decimalPad)
+        }
+        if orc.bridge.isAircraftConnected {
+            Text(String(format: "Current altitude: %.1f m", orc.bridge.telemetry.altitudeM))
+                .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
         }
     }
 
@@ -755,6 +759,16 @@ struct ManualFlightControlView: View {
         postFeedback("Orbit started (radius \(String(format: "%.1f", radius)) m, duration \(String(format: "%.1f", duration)) s).", level: .success)
     }
 
+    private func executeBehavior() {
+        switch selectedBehavior {
+        case .approach: startApproach()
+        case .orbit:    startOrbit()
+        case .follow:   startPersonFollow()
+        case .rotate:   startRotate()
+        case .altitude: startAltitudeChange()
+        }
+    }
+
     private func startPersonFollow() {
         guard orc.bridge.isAircraftConnected else {
             print("❌ ManualFlightControl: Aircraft not connected")
@@ -765,6 +779,28 @@ struct ManualFlightControlView: View {
         orc.startPersonFollow()
         print("👤 ManualFlightControl: Person follow started (mode: \(orc.isOverheadFollowModeEnabled ? "overhead" : "heading-follow"))")
         postFeedback("Person follow started (\(orc.isOverheadFollowModeEnabled ? "overhead" : "heading-follow") mode).", level: .success)
+    }
+
+    private func startRotate() {
+        guard orc.bridge.isAircraftConnected else {
+            postFeedback("Cannot rotate: aircraft not connected.", level: .error)
+            return
+        }
+        let angle = abs(Double(rotateAngle) ?? 90.0)
+        let signed = rotateClockwise ? angle : -angle
+        orc.behaviors.rotateBy(yawDeg: signed)
+        postFeedback("Rotating \(Int(angle))° \(rotateClockwise ? "CW" : "CCW").", level: .success)
+    }
+
+    private func startAltitudeChange() {
+        guard orc.bridge.isAircraftConnected else {
+            postFeedback("Cannot change altitude: aircraft not connected.", level: .error)
+            return
+        }
+        let delta = Double(altitudeDelta) ?? 1.0
+        orc.behaviors.changeAltitude(deltaM: delta)
+        let sign = delta >= 0 ? "+" : ""
+        postFeedback("Altitude \(sign)\(String(format: "%.1f", delta)) m.", level: .success)
     }
 
     private func saveCurrentSpot() {

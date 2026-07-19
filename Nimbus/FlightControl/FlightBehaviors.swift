@@ -13,6 +13,8 @@ final class FlightBehaviors {
     let bridge: DJISDKBridge
     let safety: SafetySupervisor
     let headTracking: HeadTrackingManager
+    /// All per-action adjustable parameters live in ActionTuning.swift.
+    private var tuning: ActionTuning { .shared }
 
     private var behaviorTimer: Timer?
     private var activeMode = Mode.none
@@ -34,8 +36,7 @@ final class FlightBehaviors {
     private var approachMaxSec   = 45.0
     private var approachStart    = Date.distantPast
 
-    private var orbitAngDps      = 12.0
-    private var orbitPitchMps: Float = 1.0
+    private var orbitTangentialMps: Float = 1.0
     private var orbitMaxSec      = 30.0
     private var orbitStart       = Date.distantPast
 
@@ -45,14 +46,14 @@ final class FlightBehaviors {
     private var followStartHeading = 0.0
     private var followOverheadMode = true
     private var followHeadTopTargetY = 0.50
-    private let followYawOffsetDeg = 180.0
+    // 0° = drone faces the same direction as the user (desired for overhead follow).
+    // Change to 180° if you want the drone to face *toward* the user instead.
+    private let followYawOffsetDeg = 0.0
     private var followTargetAltitudeM: Double = 4.0
     private var followFilteredLatErr = 0.0
     private var followFilteredFwdErr = 0.0
-    private let followErrorFilterAlpha = 0.25
     private var followTrackRequest: VNTrackObjectRequest?
     private let followTrackMinConfidence: Float = 0.30
-    private let followYawFirstThresholdDeg = 5.0
     private var followLostTicks = 0
     /// Optional explicit tracker seed (Vision-normalized) set at follow start.
     private var followSeedBox: CGRect?
@@ -67,9 +68,6 @@ final class FlightBehaviors {
 
     // rotate-by-angle state
     private var rotateTargetHeading = 0.0
-    private var rotateRemainingDeg = 0.0
-    private var rotateLastHeading = 0.0
-    private var rotateDirection = 1.0          // +1 CW, -1 CCW
     private var rotateStart = Date.distantPast
     private var rotateMaxSec = 30.0
 
@@ -84,6 +82,9 @@ final class FlightBehaviors {
     private var timedThrottle: Float = 0
     private var timedUntil = Date.distantPast
 
+    // background heading-hold (runs perpetually; only acts when no behavior owns the aircraft)
+    private var headingHoldTimer: Timer?
+
     enum Mode { case none, approach, orbit, hover, followPerson, navigateToSpot,
                      rotateBy, altitudeChange, timedVelocity }
 
@@ -91,6 +92,11 @@ final class FlightBehaviors {
         self.bridge = bridge
         self.safety = safety
         self.headTracking = headTracking
+        startHeadingHoldLoop()
+    }
+
+    deinit {
+        headingHoldTimer?.invalidate()
     }
 
     // MARK: - Public Commands
@@ -104,12 +110,17 @@ final class FlightBehaviors {
         startTimer(mode: .approach)
     }
 
-    /// Fly in a horizontal circle (CW). Radius now affects the linear speed.
-    func orbit(radiusM: Double = 5.0, durationSec: Double = 30.0) {
+    /// Fly a horizontal circle (CW) at `angularVelocityDps` for `durationSec`.
+    /// Linear speed = ω · r; multiple revolutions = longer duration.
+    /// (Virtual-Stick fallback — the SDK Hotpoint mission is preferred; see
+    /// MissionExecutor.runOrbit.)
+    func orbit(radiusM: Double = 5.0,
+               angularVelocityDps: Double = 15.0,
+               durationSec: Double = 30.0) {
         let safeRadius = max(0.5, radiusM)
-        orbitAngDps = 360.0 / max(1.0, durationSec)
+        let orbitAngDps = max(1.0, angularVelocityDps)
         let angularRadPerSec = orbitAngDps * .pi / 180.0
-        orbitPitchMps = safety.clamp(Float(safeRadius * angularRadPerSec))
+        orbitTangentialMps = safety.clamp(Float(safeRadius * angularRadPerSec))
         orbitMaxSec = durationSec
         orbitStart = Date()
         startTimer(mode: .orbit)
@@ -127,8 +138,6 @@ final class FlightBehaviors {
         followStart = Date()
         followOverheadMode = overheadMode
         followHeadTopTargetY = overheadMode ? 0.50 : 0.62
-        // Absolute altitude target (AGL), not a relative climb increment.
-        followTargetAltitudeM = 4.0
         followStartHeadYaw = headTracking.effectiveAttitude.yawDeg
         followStartHeading = bridge.telemetry.headingDeg
         followFilteredLatErr = 0
@@ -136,23 +145,31 @@ final class FlightBehaviors {
         followTrackRequest = nil
         followLostTicks = 0
         followSeedBox = seedBox
+        // "Fly up": absolute altitude target (AGL) from tuning, never below the
+        // current altitude baseline, capped under the safety ceiling.
         let ceiling = safety.maxAltitudeM - 1.0
-        let baseline = max(2.8, bridge.telemetry.altitudeM)
+        let baseline = max(tuning.followAltitudeM, bridge.telemetry.altitudeM)
         followTargetAltitudeM = min(ceiling, baseline)
         Task { @MainActor [weak self] in self?.onFollowTargetBoxUpdated?(nil) }
         startTimer(mode: .followPerson)
     }
 
-    /// Yaw in place by a signed angle (+ = clockwise). Closed loop on the
-    /// accumulated heading change from telemetry.
+    /// Yaw in place by a signed angle (+ = clockwise). Closed loop on absolute
+    /// heading error to a target heading (robust to telemetry jitter/sign quirks).
     func rotateBy(yawDeg: Double, maxSeconds: Double = 30.0) {
         let clamped = max(-720.0, min(720.0, yawDeg))
-        rotateRemainingDeg = abs(clamped)
-        rotateDirection = clamped >= 0 ? 1.0 : -1.0
-        rotateLastHeading = bridge.telemetry.headingDeg
+        rotateTargetHeading = normalizedHeading(bridge.telemetry.headingDeg + clamped)
         rotateStart = Date()
         rotateMaxSec = maxSeconds
         startTimer(mode: .rotateBy)
+    }
+
+    /// Yaw in place to an absolute compass heading (deg, 0 = north). Takes the
+    /// shortest way around. Used by user-relative cardinal fly_to moves.
+    func rotateToHeading(_ headingDeg: Double, maxSeconds: Double = 30.0) {
+        let delta = shortestAngleDelta(target: headingDeg,
+                                       current: bridge.telemetry.headingDeg)
+        rotateBy(yawDeg: delta, maxSeconds: maxSeconds)
     }
 
     /// Climb (+) or descend (−) by a relative altitude in meters.
@@ -273,19 +290,20 @@ final class FlightBehaviors {
             startStabilizedHoverHold(notifyCompletion: true)
             return
         }
-        // Accumulate traversed angle from telemetry heading deltas.
         let heading = bridge.telemetry.headingDeg
-        let delta = abs(shortestAngleDelta(target: heading, current: rotateLastHeading))
-        rotateLastHeading = heading
-        rotateRemainingDeg -= delta
+        let yawError = shortestAngleDelta(target: rotateTargetHeading, current: heading)
+        let remainingDeg = abs(yawError)
 
-        if rotateRemainingDeg <= 2.0 {
+        if remainingDeg <= tuning.rotateStopToleranceDeg {
             startStabilizedHoverHold(notifyCompletion: true)
             return
         }
         // Slow down near the end for a clean stop.
-        let rate = min(40.0, max(8.0, rotateRemainingDeg * 1.2))
-        sendSmoothedVelocity(pitch: 0, roll: 0, yaw: Float(rate * rotateDirection), throttle: 0)
+        let rate = min(tuning.rotateMaxRateDps,
+                       max(tuning.rotateMinRateDps,
+                           remainingDeg * tuning.rotateRateGain))
+        let yawSign = yawError >= 0 ? 1.0 : -1.0
+        sendSmoothedVelocity(pitch: 0, roll: 0, yaw: Float(rate * yawSign), throttle: 0)
     }
 
     // MARK: - Altitude Change
@@ -296,11 +314,11 @@ final class FlightBehaviors {
             return
         }
         let err = altitudeTargetM - bridge.telemetry.altitudeM
-        if abs(err) < 0.3 {
+        if abs(err) < tuning.altitudeToleranceM {
             startStabilizedHoverHold(notifyCompletion: true)
             return
         }
-        sendSmoothedVelocity(pitch: 0, roll: 0, yaw: 0, throttle: Float(err * 0.8))
+        sendSmoothedVelocity(pitch: 0, roll: 0, yaw: 0, throttle: Float(err * tuning.altitudeGain))
     }
 
     // MARK: - Timed Velocity
@@ -310,11 +328,14 @@ final class FlightBehaviors {
             startStabilizedHoverHold(notifyCompletion: true)
             return
         }
+        // Body-frame commands: pitch is forward/back, roll is right/left.
         sendSmoothedVelocity(pitch: timedPitch, roll: timedRoll, yaw: 0, throttle: timedThrottle)
     }
 
     private func tickHoverHold() {
-        sendSmoothedVelocity(pitch: 0, roll: 0, yaw: 0, throttle: 0)
+        // Keep tracking the user's heading even during stabilisation hover.
+        let yaw = headTrackingYawCorrection()
+        sendSmoothedVelocity(pitch: 0, roll: 0, yaw: yaw, throttle: 0)
         if Date() < hoverHoldUntil { return }
         let shouldNotifyCompletion = pendingCompletionAfterHover
         stopBehavior()
@@ -323,10 +344,10 @@ final class FlightBehaviors {
         }
     }
 
-    // MARK: - Approach (visual servo)
+    // MARK: - Approach (visual servo — fly_to)
     //
-    // Drives toward the target using bbox area as a distance proxy and
-    // bbox center as a lateral error signal.
+    // Body-frame control: pitch drives forward/back toward the target after yaw
+    // alignment, so no world-frame decomposition is needed.
     //
     // box is [ymin, xmin, ymax, xmax] in 0–1000 coordinates.
 
@@ -345,25 +366,26 @@ final class FlightBehaviors {
         let yCenter  = (ymin + ymax) / 2
         let bboxArea = max(0, (xmax - xmin)) * max(0, (ymax - ymin)) / 1_000_000
 
-        let targetArea = 0.04
-        let areaErr    = targetArea - bboxArea
-        let latErr     = (xCenter - 500) / 500
-        let vertErr    = (yCenter - 500) / 500
-
-        if abs(areaErr) < 0.005 {
+        // Too close: bbox fills too much of the frame → stop.
+        if bboxArea >= tuning.flyToStopAreaFraction {
             startStabilizedHoverHold(notifyCompletion: true)
             return
         }
 
-        let kFwd: Double = 2.5
-        let kYaw: Double = 30.0
-        let kVert: Double = 1.0
+        let latErr  = (xCenter - 500) / 500          // −1 … +1 horizontal
+        let vertErr = (yCenter - 500) / 500          // −1 … +1 vertical (down +)
+        let areaErr = tuning.flyToStopAreaFraction - bboxArea
 
-        let fwd      = Float(areaErr * kFwd)
-        let yawRate  = Float(latErr * kYaw)
-        let throttle = Float(-vertErr * kVert)
+        // Rotate-first: while the target is far off-center horizontally, only
+        // yaw toward it; translate once roughly aligned.
+        let approxYawErrDeg = latErr * tuning.lookAtHorizontalFovDeg / 2
+        let aligned = abs(approxYawErrDeg) < tuning.flyToYawAlignThresholdDeg
 
-        sendSmoothedVelocity(pitch: fwd, roll: 0, yaw: yawRate, throttle: throttle)
+        let yawRate  = Float(latErr * tuning.flyToYawGainDps)
+        let fwdMag   = aligned ? Double(areaErr) * tuning.flyToForwardGain : 0
+        let throttle = aligned ? Float(-vertErr * tuning.flyToVerticalGain) : 0
+
+        sendSmoothedVelocity(pitch: Float(fwdMag), roll: 0, yaw: yawRate, throttle: throttle)
     }
 
     // MARK: - Orbit
@@ -373,8 +395,10 @@ final class FlightBehaviors {
             startStabilizedHoverHold(notifyCompletion: true)
             return
         }
-        // Constant yaw + forward velocity; orbit radius is set by v / ω.
-        sendSmoothedVelocity(pitch: orbitPitchMps, roll: 0, yaw: Float(orbitAngDps), throttle: 0)
+        // Home Lock orbit primitive:
+        // roll commands generate tangential motion around home; pitch remains
+        // zero so radial distance stays near constant.
+        sendSmoothedVelocity(pitch: 0, roll: orbitTangentialMps, yaw: 0, throttle: 0)
     }
 
     // MARK: - Person Follow
@@ -421,26 +445,25 @@ final class FlightBehaviors {
         // - yaw follows AirPods heading so drone faces same direction as user
         let latErr = Double(correctedTarget.x - frameCenter.x)   // right-left screen error
         let fwdErr = Double(frameCenter.y - correctedTarget.y)   // forward-back screen error (head-centric)
-        followFilteredLatErr += (latErr - followFilteredLatErr) * followErrorFilterAlpha
-        followFilteredFwdErr += (fwdErr - followFilteredFwdErr) * followErrorFilterAlpha
-
-        let kLat: Double = 2.2
-        let kCenterPitch: Double = 2.0
-        let kAlt: Double = 0.7
-        let kYaw: Double = 1.6
-
+        followFilteredLatErr += (latErr - followFilteredLatErr) * tuning.followErrorFilterAlpha
+        followFilteredFwdErr += (fwdErr - followFilteredFwdErr) * tuning.followErrorFilterAlpha
 
         let currentHeading = bridge.telemetry.headingDeg
-        let desiredHeading = followStartHeading + (headTracking.effectiveAttitude.yawDeg - followStartHeadYaw) + followYawOffsetDeg
+        // Use the AirPods absolute world heading directly — no incremental delta
+        // accumulation, which was drifting and computing the wrong offset.
+        let desiredHeading = headTracking.effectiveAttitude.yawDeg + followYawOffsetDeg
         let yawError = shortestAngleDelta(target: desiredHeading, current: currentHeading)
-        let yawRate = Float(yawError * kYaw)
+        let yawRate = Float(yawError * tuning.followYawGain)
         // Yaw-first sequencing for stability:
         // if heading is still off, rotate first and defer translational corrections.
-        let applyTranslation = abs(yawError) < followYawFirstThresholdDeg
-        let roll = applyTranslation ? Float(followFilteredLatErr * kLat) : 0
-        let pitch = applyTranslation ? Float(followFilteredFwdErr * kCenterPitch) : 0
+        let applyTranslation = abs(yawError) < tuning.followYawFirstThresholdDeg
+        // Screen errors are body-frame (right / forward).
+        let bodyRight = applyTranslation ? followFilteredLatErr * tuning.followLateralGain : 0
+        let bodyFwd = applyTranslation ? followFilteredFwdErr * tuning.followForwardGain : 0
+        let pitch = Float(bodyFwd)
+        let roll = Float(bodyRight)
         let altError = followTargetAltitudeM - bridge.telemetry.altitudeM
-        let throttle = Float(altError * kAlt)
+        let throttle = Float(altError * tuning.followAltitudeGain)
         // Enforce straight-down gimbal in follow mode.
         bridge.trackHeadTopWithGimbal(headTopY: CGFloat(headTopY),
                                       targetY: CGFloat(followHeadTopTargetY),
@@ -453,12 +476,15 @@ final class FlightBehaviors {
         if followTrackRequest == nil {
             // Seed priority:
             //   1. explicit seed box (e.g. Gemini-grounded target / follow subject)
-            //   2. detected person nearest the frame center (the operator)
-            //   3. fixed center region (operator stands under the drone)
+            //   2. head region from body-pose keypoints (best for overhead view)
+            //   3. detected person nearest the frame center (the operator)
+            //   4. fixed center region (operator stands under the drone)
             let seed: CGRect
             if let explicit = followSeedBox {
                 seed = explicit
                 followSeedBox = nil
+            } else if let head = Self.detectHeadBox(in: cgImage) {
+                seed = head
             } else if let person = Self.detectPersonBox(in: cgImage) {
                 seed = person
             } else {
@@ -479,6 +505,52 @@ final class FlightBehaviors {
         }
         request.inputObservation = tracked
         return tracked.boundingBox
+    }
+
+    /// Locate the operator's head using body-pose keypoints (nose / eyes /
+    /// ears). Unlike face detection, pose keypoints keep working from steep
+    /// overhead camera angles, so this gives a "top of the head" region the
+    /// follow tracker can lock onto. Multiple people are disambiguated with
+    /// the same operator heuristic as `detectPersonBox` (bigger + central).
+    /// Returns a Vision-normalized box (origin bottom-left) or nil.
+    static func detectHeadBox(in cgImage: CGImage) -> CGRect? {
+        let request = VNDetectHumanBodyPoseRequest()
+        let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+        try? handler.perform([request])
+
+        var best: CGRect?
+        var bestScore = -Double.infinity
+
+        for obs in request.results ?? [] {
+            guard let joints = try? obs.recognizedPoints(.face) else { continue }
+            let headPoints = joints.values.filter { $0.confidence >= 0.3 }
+            guard !headPoints.isEmpty else { continue }
+
+            let xs = headPoints.map { $0.location.x }
+            let ys = headPoints.map { $0.location.y }
+            guard let minX = xs.min(), let maxX = xs.max(),
+                  let minY = ys.min(), let maxY = ys.max() else { continue }
+
+            // Pad the keypoint cluster into a box; extend extra upward since
+            // the keypoints stop at the eyes/ears and we want the crown.
+            let span = max(maxX - minX, maxY - minY, 0.03)
+            let box = CGRect(x: minX - span * 0.5,
+                             y: minY - span * 0.25,
+                             width: (maxX - minX) + span,
+                             height: (maxY - minY) + span * 1.25)
+                .intersection(CGRect(x: 0, y: 0, width: 1, height: 1))
+            guard !box.isEmpty else { continue }
+
+            let dx = Double(box.midX - 0.5)
+            let dy = Double(box.midY - 0.5)
+            let score = Double(box.width * box.height)
+                      - (dx * dx + dy * dy).squareRoot() * 0.15
+            if score > bestScore {
+                bestScore = score
+                best = box
+            }
+        }
+        return best
     }
 
     /// Detect humans in the frame and pick the operator: the person whose box
@@ -527,7 +599,7 @@ final class FlightBehaviors {
         let dx = Double(point.x - 0.5)
         let dy = Double(point.y - 0.5)
         let r2 = dx * dx + dy * dy
-        let k1 = -0.18
+        let k1 = tuning.followLensK1
         let scale = 1.0 + (k1 * r2)
         let correctedX = 0.5 + (dx * scale)
         let correctedY = 0.5 + (dy * scale)
@@ -555,16 +627,13 @@ final class FlightBehaviors {
             return
         }
 
-        let headingRad = bridge.telemetry.headingDeg * .pi / 180.0
-        let bearingRad = bearingDeg * .pi / 180.0
-        let north = cos(bearingRad) * distanceM
-        let east = sin(bearingRad) * distanceM
-        let forward = north * cos(headingRad) + east * sin(headingRad)
-        let right = -north * sin(headingRad) + east * cos(headingRad)
+        // Body-frame VS: project world bearing error into forward/right.
+        let headingErrorDeg = shortestAngleDelta(target: bearingDeg, current: bridge.telemetry.headingDeg)
+        let headingErrorRad = headingErrorDeg * .pi / 180.0
 
         let kPos: Double = 0.08
-        let pitch = Float(forward * kPos)
-        let roll = Float(right * kPos)
+        let pitch = Float(cos(headingErrorRad) * distanceM * kPos)
+        let roll = Float(sin(headingErrorRad) * distanceM * kPos)
 
         var throttle: Float = 0
         if let targetAlt = target.altitudeM,
@@ -575,6 +644,43 @@ final class FlightBehaviors {
 
         sendSmoothedVelocity(pitch: pitch, roll: roll, yaw: 0, throttle: throttle)
     }
+
+    // MARK: - Background Heading Hold
+
+    /// Perpetual 10 Hz loop. Sends a proportional yaw correction toward the
+    /// user's AirPods heading whenever no other behavior owns the aircraft.
+    /// Active modes that control yaw themselves (approach, orbit, rotateBy,
+    /// timedVelocity, navigateToSpot) are excluded via the activeMode guard.
+    private func startHeadingHoldLoop() {
+        let t = Timer(timeInterval: 0.1, repeats: true) { [weak self] _ in
+            self?.tickHeadingHold()
+        }
+        RunLoop.main.add(t, forMode: .common)
+        headingHoldTimer = t
+    }
+
+    private func tickHeadingHold() {
+        // Only act when the drone is truly idle (behavior timer not running).
+        // hover / followPerson / altitudeChange handle their own yaw inline.
+        guard activeMode == .none, headTracking.isTracking else { return }
+        let yaw = headTrackingYawCorrection()
+        // Bypass the slew limiter — behavior timer is inactive, no state conflict.
+        bridge.sendVelocity(pitch: 0, roll: 0, yaw: yaw, throttle: 0)
+    }
+
+    /// Proportional yaw correction toward the user's AirPods heading.
+    /// Returns 0 when AirPods are not tracking or error is within the dead zone.
+    private func headTrackingYawCorrection() -> Float {
+        guard headTracking.isTracking else { return 0 }
+        let desired = headTracking.effectiveAttitude.yawDeg
+        let error = shortestAngleDelta(target: desired, current: bridge.telemetry.headingDeg)
+        guard abs(error) > tuning.headingHoldDeadZoneDeg else { return 0 }
+        let dir: Double = error > 0 ? 1 : -1
+        let rate = min(tuning.rotateMaxRateDps,
+                       max(tuning.rotateMinRateDps, abs(error) * tuning.headingHoldGain))
+        return Float(rate * dir)
+    }
+
 
     private func distanceAndBearing(from current: GPSCoordinate, to target: GPSCoordinate) -> (distanceM: Double, bearingDeg: Double) {
         let lat1 = current.latitude * .pi / 180.0
@@ -595,16 +701,20 @@ final class FlightBehaviors {
         return delta
     }
 
+    private func normalizedHeading(_ heading: Double) -> Double {
+        let normalized = heading.truncatingRemainder(dividingBy: 360)
+        return normalized >= 0 ? normalized : normalized + 360
+    }
+
     private func sendSmoothedVelocity(pitch: Float,
                                       roll: Float,
                                       yaw: Float,
                                       throttle: Float) {
-        let maxDeltaLinear: Float = 0.35
-        let maxDeltaYaw: Float = 12.0
-        let nextPitch = slewLimit(current: lastPitchCommand, target: pitch, maxDelta: maxDeltaLinear)
-        let nextRoll = slewLimit(current: lastRollCommand, target: roll, maxDelta: maxDeltaLinear)
-        let nextYaw = slewLimit(current: lastYawCommand, target: yaw, maxDelta: maxDeltaYaw)
-        let nextThrottle = slewLimit(current: lastThrottleCommand, target: throttle, maxDelta: maxDeltaLinear)
+        // Slew rates are tunable in ActionTuning (slewLinear / slewYaw).
+        let nextPitch    = slewLimit(current: lastPitchCommand,    target: pitch,    maxDelta: tuning.slewLinear)
+        let nextRoll     = slewLimit(current: lastRollCommand,     target: roll,     maxDelta: tuning.slewLinear)
+        let nextYaw      = slewLimit(current: lastYawCommand,      target: yaw,      maxDelta: tuning.slewYaw)
+        let nextThrottle = slewLimit(current: lastThrottleCommand, target: throttle, maxDelta: tuning.slewLinear)
         lastPitchCommand = nextPitch
         lastRollCommand = nextRoll
         lastYawCommand = nextYaw

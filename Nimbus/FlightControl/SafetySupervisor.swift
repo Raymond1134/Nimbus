@@ -6,10 +6,21 @@ import Foundation
 
 final class SafetySupervisor {
 
-    // MARK: - Configurable Limits (spec §8)
+    // MARK: - Configurable Limits
+    //
+    // Defaults are set for INDOOR / NO-GPS operation (cramped spaces).
+    // Increase these when flying outdoors with GPS.
+    //
+    // The safety ceiling is ALSO enforced by an SDK limit set in Xcode's
+    // DJI app-key config; make sure both stay in sync.
 
-    /// Maximum speed for any virtual-stick velocity axis (m/s).
-    var maxSpeedMps: Double     = 2.0
+    /// Maximum speed for any virtual-stick horizontal/vertical axis (m/s).
+    var maxSpeedMps: Double     = 5.0
+
+    /// Maximum yaw angular rate (deg/s). DJI VS accepts up to ~200 on most
+    /// airframes; 150 is high-end while still giving the decel curve room to
+    /// stop accurately.
+    var maxYawDps: Double       = 150.0
 
     /// Hard altitude ceiling AGL (m). SDK's own limit should also be set.
     var maxAltitudeM: Double    = 30.0
@@ -21,7 +32,7 @@ final class SafetySupervisor {
     var geofenceRadiusM: Double = 50.0
 
     /// Dead-man switch interval (s). DJISDKBridge sends zero-velocity if no
-    /// command arrives within this window.
+    /// command arrives within this window. Keep tight for indoor flight.
     var deadManIntervalSec: Double = 0.3
 
     // MARK: - Velocity Clamp
@@ -34,9 +45,9 @@ final class SafetySupervisor {
         Float(clamp(Double(v)))
     }
 
-    /// Clamp yaw angular rate to ±maxDps deg/s.
-    func clampYawDps(_ v: Double, maxDps: Double = 45) -> Double {
-        Swift.max(-maxDps, Swift.min(maxDps, v))
+    /// Clamp yaw angular rate to ±maxYawDps deg/s.
+    func clampYawDps(_ v: Double) -> Double {
+        Swift.max(-maxYawDps, Swift.min(maxYawDps, v))
     }
 
     // MARK: - Live Telemetry Check

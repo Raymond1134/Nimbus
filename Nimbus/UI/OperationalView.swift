@@ -52,7 +52,7 @@ struct OperationalView: View {
                         ForEach(Array(overlayDetections.enumerated()), id: \.element.id) { _, det in
                             detectionBox(det.bbox,
                                          in: geo.size,
-                                         color: .yellow,
+                                         color: overlayColor(for: det),
                                          label: det.label)
                         }
                         if let followBox = orc.followTargetBox {
@@ -127,6 +127,17 @@ struct OperationalView: View {
         let w = bbox.width * size.width
         let h = bbox.height * size.height
         return CGRect(x: x, y: y, width: w, height: h)
+    }
+
+    private func overlayColor(for detection: DetectedObject) -> Color {
+        switch detection.label.lowercased() {
+        case "black_hair":
+            return .purple
+        case "person":
+            return .yellow
+        default:
+            return .white
+        }
     }
 
     private func processCurrentFrameForOverlays() {
@@ -390,41 +401,16 @@ struct OperationalView: View {
 
     private var controlsArea: some View {
         VStack(spacing: 18) {
-            // Session launch / end + hands-free
-            HStack(spacing: 12) {
-                if orc.isSessionActive {
-                    Button { orc.endSession() } label: {
-                        Label("End · Land", systemImage: "arrow.down.circle.fill")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 20).padding(.vertical, 10)
-                            .background(Color.orange.opacity(0.85))
-                            .clipShape(Capsule())
-                    }
-                } else {
-                    Button { orc.startSession() } label: {
-                        Label("Launch Nimbus", systemImage: "arrow.up.circle.fill")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 20).padding(.vertical, 10)
-                            .background(Color.green.opacity(0.85))
-                            .clipShape(Capsule())
-                    }
-                    .disabled(!orc.bridge.isAircraftConnected)
-                    .opacity(orc.bridge.isAircraftConnected ? 1 : 0.4)
-                }
-
-                // Hands-free wakeword toggle ("Nimbus …")
-                Button { orc.setHandsFree(!orc.isHandsFreeEnabled) } label: {
-                    Label(orc.isHandsFreeEnabled ? "\"Nimbus\" ON" : "\"Nimbus\" OFF",
-                          systemImage: orc.isHandsFreeEnabled ? "ear.fill" : "ear")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 16).padding(.vertical, 10)
-                        .background(orc.isHandsFreeEnabled ? Color.purple.opacity(0.85)
-                                                           : Color.white.opacity(0.12))
-                        .clipShape(Capsule())
-                }
+            // Hands-free wakeword toggle ("Nimbus …")
+            Button { orc.setHandsFree(!orc.isHandsFreeEnabled) } label: {
+                Label(orc.isHandsFreeEnabled ? "\"Nimbus\" ON" : "\"Nimbus\" OFF",
+                      systemImage: orc.isHandsFreeEnabled ? "ear.fill" : "ear")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 16).padding(.vertical, 10)
+                    .background(orc.isHandsFreeEnabled ? Color.purple.opacity(0.85)
+                                                       : Color.white.opacity(0.12))
+                    .clipShape(Capsule())
             }
 
             // Abort — visible only when a command is running

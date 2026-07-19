@@ -108,8 +108,11 @@ final class HeadTrackingManager: NSObject {
 
     private func handleMotion(_ motion: CMDeviceMotion) {
         let rawYaw   = motion.attitude.yaw * 180 / .pi
-        let relative = rawYaw - calibYawOffset
-        let worldYaw = (compassNorthDeg + relative).truncatingRemainder(dividingBy: 360)
+        // CMHeadphoneMotionManager uses CCW-positive yaw (right-hand rule).
+        // Negate to match compass convention (CW-positive) used everywhere else.
+        let relative = calibYawOffset - rawYaw
+        let raw = (compassNorthDeg + relative).truncatingRemainder(dividingBy: 360)
+        let worldYaw = raw < 0 ? raw + 360 : raw   // normalise to [0, 360)
         currentAttitude = HeadAttitude(
             yawDeg:   worldYaw,
             pitchDeg: motion.attitude.pitch * 180 / .pi,

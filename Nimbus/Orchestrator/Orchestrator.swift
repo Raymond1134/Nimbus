@@ -32,6 +32,9 @@ final class Orchestrator {
     var isSessionActive                 = false
     /// Hands-free mode: "Nimbus …" wakeword triggers listening automatically.
     var isHandsFreeEnabled              = false
+    var handsFreeVadStartThresholdDB: Float { handsFreeSpeechStartThresholdDB }
+    var handsFreeVadContinueThresholdDB: Float { handsFreeSpeechContinueThresholdDB }
+    var handsFreeVadSilenceStopSeconds: Double { handsFreeSilenceStopSeconds }
 
     // MARK: - Subsystems
 
@@ -56,8 +59,16 @@ final class Orchestrator {
     /// Executes multi-step MissionPlans from the backend.
     @ObservationIgnored private(set) var missionExecutor: MissionExecutor!
     @ObservationIgnored private let rememberedSpotsKey = "Nimbus.RememberedSpots"
-    /// How long the auto-recording window stays open after the wakeword fires.
-    @ObservationIgnored private let handsFreeRecordSeconds: Double = 5.0
+    /// Hard ceiling for wakeword-initiated capture.
+    @ObservationIgnored private let handsFreeMaxRecordSeconds: Double = 8.0
+    /// End recording after this much trailing silence once speech started.
+    @ObservationIgnored private let handsFreeSilenceStopSeconds: Double = 1.0
+    /// dBFS threshold to declare speech start (less sensitive).
+    @ObservationIgnored private let handsFreeSpeechStartThresholdDB: Float = -38
+    /// dBFS threshold to continue speech (more sensitive hysteresis).
+    @ObservationIgnored private let handsFreeSpeechContinueThresholdDB: Float = -45
+    @ObservationIgnored private let handsFreeMeterPollSeconds: Double = 0.08
+    @ObservationIgnored private var handsFreeCaptureTask: Task<Void, Never>?
     @ObservationIgnored private let speechSynth = AVSpeechSynthesizer()
 
     // MARK: - Init
@@ -89,14 +100,20 @@ final class Orchestrator {
             say: { [weak self] text in self?.speak(text) }
         )
         missionExecutor.onAbortRequested = { [weak self] in
-            self?.resumeOverheadHold_public()
+            guard let self else { return }
+            if ActionTuning.shared.abortResumesOverheadHold {
+                self.resumeOverheadHold_public()
+            } else {
+                // Spec: stop everything and hold in place.
+                self.behaviors.hover()
+                self.appState = .executing(verb: "HOLD", target: nil)
+                self.log("Abort → holding in place.")
+            }
         }
         wakeword.onWakewordDetected = { [weak self] in
             self?.handleWakewordTriggered()
         }
         loadRememberedSpots()
-        headTracking.start(compassHeadingDeg: bridge.telemetry.headingDeg)
-        headTracking.calibrate()
         log("Orchestrator initialised.")
         Task { await checkBackendHealth() }
     }
@@ -146,8 +163,27 @@ final class Orchestrator {
         behaviors.stop()
         isSessionActive = false
         wakeword.stopListening()
+        voicePipeline.stopWakewordPreRollCapture()
         appState = .executing(verb: "LAND", target: nil)
         log("Session end: landing.")
+        Task { [weak self] in
+            guard let self else { return }
+            _ = await self.bridge.startLanding()
+            self.returnToIdle()
+        }
+    }
+
+    /// Immediate forced landing flow from UI controls.
+    func forceLandNow() {
+        missionExecutor.cancel()
+        behaviors.stop()
+        tracker.stopTracking()
+        headTracking.unfreeze()
+        isSessionActive = false
+        wakeword.stopListening()
+        voicePipeline.stopWakewordPreRollCapture()
+        appState = .executing(verb: "FORCE LAND", target: nil)
+        log("Force landing requested.")
         Task { [weak self] in
             guard let self else { return }
             _ = await self.bridge.startLanding()
@@ -184,15 +220,19 @@ final class Orchestrator {
     func setHandsFree(_ enabled: Bool) {
         isHandsFreeEnabled = enabled
         if enabled {
+            voicePipeline.startWakewordPreRollCapture()
             wakeword.startListening()
             log("Hands-free enabled — say \"Nimbus …\".")
         } else {
+            handsFreeCaptureTask?.cancel()
+            handsFreeCaptureTask = nil
             wakeword.stopListening()
+            voicePipeline.stopWakewordPreRollCapture()
             log("Hands-free disabled.")
         }
     }
 
-    /// Wakeword fired: auto-record a fixed window, then process like PTT release.
+    /// Wakeword fired: auto-record, then stop on end-of-speech (with max cap).
     private func handleWakewordTriggered() {
         guard case .idle = appState else {
             // Busy — executing states also accept commands: interrupt current mission.
@@ -210,13 +250,12 @@ final class Orchestrator {
     private func beginHandsFreeCapture() {
         spatialAudio.playCommandConfirmation()
         headTracking.freeze()
-        voicePipeline.onPressStartTalking()
+        voicePipeline.onWakewordActivatedStartTalking()
         appState = .listening
-        log("Wakeword → listening for \(Int(handsFreeRecordSeconds))s…")
-        Task { [weak self] in
-            guard let self else { return }
-            try? await Task.sleep(for: .seconds(self.handsFreeRecordSeconds))
-            self.handleVoiceRelease()
+        log("Wakeword → listening (auto-stop on silence, max \(Int(handsFreeMaxRecordSeconds))s)…")
+        handsFreeCaptureTask?.cancel()
+        handsFreeCaptureTask = Task { [weak self] in
+            await self?.monitorHandsFreeCaptureUntilSpeechEnds()
         }
     }
 
@@ -231,6 +270,7 @@ final class Orchestrator {
 
     private func restartWakewordIfNeeded() {
         if isHandsFreeEnabled {
+            voicePipeline.startWakewordPreRollCapture()
             wakeword.startListening()
         }
     }
@@ -250,6 +290,8 @@ final class Orchestrator {
     /// Allowed from idle AND while executing — a new command interrupts the
     /// current mission / overhead hold (drone hovers while listening).
     func onPushToTalkPressed() {
+        handsFreeCaptureTask?.cancel()
+        handsFreeCaptureTask = nil
         switch appState {
         case .idle:
             break
@@ -272,18 +314,20 @@ final class Orchestrator {
     /// Call when the PTT button is released.
     func handleVoiceRelease() {
         guard case .listening = appState else { return }
+        handsFreeCaptureTask?.cancel()
+        handsFreeCaptureTask = nil
         appState = .processing
 
         Task {
-            guard let fileURL = voicePipeline.recorder.stopRecording() else {
+            guard let fileURL = voicePipeline.stopCommandCapture() else {
                 log("Recording failed — no output file.", level: .error)
                 appState = .error(message: "Recording failed")
                 scheduleReturnToIdle(after: 2)
                 return
             }
-
             do {
-                let text = try await ElevenLabsSTT.transcribe(fileURL: fileURL)
+                let rawText = try await ElevenLabsSTT.transcribe(fileURL: fileURL)
+                let text = trimmedTranscriptForCommandPrinting(rawText)
                 lastTranscript = text
                 log("STT: \"\(text)\"")
                 speak("Got it. Planning your command now.")
@@ -305,6 +349,11 @@ final class Orchestrator {
         // — never stomp it.
         if case .listening = appState { return }
         if case .processing = appState { return }
+        // An abort step put the drone into a hold-in-place — keep it there.
+        if case .executing(let verb, _) = appState, verb == "HOLD" {
+            restartWakewordIfNeeded()
+            return
+        }
         headTracking.unfreeze()
         if isSessionActive && bridge.telemetry.isFlying {
             resumeOverheadHold()
@@ -452,6 +501,23 @@ final class Orchestrator {
         returnToIdle()
     }
 
+    // MARK: - Debug Mission (Debug panel op dropdown)
+
+    /// Execute a single hand-built step from the Debug panel, going through
+    /// the exact same MissionExecutor path as voice commands.
+    func executeDebugMission(steps: [NimbusStep]) async {
+        guard bridge.isAircraftConnected else {
+            log("Debug mission ignored — aircraft not connected.", level: .warning)
+            return
+        }
+        guard !missionExecutor.isRunning else {
+            log("Debug mission ignored — a mission is already running.", level: .warning)
+            return
+        }
+        log("Debug mission: \(steps.map(\.op).joined(separator: " → "))")
+        await runMission(steps: steps)
+    }
+
     // MARK: - Backend Health
 
     func checkBackendHealth() async {
@@ -480,6 +546,60 @@ final class Orchestrator {
         while Date() < deadline {
             if bridge.hasLiveVideoData, bridge.cameraFrame != nil { return }
             try? await Task.sleep(for: .seconds(0.2))
+        }
+    }
+
+    /// When wakeword pre-roll is enabled, the transcript can contain speech
+    /// from before activation. For command printing/logging, trim to start at
+    /// "hey nimbus" if present.
+    private func trimmedTranscriptForCommandPrinting(_ transcript: String) -> String {
+        let trimmed = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return trimmed }
+        let lowered = trimmed.lowercased()
+        if let range = lowered.range(of: "hey nimbus") {
+            return String(trimmed[range.lowerBound...]).trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        return trimmed
+    }
+
+    private func monitorHandsFreeCaptureUntilSpeechEnds() async {
+        let startedAt = Date()
+        var speechDetected = false
+        var lastSpeechAt = startedAt
+
+        while !Task.isCancelled {
+            guard case .listening = appState else { return }
+            guard voicePipeline.recorder.isRecording else { return }
+
+            let now = Date()
+            let powerDB = voicePipeline.recorder.currentAveragePowerDB() ?? -160
+            let threshold = speechDetected
+                ? handsFreeSpeechContinueThresholdDB
+                : handsFreeSpeechStartThresholdDB
+            let isSpeech = powerDB > threshold
+
+            if isSpeech {
+                if !speechDetected {
+                    speechDetected = true
+                    log("Wakeword capture: speech detected.")
+                }
+                lastSpeechAt = now
+            }
+
+            if speechDetected,
+               now.timeIntervalSince(lastSpeechAt) >= handsFreeSilenceStopSeconds {
+                log("Wakeword capture: trailing silence detected → processing.")
+                handleVoiceRelease()
+                return
+            }
+
+            if now.timeIntervalSince(startedAt) >= handsFreeMaxRecordSeconds {
+                log("Wakeword capture: max window reached → processing.")
+                handleVoiceRelease()
+                return
+            }
+
+            try? await Task.sleep(for: .seconds(handsFreeMeterPollSeconds))
         }
     }
 

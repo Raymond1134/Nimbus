@@ -3,6 +3,8 @@
 // Exposes raw subsystem state for testing and tuning without connecting a real drone.
 
 import SwiftUI
+import AVFoundation
+import Combine
 
 struct DebugView: View {
 
@@ -12,6 +14,29 @@ struct DebugView: View {
     @State private var sttResult   = "Hold the button below to test STT in isolation…"
     @State private var isSttTest   = false
     @State private var testPipeline = VoiceCommandPipeline()
+    @State private var sttPlaybackPlayer: AVAudioPlayer?
+    @State private var liveInputLevelDB: Float = -160
+
+    // Audio input/output device switching (debug)
+    @State private var audioRoutes = AudioRouteManager()
+
+    // Mission Ops (execute any action directly)
+    private static let missionOps = [
+        "takeoff", "land", "fly_to", "change_altitude", "rotate", "orbit",
+        "hover", "look_at", "photo", "selfie", "panorama", "follow",
+        "return", "abort",
+    ]
+    @State private var selectedOp       = "takeoff"
+    @State private var opFlyToMode      = "visual"      // "visual" | "direction"
+    @State private var opTarget         = ""
+    @State private var opDirection      = "forward"     // fly_to cardinal
+    @State private var opRotateDirection = "right"      // rotate
+    @State private var opDegrees        = ""
+    @State private var opDeltaM         = ""
+    @State private var opSeconds        = ""
+    @State private var opRevolutions    = ""
+    @State private var opDistanceM      = ""
+    @State private var opUsePersonSeed  = true
 
     var body: some View {
         NavigationStack {
@@ -19,14 +44,20 @@ struct DebugView: View {
                 djiSection
                 rcSection
                 manualFlightControlSection
+                missionOpsSection
                 backendSection
                 lastCommandSection
                 logSection
+                audioDevicesSection
                 sttTestSection
             }
             .navigationTitle("Debug")
             .navigationBarTitleDisplayMode(.inline)
             .listStyle(.insetGrouped)
+            .onAppear { audioRoutes.refresh() }
+            .onReceive(Timer.publish(every: 0.12, on: .main, in: .common).autoconnect()) { _ in
+                liveInputLevelDB = currentLiveInputLevelDB() ?? -160
+            }
         }
     }
 
@@ -45,8 +76,16 @@ struct DebugView: View {
                 row("Heading",    "\(String(format: "%.1f", t.headingDeg))°")
                 row("Battery",    "\(t.batteryPercent) %",
                     color: (1..<20).contains(t.batteryPercent) ? .red : .primary)
-                row("GPS",        t.isGPSValid ? "\(t.satelliteCount) sat" : "No fix",
+                row("GPS",
+                    t.isGPSValid ? "\(t.satelliteCount) sat" : "No fix",
                     color: t.isGPSValid ? .primary : .orange)
+                // VPS (Vision-Assisted Positioning) is the indoor GPS replacement.
+                // Green = optical-flow is actively stabilising position.
+                row("VPS / Optical Flow",
+                    t.isVisionPositioningActive ? "✓ Active" : "✕ Inactive",
+                    color: t.isVisionPositioningActive ? .green
+                         : t.isFlying              ? .orange
+                         :                            .secondary)
                 row("Vel X/Y/Z",  "\(String(format: "%.2f / %.2f / %.2f", t.velocityX, t.velocityY, t.velocityZ)) m/s")
             }
             Divider()
@@ -88,6 +127,24 @@ struct DebugView: View {
                 .foregroundStyle(.red)
                 .disabled(!orc.bridge.isAircraftConnected)
             }
+        }
+    }
+
+    private func playLastSttRecording() {
+        let url = testPipeline.recorder.lastRecordingURL ?? orc.voicePipeline.recorder.lastRecordingURL
+        guard let url else { return }
+        playRecording(at: url)
+    }
+
+    /// Play back a recorded clip so you can hear what you sound like.
+    private func playRecording(at url: URL) {
+        do {
+            let player = try AVAudioPlayer(contentsOf: url)
+            player.prepareToPlay()
+            player.play()
+            sttPlaybackPlayer = player
+        } catch {
+            sttResult = "Playback error: \(error.localizedDescription)"
         }
     }
 
@@ -145,6 +202,183 @@ struct DebugView: View {
                     .foregroundStyle(.secondary)
             }
         }
+    }
+
+    // MARK: - Mission Ops (execute any action with parameters)
+
+    private var missionOpsSection: some View {
+        Section("Mission Ops (execute any action)") {
+            Picker("Action", selection: $selectedOp) {
+                ForEach(Self.missionOps, id: \.self) { Text($0).tag($0) }
+            }
+
+            opParameterFields
+
+            if opNeedsVisualTarget {
+                Toggle("Seed target from person detection", isOn: $opUsePersonSeed)
+                    .font(.subheadline)
+            }
+
+            Button {
+                let step = buildDebugStep()
+                Task { await orc.executeDebugMission(steps: [step]) }
+            } label: {
+                Label("Execute \(selectedOp)", systemImage: "play.circle.fill")
+                    .font(.subheadline.weight(.semibold))
+            }
+            .disabled(!orc.bridge.isAircraftConnected)
+
+            Button(role: .destructive) {
+                orc.abort()
+            } label: {
+                Label("Abort / Stop", systemImage: "xmark.octagon.fill")
+                    .font(.subheadline.weight(.semibold))
+            }
+            .disabled(!orc.bridge.isAircraftConnected)
+
+            if !orc.bridge.isAircraftConnected {
+                Text("Connect aircraft to execute mission ops")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            if let photo = orc.bridge.lastCapturedPhoto {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Last captured photo")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Image(uiImage: photo)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxHeight: 180)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+            }
+        }
+    }
+
+    /// Ops that servo on a visual bounding-box target.
+    private var opNeedsVisualTarget: Bool {
+        switch selectedOp {
+        case "look_at", "orbit", "follow": return true
+        case "fly_to":                     return opFlyToMode == "visual"
+        default:                           return false
+        }
+    }
+
+    @ViewBuilder
+    private var opParameterFields: some View {
+        switch selectedOp {
+        case "fly_to":
+            Picker("Mode", selection: $opFlyToMode) {
+                Text("visual target").tag("visual")
+                Text("cardinal direction").tag("direction")
+            }
+            .pickerStyle(.segmented)
+            if opFlyToMode == "direction" {
+                Picker("Direction (user-relative)", selection: $opDirection) {
+                    ForEach(["forward", "back", "left", "right"], id: \.self) { Text($0).tag($0) }
+                }
+                paramField("Distance (m)", text: $opDistanceM,
+                           placeholder: "\(ActionTuning.shared.flyToCardinalDefaultDistanceM)")
+            } else {
+                paramField("Target label", text: $opTarget, placeholder: "person", numeric: false)
+            }
+
+        case "change_altitude":
+            paramField("Δ altitude (m, +up/−down)", text: $opDeltaM, placeholder: "1.0")
+
+        case "rotate":
+            Picker("Direction", selection: $opRotateDirection) {
+                Text("left").tag("left")
+                Text("right").tag("right")
+            }
+            .pickerStyle(.segmented)
+            paramField("Degrees", text: $opDegrees,
+                       placeholder: "\(Int(ActionTuning.shared.rotateDefaultDegrees))")
+
+        case "orbit":
+            paramField("Revolutions", text: $opRevolutions,
+                       placeholder: "\(ActionTuning.shared.orbitDefaultRevolutions)")
+
+        case "hover":
+            paramField("Seconds", text: $opSeconds,
+                       placeholder: "\(Int(ActionTuning.shared.hoverDefaultSeconds))")
+
+        case "look_at":
+            paramField("Target label", text: $opTarget, placeholder: "person", numeric: false)
+
+        case "follow":
+            paramField("Seconds", text: $opSeconds,
+                       placeholder: "\(Int(ActionTuning.shared.followDefaultSeconds))")
+
+        default:
+            EmptyView()
+        }
+    }
+
+    private func paramField(_ label: String,
+                            text: Binding<String>,
+                            placeholder: String,
+                            numeric: Bool = true) -> some View {
+        HStack {
+            Text(label)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            Spacer()
+            TextField(placeholder, text: text)
+                .multilineTextAlignment(.trailing)
+                .frame(maxWidth: 120)
+                .keyboardType(numeric ? .numbersAndPunctuation : .default)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.never)
+        }
+    }
+
+    /// Build a NimbusStep from the panel state — same shape the backend sends.
+    private func buildDebugStep() -> NimbusStep {
+        var box: [Int] = []
+        var found = false
+        var direction: String?
+
+        switch selectedOp {
+        case "fly_to" where opFlyToMode == "direction":
+            direction = opDirection
+        case "rotate":
+            direction = opRotateDirection
+        default:
+            break
+        }
+
+        // Debug panel has no Gemini grounding — optionally seed visual-target
+        // ops from onboard person detection on the live frame.
+        if opNeedsVisualTarget, opUsePersonSeed,
+           let frame = orc.bridge.cameraFrame?.cgImage,
+           let person = FlightBehaviors.detectPersonBox(in: frame) {
+            // Vision (origin bottom-left) → Gemini box [ymin,xmin,ymax,xmax] 0–1000.
+            box = [
+                Int((1.0 - person.maxY) * 1000.0),
+                Int(person.minX * 1000.0),
+                Int((1.0 - person.minY) * 1000.0),
+                Int(person.maxX * 1000.0),
+            ]
+            found = true
+        }
+
+        return NimbusStep(
+            op: selectedOp,
+            target: opTarget.isEmpty ? nil : opTarget,
+            box2d: box,
+            found: found,
+            distanceM: Double(opDistanceM),
+            confidence: 1.0,
+            deltaM: Double(opDeltaM),
+            direction: direction,
+            degrees: Double(opDegrees),
+            revolutions: Double(opRevolutions),
+            seconds: Double(opSeconds),
+            text: nil
+        )
     }
 
     // MARK: - Backend
@@ -208,6 +442,47 @@ struct DebugView: View {
         }
     }
 
+    // MARK: - Audio Devices
+
+    private var audioDevicesSection: some View {
+        Section("Audio Devices") {
+            Picker("Input", selection: Binding(
+                get: { audioRoutes.selectedInputUID ?? "" },
+                set: { audioRoutes.selectInput(uid: $0.isEmpty ? nil : $0) }
+            )) {
+                Text("System Default").tag("")
+                ForEach(audioRoutes.availableInputs, id: \.uid) { port in
+                    Text(port.portName).tag(port.uid)
+                }
+            }
+            .font(.subheadline)
+
+            row("Active Input",  audioRoutes.currentInputName)
+            row("Active Output", audioRoutes.currentOutputName)
+
+            Toggle("Force speaker output", isOn: Binding(
+                get: { audioRoutes.speakerOverride },
+                set: { audioRoutes.setSpeakerOverride($0) }
+            ))
+            .font(.subheadline)
+
+            HStack {
+                Text("Output device")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                AudioRoutePickerButton()
+                    .frame(width: 44, height: 44)
+            }
+
+            Button("Refresh devices") {
+                audioRoutes.prepareSession()
+                audioRoutes.refresh()
+            }
+            .font(.subheadline)
+        }
+    }
+
     // MARK: - Standalone STT Test
 
     private var sttTestSection: some View {
@@ -227,6 +502,39 @@ struct DebugView: View {
                 .font(.system(.caption, design: .monospaced))
                 .foregroundStyle(.secondary)
                 .lineLimit(6)
+            Text(
+                String(
+                    format: "Live input: %.1f dBFS  |  VAD start > %.0f  continue > %.0f  silence %.1fs",
+                    liveInputLevelDB,
+                    orc.handsFreeVadStartThresholdDB,
+                    orc.handsFreeVadContinueThresholdDB,
+                    orc.handsFreeVadSilenceStopSeconds
+                )
+            )
+            .font(.system(.caption2, design: .monospaced))
+            .foregroundStyle(liveInputLevelColor())
+            .lineLimit(2)
+
+            HStack(spacing: 10) {
+                Button {
+                    playLastSttRecording()
+                } label: {
+                    Label("Play last recorded clip", systemImage: "play.circle")
+                        .font(.subheadline.weight(.semibold))
+                }
+                .disabled(testPipeline.recorder.lastRecordingURL == nil &&
+                          orc.voicePipeline.recorder.lastRecordingURL == nil)
+
+                if sttPlaybackPlayer?.isPlaying == true {
+                    Button {
+                        sttPlaybackPlayer?.stop()
+                    } label: {
+                        Label("Stop", systemImage: "stop.circle")
+                            .font(.subheadline.weight(.semibold))
+                    }
+                    .foregroundStyle(.red)
+                }
+            }
 
             Text("HOLD TO TALK (test — no drone control)")
                 .font(.headline)
@@ -253,10 +561,13 @@ struct DebugView: View {
     }
 
     private func runSttTest() {
-        guard let url = testPipeline.recorder.stopRecording() else {
+        guard let url = testPipeline.stopCommandCapture() else {
             sttResult = "Error: no recording file."
             return
         }
+        // Play the clip back immediately so you hear what you sounded like
+        // while the transcription request is in flight.
+        playRecording(at: url)
         Task {
             do {
                 let text = try await ElevenLabsSTT.transcribe(fileURL: url)
@@ -286,6 +597,26 @@ struct DebugView: View {
 
     private func shortestAngleDelta(target: Double, current: Double) -> Double {
         (target - current + 540).truncatingRemainder(dividingBy: 360) - 180
+    }
+
+    private func currentLiveInputLevelDB() -> Float? {
+        if testPipeline.recorder.isRecording {
+            return testPipeline.recorder.currentAveragePowerDB()
+        }
+        if orc.voicePipeline.recorder.isRecording {
+            return orc.voicePipeline.recorder.currentAveragePowerDB()
+        }
+        return nil
+    }
+
+    private func liveInputLevelColor() -> Color {
+        if liveInputLevelDB > orc.handsFreeVadStartThresholdDB {
+            return .green
+        }
+        if liveInputLevelDB > orc.handsFreeVadContinueThresholdDB {
+            return .orange
+        }
+        return .secondary
     }
 }
 

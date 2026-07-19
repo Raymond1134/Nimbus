@@ -111,9 +111,9 @@ def _mock_freesolo_objective(transcript: str) -> dict:
     # Instant single-op commands
     if re.search(r"\b(abort|stop|cancel|halt|never mind)\b", text):
         return obj(["abort"], 0.95)
-    if re.search(r"\b(take ?off|lift off|launch)\b", text):
+    if re.search(r"\b(take ?off|lift ?off|launch|liftoff|air ?borne)\b", text):
         return obj(["takeoff"], 0.95)
-    if re.search(r"\bland\b", text) and "fly" not in text:
+    if re.search(r"\bland\b", text) and "fly" not in text and "launch" not in text:
         return obj(["land"], 0.95)
     if re.search(r"\b(return|come back|fly back|come home|fly home)\b", text) and not target:
         return obj(["return"], 0.9)

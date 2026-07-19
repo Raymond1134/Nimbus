@@ -188,16 +188,18 @@ Valid ops:
 
 Rules:
 - Split compound commands into ordered steps.
-- "come back/return/fly home" \u2192 return
-- "stop/cancel/abort" \u2192 abort
-- "take a picture of X" \u2192 fly_to|X then photo
-- "look at X/point camera at X" \u2192 look_at|X
-- "go up/higher [N]" \u2192 change_altitude|+N (convert feet: 1 ft = 0.3 m)
-- "go down/lower [N]" \u2192 change_altitude|-N
-- "fly forward/back/left/right [N feet/meters]" \u2192 fly_to|forward|N (convert feet to meters)
-- "turn/spin around" \u2192 rotate|right|360 unless direction given
+- "launch/take off/lift off/go up and hover/liftoff" → takeoff  (NEVER land)
+- "land/touch down/come down/set down/put it down" → land  (NEVER takeoff)
+- "come back/return/fly home" → return
+- "stop/cancel/abort" → abort
+- "take a picture of X" → fly_to|X then photo
+- "look at X/point camera at X" → look_at|X
+- "go up/higher [N]" → change_altitude|+N (convert feet: 1 ft = 0.3 m)
+- "go down/lower [N]" → change_altitude|-N
+- "fly forward/back/left/right [N feet/meters]" → fly_to|forward|N (convert feet to meters)
+- "turn/spin around" → rotate|right|360 unless direction given
 - When no distance given for nudge/altitude: omit the value (app defaults to 0.5 m)
-- Non-flight or unintelligible \u2192 say|<short reply>
+- Non-flight or unintelligible → say|<short reply>
 
 Example:
 {"steps":["fly_to|red tent","photo","rotate|right|360","return"],"confidence":0.95}

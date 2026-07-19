@@ -127,12 +127,16 @@ struct TelemetrySnapshot: Sendable {
     let isFlying: Bool
     let currentLocation: GPSCoordinate?
     let homeLocation: GPSCoordinate?
+    /// True when the downward vision / optical-flow sensor is actively being
+    /// used for position hold (i.e. VPS is stabilising the aircraft).
+    let isVisionPositioningActive: Bool
 
     static let zero = TelemetrySnapshot(
         altitudeM: 0, headingDeg: 0,
         velocityX: 0, velocityY: 0, velocityZ: 0,
         batteryPercent: 0, isGPSValid: false, satelliteCount: 0,
-        isFlying: false, currentLocation: nil, homeLocation: nil
+        isFlying: false, currentLocation: nil, homeLocation: nil,
+        isVisionPositioningActive: false
     )
 }
 
