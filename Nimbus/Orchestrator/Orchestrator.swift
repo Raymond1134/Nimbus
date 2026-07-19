@@ -300,11 +300,17 @@ final class Orchestrator {
             missionExecutor.cancel()
             behaviors.stop()
             tracker.stopTracking()
+        case .error:
+            log("PTT recovering from error state.")
         default:
             log("PTT ignored — state is \(appState.displayTitle).", level: .warning)
             return
         }
-        headTracking.freeze()        // lock frame for grounding (spec §5 step 2)
+        // Release the wakeword mic BEFORE starting the recorder.
+        // AVAudioEngine (wakeword) and AVAudioRecorder share the same input
+        // hardware — running both simultaneously silently kills the recording.
+        wakeword.stopListening()
+        headTracking.freeze()
         voicePipeline.onPressStartTalking()
         appState = .listening
         spatialAudio.playCommandConfirmation()

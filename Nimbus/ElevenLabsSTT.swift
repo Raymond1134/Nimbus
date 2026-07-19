@@ -46,7 +46,9 @@ final class AudioRecorderManager: NSObject, AVAudioRecorderDelegate {
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString)
             .appendingPathExtension("m4a")
-        recordingURL = url
+        // recordingURL is set only after record() succeeds.
+        // If AVAudioRecorder init throws (e.g. mic conflict), stopRecording()
+        // returns nil instead of a stale URL that ElevenLabs can't read.
 
         let settings: [String: Any] = [
             AVFormatIDKey:            Int(kAudioFormatMPEG4AAC),
@@ -59,6 +61,7 @@ final class AudioRecorderManager: NSObject, AVAudioRecorderDelegate {
             recorder?.delegate = self
             recorder?.isMeteringEnabled = true
             recorder?.record()
+            recordingURL = url    // only set on success
             print("Recording started: \(url.lastPathComponent)")
         } catch {
             print("Recording start error: \(error)")
@@ -68,10 +71,11 @@ final class AudioRecorderManager: NSObject, AVAudioRecorderDelegate {
     func stopRecording() -> URL? {
         recorder?.stop()
         recorder = nil
-        if let recordingURL {
-            lastRecordingURL = recordingURL
-        }
-        return recordingURL
+        // Capture-and-clear so a stale URL never bleeds into the next session.
+        let url = recordingURL
+        recordingURL = nil
+        if let url { lastRecordingURL = url }
+        return url
     }
 
     /// Returns channel-0 average power in dBFS (-160...0). Higher is louder.
