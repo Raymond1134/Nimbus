@@ -57,8 +57,16 @@ def _empty_annotation() -> dict[str, Any]:
 # Public API
 # ---------------------------------------------------------------------------
 
-async def annotate_steps(actions: list[dict], image_bytes: bytes) -> list[dict]:
+async def annotate_steps(
+    actions: list[dict],
+    image_bytes: bytes,
+    resolution_cache: dict | None = None,
+) -> list[dict]:
     """Add box_2d + found + confidence to visual action dicts via resolve_action.
+
+    resolution_cache: optional pre-computed {target_lower: ActionResolution}
+    produced by a parallel resolve_action call started while FreeSolo was
+    still running. Cache hits skip the Gemini round-trip for that target.
 
     Each visual step (fly_to|<target>, orbit|<target>, look_at|<target>) gets
     its own resolve_action() call with the op name as intent, so Gemini has
@@ -75,8 +83,10 @@ async def annotate_steps(actions: list[dict], image_bytes: bytes) -> list[dict]:
     if not visual_indices:
         return result_actions  # no visual ops — skip Gemini entirely
 
-    # Resolve each unique (target, op) pair concurrently
-    seen: dict[str, Any] = {}  # target.lower() -> ActionResolution
+    # Resolve each unique (target, op) pair concurrently.
+    # Seed `seen` with any pre-computed results from the parallel pre-resolution
+    # in voice_command_route — those targets won't generate a new Gemini call.
+    seen: dict[str, Any] = dict(resolution_cache or {})  # target.lower() -> ActionResolution
     tasks = []
     keys = []
     for i in visual_indices:
@@ -91,7 +101,7 @@ async def annotate_steps(actions: list[dict], image_bytes: bytes) -> list[dict]:
     try:
         results = await asyncio.wait_for(
             asyncio.gather(*tasks, return_exceptions=True),
-            timeout=15.0,
+            timeout=6.0,   # must fit in the overall <3s budget
         )
     except Exception as exc:
         logger.error("resolve_action gather failed: %s — visual steps get empty boxes", exc)

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Nimbus Voice Command API.
 
 Pipeline:
@@ -50,10 +52,31 @@ _MAX_BYTES = 10 * 1024 * 1024  # 10 MB
 _FREESOLO_BASE_URL = os.getenv("FREESOLO_BASE_URL", "").rstrip("/")
 _FREESOLO_API_KEY = os.getenv("FREESOLO_API_KEY", "")
 _FREESOLO_MODEL = os.getenv("FREESOLO_MODEL", "")
-_FREESOLO_TIMEOUT = 15.0
-_USE_MOCK = os.getenv("USE_FREESOLO_MOCK", "true").lower() == "true"
+_FREESOLO_TIMEOUT = 6.0   # fail fast to mock on slow Modal cold-starts
+_freesolo_configured = bool(_FREESOLO_BASE_URL and _FREESOLO_API_KEY and _FREESOLO_MODEL)
+_USE_MOCK = os.getenv(
+    "USE_FREESOLO_MOCK",
+    "false" if _freesolo_configured else "true",
+).lower() == "true"
 
 app = FastAPI(title="Nimbus v2 API")
+
+
+@app.on_event("startup")
+async def _warm_up_freesolo() -> None:
+    """Ping FreeSolo on startup so the Modal container is warm for the
+    first real voice command, eliminating cold-start latency (~1-2 s)."""
+    if _USE_MOCK:
+        return
+    import asyncio
+    async def _ping() -> None:
+        try:
+            await _get_objective("takeoff")
+            logger.info("FreeSolo warm-up OK")
+        except Exception as exc:
+            logger.warning("FreeSolo warm-up failed (will retry on first request): %s", exc)
+    asyncio.ensure_future(_ping())
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -198,7 +221,7 @@ async def _call_freesolo_real(transcript: str) -> str:
     payload = {
         "model": _FREESOLO_MODEL,
         "temperature": 0.0,
-        "max_tokens": 256,
+        "max_tokens": 64,   # OBJECTIVE JSON is ~30-50 tokens; 64 is plenty
         "messages": [
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": transcript},
@@ -362,14 +385,53 @@ async def voice_command_route(
             transcript,
         )
 
-        try:
-            objective = await _get_objective(transcript)
-        except HTTPException as exc:
-            detail = exc.detail if isinstance(exc.detail, dict) else {"error": str(exc.detail)}
-            return JSONResponse(status_code=exc.status_code, content=detail)
+        # Use transcript keyword heuristic (instant) to predict the likely
+        # visual target BEFORE FreeSolo responds. If the prediction matches
+        # FreeSolo's output, we save the full Gemini round-trip time (~900 ms)
+        # because resolve_action ran in parallel with FreeSolo.
+        import asyncio
+        from resolve_action import resolve_action as _resolve_action
+
+        predicted_target = _extract_target_phrase(transcript)
+        gemini_api_key = os.getenv("GEMINI_API_KEY", "").strip()
+
+        if predicted_target and gemini_api_key:
+            async def _pre_resolve() -> Any:
+                try:
+                    return await asyncio.to_thread(
+                        _resolve_action, image_bytes, predicted_target, "fly_to"
+                    )
+                except Exception as exc:
+                    logger.warning("Pre-resolution failed for %r: %s", predicted_target, exc)
+                    return None
+
+            try:
+                objective, pre_result = await asyncio.gather(
+                    _get_objective(transcript),
+                    _pre_resolve(),
+                )
+            except HTTPException as exc:
+                detail = exc.detail if isinstance(exc.detail, dict) else {"error": str(exc.detail)}
+                return JSONResponse(status_code=exc.status_code, content=detail)
+
+            resolution_cache = (
+                {predicted_target.lower(): pre_result} if pre_result is not None else {}
+            )
+            if pre_result is not None:
+                logger.info(
+                    "parallel pre-resolution done | target=%r action_type=%s",
+                    predicted_target, pre_result.action_type,
+                )
+        else:
+            try:
+                objective = await _get_objective(transcript)
+            except HTTPException as exc:
+                detail = exc.detail if isinstance(exc.detail, dict) else {"error": str(exc.detail)}
+                return JSONResponse(status_code=exc.status_code, content=detail)
+            resolution_cache: dict[str, Any] = {}
 
         actions = objective.get("actions") or []
-        annotated = await annotate_steps(actions, image_bytes)
+        annotated = await annotate_steps(actions, image_bytes, resolution_cache=resolution_cache)
 
         steps = [_action_to_nimbus_step(a) for a in annotated]
         confidence = float(objective.get("confidence", 0.0))

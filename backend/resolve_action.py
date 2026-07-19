@@ -29,7 +29,7 @@ load_dotenv(Path(__file__).resolve().parent / ".env")
 logger = logging.getLogger(__name__)
 
 _MAX_ATTEMPTS = 2
-_MODEL = "gemini-2.5-flash"
+_MODEL = "gemini-3.1-flash-lite"  # gemini-2.5-flash returns 404 on free-tier keys
 
 _FALLBACK_REASONING = (
     "Gemini unavailable after all retry attempts — defaulting to seek_object/not-found "
