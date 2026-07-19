@@ -44,6 +44,7 @@ struct DebugView: View {
             List {
                 djiSection
                 rcSection
+                controlMappingSection
                 manualFlightControlSection
                 missionOpsSection
                 backendSection
@@ -182,6 +183,21 @@ struct DebugView: View {
                     .font(.subheadline)
                     .disabled(!orc.djiManager.isRCConnected)
             }
+        }
+    }
+
+    // MARK: - Control Mapping
+
+    private var controlMappingSection: some View {
+        Section("Control Mapping") {
+            Toggle("Swap pitch/roll axes", isOn: Binding(
+                get: { ActionTuning.shared.swapPitchAndRollAxes },
+                set: { ActionTuning.shared.swapPitchAndRollAxes = $0 }
+            ))
+            .font(.subheadline)
+            Text("Enable if forward/back feels like left/right on this aircraft.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
     }
 

@@ -82,7 +82,7 @@ struct NimbusStep: Codable, Sendable, Identifiable {
     let distanceM: Double?   // Gemini distance estimate in meters
     let confidence: Double   // Gemini annotation confidence 0-1
     let deltaM: Double?      // change_altitude: signed meters (+up / -down)
-    let direction: String?   // rotate: "left"|"right"; fly_to relative: "forward"|"back"|"left"|"right"
+    let direction: String?   // rotate: "left"|"right"; fly_direction (and legacy fly_to relative): "forward"|"back"|"left"|"right"
     let degrees: Double?     // rotate
     let revolutions: Double? // orbit
     let seconds: Double?     // hover, follow

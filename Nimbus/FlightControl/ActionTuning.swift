@@ -41,6 +41,11 @@ final class ActionTuning {
     /// Yaw acceleration ramp per tick (deg/s · tick⁻¹).
     /// 30 → 300 deg/s² — very fast engagement without oscillation.
     var slewYaw: Float          = 30.0
+    // MARK: - Virtual Stick axis mapping
+    /// Some aircraft/firmware combinations expose body axes swapped in practice
+    /// (forward interpreted as right). When true, bridge swaps pitch/roll before
+    /// writing DJIVirtualStickFlightControlData.
+    var swapPitchAndRollAxes = true
 
     // MARK: - fly_to (visual approach / cardinal move)
 
@@ -182,6 +187,19 @@ final class ActionTuning {
     var headingHoldDeadZoneDeg  = 2.0
     /// Proportional rate gain: rate = |error| × gain, clamped to rotate min/max.
     var headingHoldGain         = 3.0
+    // MARK: - driftProtection (uncommanded drift lockout)
+    /// Trigger drift lockout when uncommanded drift exceeds threshold for this duration.
+    var driftPauseTriggerSeconds = 1.0
+    /// Clear drift lockout when drift stays below threshold for this duration.
+    var driftPauseClearSeconds = 1.0
+    /// Horizontal speed threshold in m/s (0.10 m/s).
+    var driftPauseHorizontalSpeedThresholdMps = 0.10
+    /// Vertical speed threshold in m/s (0.10 m/s).
+    var driftPauseVerticalSpeedThresholdMps = 0.10
+    /// Commands below this are treated as "no translational input" for drift detection.
+    var driftPauseCommandNeutralToleranceMps = 0.03
+    /// Yaw commands below this are treated as "no yaw input" for drift detection.
+    var driftPauseYawNeutralToleranceDps = 3.0
 
     // MARK: - return
 

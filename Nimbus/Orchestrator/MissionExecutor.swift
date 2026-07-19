@@ -93,6 +93,7 @@ final class MissionExecutor {
     // MARK: - Step Dispatch
 
     private func execute(step: NimbusStep) async -> Bool {
+        rebaselineHeadTrackingToDroneHeadingForAction()
         if step.op != "land" {
             await bridge.prepareForActionControl()
         }
@@ -107,12 +108,19 @@ final class MissionExecutor {
         case "land":
             behaviors.stop()
             return await bridge.startLanding()
+        case "fly_direction":
+            guard let direction = step.direction else {
+                log("fly_direction missing direction — skipping.")
+                return true
+            }
+            return await runDirectionalMove(direction: direction,
+                                            distanceM: step.distanceM)
 
         case "fly_to":
             if let direction = step.direction {
                 // Cardinal move relative to the USER's facing direction.
-                return await runCardinalFlyTo(direction: direction,
-                                              distanceM: step.distanceM)
+                return await runDirectionalMove(direction: direction,
+                                                distanceM: step.distanceM)
             } else if step.found && step.box2d.count == 4 {
                 // Visual approach: rotate to the bbox center, fly to it
                 // horizontally + vertically, stop when the bbox gets too big
@@ -238,10 +246,11 @@ final class MissionExecutor {
 
     // MARK: - Composite Behaviors
 
-    /// Cardinal fly_to (spec): the direction is relative to the USER's facing
-    /// direction from AirPods head tracking, not the drone's. E.g. user facing
-    /// 110° CW, "fly left" → rotate the drone to 20°, then fly forward.
-    private func runCardinalFlyTo(direction: String, distanceM: Double?) async -> Bool {
+    /// Directional movement (spec): the direction is relative to the USER's
+    /// facing direction from AirPods head tracking, not the drone's.
+    /// E.g. user facing 110° CW, "fly left" → rotate the drone to 20°,
+    /// then fly forward.
+    private func runDirectionalMove(direction: String, distanceM: Double?) async -> Bool {
         let dist  = max(0.3, distanceM ?? tuning.flyToCardinalDefaultDistanceM)
         let speed = tuning.flyToCardinalSpeedMps
         let maxSeconds = max(2.5, dist * tuning.flyToCardinalMaxSecondsPerMeter)
@@ -259,7 +268,7 @@ final class MissionExecutor {
         let head = behaviors.headTracking
         let baseHeading = head.isTracking ? head.effectiveAttitude.yawDeg : bridge.telemetry.headingDeg
         let targetHeading = baseHeading + offset
-        log("Cardinal fly_to \(direction): heading \(Int(baseHeading))° + \(Int(offset))° → \(Int(targetHeading))°, then pitch-forward.")
+        log("Directional move \(direction): heading \(Int(baseHeading))° + \(Int(offset))° → \(Int(targetHeading))°, then pitch-forward.")
         behaviors.rotateToHeading(targetHeading)
         guard await waitForBehavior(timeout: 30) else { return false }
         if cancelRequested { return false }
@@ -485,6 +494,15 @@ final class MissionExecutor {
         let hav = pow(sin(dLat / 2), 2) + cos(lat1) * cos(lat2) * pow(sin(dLon / 2), 2)
         let c = 2 * atan2(sqrt(hav), sqrt(1 - hav))
         return 6_371_000.0 * c
+    }
+
+    /// AirPods yaw is relative; at each action boundary we remap the current
+    /// AirPods pose to the drone's current heading so directional control starts
+    /// from a known reference frame.
+    private func rebaselineHeadTrackingToDroneHeadingForAction() {
+        let head = behaviors.headTracking
+        guard head.isTracking else { return }
+        head.calibrate(toCompassHeadingDeg: bridge.telemetry.headingDeg)
     }
 
     /// Await the active FlightBehaviors loop reaching its completion condition.

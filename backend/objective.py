@@ -6,11 +6,11 @@ Flat pipe-delimited step strings are deliberately simple so a small SFT'd
 model reproduces them reliably. `normalize_objective` converts them into
 structured action dicts consumed by the annotator (backend/annotator.py).
 
-Step grammar (14 ops, `?` = optional):
+Step grammar (16 ops, `?` = optional):
   takeoff
   land
   fly_to|<target>
-  fly_to|<forward|back|left|right>|<meters?>   relative nudge (default 0.5 m)
+  fly_direction|<forward|back|left|right>|<meters?>   relative nudge (default 0.5 m)
   change_altitude|<+/-meters?>                  + = climb, - = descend (default +0.5)
   rotate|<left|right>|<degrees?>               default right|90
   orbit|<target>|<revolutions?>                default 1
@@ -36,6 +36,7 @@ OPS = frozenset(
         "takeoff",
         "land",
         "fly_to",
+        "fly_direction",
         "change_altitude",
         "rotate",
         "orbit",
@@ -74,7 +75,7 @@ DEFAULT_ROTATE_DEG = 90.0
 _ALTITUDE_POS_ALIASES = frozenset({"fly_higher", "fly_up", "ascend", "climb"})
 # Altitude-negative aliases (lenient → change_altitude negative delta)
 _ALTITUDE_NEG_ALIASES = frozenset({"fly_lower", "fly_down", "descend"})
-# Directional aliases (lenient → fly_to with direction injected)
+# Directional aliases (lenient → fly_direction with direction injected)
 _DIRECTIONAL_ALIASES: dict[str, str] = {
     "fly_forward":   "forward",
     "move_forward":  "forward",
@@ -115,8 +116,8 @@ OP_ALIASES: dict[str, str] = {
     "fly_through":   "fly_to",
     "go_to":         "fly_to",
     "approach":      "fly_to",
-    # Directional relative fly_to (parse_step injects direction)
-    **{k: "fly_to" for k in _DIRECTIONAL_ALIASES},
+    # Directional relative movement (parse_step injects direction)
+    **{k: "fly_direction" for k in _DIRECTIONAL_ALIASES},
     # Rotate
     "spin":          "rotate",
     "turn":          "rotate",
@@ -168,10 +169,10 @@ Valid ops:
   takeoff
   land
   fly_to|<target>                 target = visible object or place
-  fly_to|forward|<meters>         relative nudge (omit meters for 0.5 m default)
-  fly_to|back|<meters>
-  fly_to|left|<meters>
-  fly_to|right|<meters>
+  fly_direction|forward|<meters>  relative nudge (omit meters for 0.5 m default)
+  fly_direction|back|<meters>
+  fly_direction|left|<meters>
+  fly_direction|right|<meters>
   change_altitude|<+/-meters>     + climb, - descend (omit for \u00b10.5 m default)
   rotate|left|<degrees>           (omit degrees for 90)
   rotate|right|<degrees>
@@ -196,7 +197,7 @@ Rules:
 - "look at X/point camera at X" → look_at|X
 - "go up/higher [N]" → change_altitude|+N (convert feet: 1 ft = 0.3 m)
 - "go down/lower [N]" → change_altitude|-N
-- "fly forward/back/left/right [N feet/meters]" → fly_to|forward|N (convert feet to meters)
+- "fly forward/back/left/right [N feet/meters]" → fly_direction|forward|N (convert feet to meters)
 - "turn/spin around" → rotate|right|360 unless direction given
 - When no distance given for nudge/altitude: omit the value (app defaults to 0.5 m)
 - Non-flight or unintelligible → say|<short reply>
@@ -276,11 +277,11 @@ def parse_step(step: str, lenient: bool = False) -> dict[str, Any] | None:
             delta = -abs(meters) if meters is not None else -DEFAULT_ALTITUDE_M
             return {"op": "change_altitude", "delta_m": delta}
 
-        # Directional aliases → fly_to with direction injected
-        if op == "fly_to" and orig_op in _DIRECTIONAL_ALIASES:
+        # Directional aliases → fly_direction with direction injected
+        if op == "fly_direction" and orig_op in _DIRECTIONAL_ALIASES:
             direction = _DIRECTIONAL_ALIASES[orig_op]
             dist = _float_or_none(parts[1]) if len(parts) > 1 else None
-            result: dict[str, Any] = {"op": "fly_to", "direction": direction}
+            result: dict[str, Any] = {"op": "fly_direction", "direction": direction}
             if dist is not None and dist > 0:
                 result["distance_m"] = dist
             return result
@@ -304,15 +305,29 @@ def parse_step(step: str, lenient: bool = False) -> dict[str, Any] | None:
     if op in NO_ARG_OPS:
         return out
 
+    if op == "fly_direction":
+        if not args or not args[0]:
+            return None
+        direction = args[0].strip().lower()
+        if direction not in _RELATIVE_DIRECTIONS:
+            return None
+        if direction == "backward":
+            direction = "back"
+        dist = _float_or_none(args[1]) if len(args) > 1 else None
+        result = {"op": "fly_direction", "direction": direction}
+        if dist is not None and dist > 0:
+            result["distance_m"] = dist
+        return result
+
     if op == "fly_to":
         if not args or not args[0]:
             return None
         target = args[0].strip()
-        # fly_to|forward|N — relative move with no visual target
+        # Legacy compatibility: fly_to|forward|N maps to fly_direction.
         if target.lower() in _RELATIVE_DIRECTIONS:
             direction = "back" if target.lower() == "backward" else target.lower()
             dist = _float_or_none(args[1]) if len(args) > 1 else None
-            result = {"op": "fly_to", "direction": direction}
+            result = {"op": "fly_direction", "direction": direction}
             if dist is not None and dist > 0:
                 result["distance_m"] = dist
             return result

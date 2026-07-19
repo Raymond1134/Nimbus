@@ -132,6 +132,16 @@ def _mock_freesolo_objective(transcript: str) -> dict:
         assert normalized is not None
         return normalized
 
+    def _extract_distance_meters(raw: str) -> float | None:
+        m = re.search(r"\b(\d+(?:\.\d+)?)\s*(m|meter|meters|ft|feet)?\b", raw)
+        if not m:
+            return None
+        value = float(m.group(1))
+        unit = (m.group(2) or "").lower()
+        if unit in {"ft", "feet"}:
+            return round(value * 0.3, 2)
+        return value
+
     # Instant single-op commands
     if re.search(r"\b(abort|stop|cancel|halt|never mind)\b", text):
         return obj(["abort"], 0.95)
@@ -151,6 +161,19 @@ def _mock_freesolo_objective(transcript: str) -> dict:
         return obj(["change_altitude"], 0.85)           # bare = +0.5 m climb
     if re.search(r"\b(lower|go down|descend|fly down|drop)\b", text) and not target:
         return obj(["change_altitude|-0.5"], 0.85)      # bare = -0.5 m descend
+    if not target:
+        direction_map = [
+            ("forward", r"\b(forward|ahead)\b"),
+            ("back", r"\b(back|backward|behind)\b"),
+            ("left", r"\bleft\b"),
+            ("right", r"\bright\b"),
+        ]
+        for direction, pattern in direction_map:
+            if re.search(pattern, text):
+                distance_m = _extract_distance_meters(text)
+                if distance_m and distance_m > 0:
+                    return obj([f"fly_direction|{direction}|{distance_m}"], 0.85)
+                return obj([f"fly_direction|{direction}"], 0.85)
 
     steps: list[str] = []
     wants_photo = bool(re.search(r"\b(photo|picture|pic|photograph|snap|shot)\b", text))

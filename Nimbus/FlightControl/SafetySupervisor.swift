@@ -28,9 +28,6 @@ final class SafetySupervisor {
     /// Minimum standoff from any grounded target (m).
     var minStandoffM: Double    = 2.0
 
-    /// Search radius limit (m from home point) — informational; not yet wired to GPS fence.
-    var geofenceRadiusM: Double = 50.0
-
     /// Dead-man switch interval (s). DJISDKBridge sends zero-velocity if no
     /// command arrives within this window. Keep tight for indoor flight.
     var deadManIntervalSec: Double = 0.3

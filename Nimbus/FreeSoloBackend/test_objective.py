@@ -20,6 +20,8 @@ def test_every_op_parses():
         "takeoff": {"op": "takeoff"},
         "land": {"op": "land"},
         "fly_to|red tent": {"op": "fly_to", "target": "red tent"},
+        "fly_direction|forward": {"op": "fly_direction", "direction": "forward"},
+        "fly_direction|left|2": {"op": "fly_direction", "direction": "left", "distance_m": 2.0},
         "change_altitude": {"op": "change_altitude", "delta_m": 0.5},
         "change_altitude|+2": {"op": "change_altitude", "delta_m": 2.0},
         "change_altitude|-1.5": {"op": "change_altitude", "delta_m": -1.5},
@@ -45,17 +47,23 @@ def test_every_op_parses():
         assert parse_step(step) == expected, step
 
 
-def test_fly_to_relative_nudges():
-    assert parse_step("fly_to|forward") == {"op": "fly_to", "direction": "forward", "distance_m": 0.5}
-    assert parse_step("fly_to|left|2") == {"op": "fly_to", "direction": "left", "distance_m": 2.0}
-    assert parse_step("fly_to|backward|3") == {"op": "fly_to", "direction": "back", "distance_m": 3.0}
+def test_fly_direction_parsing():
+    assert parse_step("fly_direction|forward") == {"op": "fly_direction", "direction": "forward"}
+    assert parse_step("fly_direction|left|2") == {"op": "fly_direction", "direction": "left", "distance_m": 2.0}
+    assert parse_step("fly_direction|backward|3") == {"op": "fly_direction", "direction": "back", "distance_m": 3.0}
+
+
+def test_legacy_fly_to_direction_compatibility():
+    assert parse_step("fly_to|forward") == {"op": "fly_direction", "direction": "forward"}
+    assert parse_step("fly_to|left|2") == {"op": "fly_direction", "direction": "left", "distance_m": 2.0}
+    assert parse_step("fly_to|backward|3") == {"op": "fly_direction", "direction": "back", "distance_m": 3.0}
 
 
 def test_lenient_aliases():
     assert parse_step("fly_higher|2", lenient=True) == {"op": "change_altitude", "delta_m": 2.0}
     assert parse_step("descend|3", lenient=True) == {"op": "change_altitude", "delta_m": -3.0}
     assert parse_step("climb", lenient=True) == {"op": "change_altitude", "delta_m": 0.5}
-    assert parse_step("fly_forward|2", lenient=True) == {"op": "fly_to", "direction": "forward", "distance_m": 2.0}
+    assert parse_step("fly_forward|2", lenient=True) == {"op": "fly_direction", "direction": "forward", "distance_m": 2.0}
     assert parse_step("circle|tree|2", lenient=True) == {"op": "orbit", "target": "tree", "revolutions": 2.0}
     assert parse_step("spin|360", lenient=True) == {"op": "rotate", "direction": "right", "yaw_deg": 360.0}
     # Critical v3 fix: 'fly_up' must map to change_altitude, NOT fly_to

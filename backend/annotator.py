@@ -1,8 +1,8 @@
 """Gemini visual grounding for Nimbus OBJECTIVE action dicts.
 
 FreeSolo v3 produces the full mission plan with ops already disambiguated:
-  fly_to|<target>   — visual approach (needs resolve_action)
-  fly_to|left|N     — directional move (no Gemini needed)
+  fly_to|<target>       — visual approach (needs resolve_action)
+  fly_direction|left|N  — directional move (no Gemini needed)
   change_altitude|N — altitude change  (no Gemini needed)
 
 For each visual step, resolve_action() is called with the target string

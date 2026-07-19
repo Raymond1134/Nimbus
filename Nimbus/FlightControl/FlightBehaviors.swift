@@ -82,7 +82,6 @@ final class FlightBehaviors {
     private var timedRoll: Float = 0
     private var timedThrottle: Float = 0
     private var timedUntil = Date.distantPast
-    private var isHeadingControlSuppressed = false
 
 
     enum Mode { case none, approach, orbit, hover, followPerson, navigateToSpot,
@@ -220,7 +219,7 @@ final class FlightBehaviors {
     /// Temporarily disable yaw heading-tracking output while preserving
     /// position hold (used by press-and-hold heading calibration).
     func setHeadingControlSuppressed(_ suppressed: Bool) {
-        isHeadingControlSuppressed = suppressed
+        // No-op: idle/background yaw-follow is disabled.
     }
 
     // MARK: - Control Loop
@@ -335,9 +334,8 @@ final class FlightBehaviors {
     }
 
     private func tickHoverHold() {
-        // Keep tracking the user's heading even during stabilisation hover.
-        let yaw: Float = isHeadingControlSuppressed ? 0 : headTrackingYawCorrection()
-        sendSmoothedVelocity(pitch: 0, roll: 0, yaw: yaw, throttle: 0)
+        // Vanilla hover hold: no background head-yaw coupling.
+        sendSmoothedVelocity(pitch: 0, roll: 0, yaw: 0, throttle: 0)
         if Date() < hoverHoldUntil { return }
         let shouldNotifyCompletion = pendingCompletionAfterHover
         stopBehavior()
@@ -728,8 +726,7 @@ final class FlightBehaviors {
 
     // MARK: - Heading Hold Mode
 
-    /// Enter the persistent heading-hold state: hold position and continuously
-    /// align yaw to the user's AirPods heading. Unlike stop() there is no
+    /// Enter the persistent hold state. Unlike stop() there is no
     /// stabilisation hover — the mode starts immediately. isExecuting is left
     /// false so MissionExecutor.waitForBehavior returns immediately and missions
     /// can interrupt at any time via startTimer().
@@ -745,25 +742,8 @@ final class FlightBehaviors {
     }
 
     private func tickHeadingHoldMode() {
-        // Always send even when yaw == 0 to keep VS mode alive (FC holds X/Y/Z).
-        let yaw: Float = isHeadingControlSuppressed ? 0 : headTrackingYawCorrection()
-        sendSmoothedVelocity(pitch: 0, roll: 0, yaw: yaw, throttle: 0)
-    }
-
-    /// Proportional yaw correction toward the user's AirPods heading.
-    /// Returns 0 when AirPods are not tracking or error is within the dead zone.
-    private func headTrackingYawCorrection() -> Float {
-        guard headTracking.isTracking else { return 0 }
-        // Use currentAttitude (live) not effectiveAttitude (may be frozen for
-        // grounding). Heading hold should track the real head direction even
-        // while the attitude is frozen for command capture.
-        let desired = headTracking.currentAttitude.yawDeg
-        let error = shortestAngleDelta(target: desired, current: bridge.telemetry.headingDeg)
-        guard abs(error) > tuning.headingHoldDeadZoneDeg else { return 0 }
-        let dir: Double = error > 0 ? 1 : -1
-        let rate = min(tuning.rotateMaxRateDps,
-                       max(tuning.rotateMinRateDps, abs(error) * tuning.headingHoldGain))
-        return Float(rate * dir)
+        // Legacy passive hold mode now intentionally keeps yaw neutral.
+        sendSmoothedVelocity(pitch: 0, roll: 0, yaw: 0, throttle: 0)
     }
 
 

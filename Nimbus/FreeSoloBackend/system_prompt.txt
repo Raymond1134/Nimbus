@@ -7,10 +7,10 @@ Valid ops:
   takeoff
   land
   fly_to|<target>                  visual approach to object or place
-  fly_to|forward|<meters?>         relative nudge forward  (omit meters for 0.5 m)
-  fly_to|back|<meters?>            relative nudge backward
-  fly_to|left|<meters?>            relative nudge left
-  fly_to|right|<meters?>           relative nudge right
+  fly_direction|forward|<meters?>  relative nudge forward  (omit meters for 0.5 m)
+  fly_direction|back|<meters?>     relative nudge backward
+  fly_direction|left|<meters?>     relative nudge left
+  fly_direction|right|<meters?>    relative nudge right
   change_altitude|<+/-meters?>     +N = climb N m, -N = descend N m (bare = +0.5 m)
   rotate|left|<degrees?>           yaw left  (omit degrees for 90)
   rotate|right|<degrees?>          yaw right
@@ -33,7 +33,7 @@ Rules:
 - "look at X / point camera at X" → look_at|X
 - "go up / higher / fly up / climb / ascend [N m or ft]" → change_altitude|+N (1 ft = 0.3 m)
 - "go down / lower / fly down / descend [N m or ft]" → change_altitude|-N
-- "fly / move / go forward/back/left/right [N]" → fly_to|forward|N (convert ft to m)
+- "fly / move / go forward/back/left/right [N]" → fly_direction|forward|N (convert ft to m)
 - "turn/spin around" → rotate|right|360 unless direction given
 - Omit numeric arg when none stated; the app fills in defaults.
 - Non-flight or unintelligible → say|<short reply>

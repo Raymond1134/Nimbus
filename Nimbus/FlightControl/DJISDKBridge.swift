@@ -59,6 +59,14 @@ final class DJISDKBridge: NSObject {
     @ObservationIgnored private var lastControlAuthorityAssertAt = Date.distantPast
     @ObservationIgnored private var isAssertingControlAuthority = false
     @ObservationIgnored private var isVirtualStickControlSuspended = false
+    @ObservationIgnored private var driftMonitorTimer: Timer?
+    @ObservationIgnored private var driftAboveThresholdSince = Date.distantPast
+    @ObservationIgnored private var driftBelowThresholdSince = Date.distantPast
+    @ObservationIgnored private var lastRequestedPitchMps: Double = 0
+    @ObservationIgnored private var lastRequestedRollMps: Double = 0
+    @ObservationIgnored private var lastRequestedThrottleMps: Double = 0
+    @ObservationIgnored private var lastRequestedYawDps: Double = 0
+    @ObservationIgnored private var isDriftProtectionActive = false
 
     private override init() { super.init() }
 
@@ -99,6 +107,7 @@ final class DJISDKBridge: NSObject {
             self?.liveFeedManager.onAircraftConnectionChanged(connected: true)
         }
         startHealthMonitor()
+        startDriftMonitor()
         print("DJISDKBridge: aircraft '\(aircraft.model ?? "unknown")' connected — Virtual Stick init deferred 1.5 s.")
     }
 
@@ -132,6 +141,7 @@ final class DJISDKBridge: NSObject {
     func onProductDisconnected() {
         stopDeadMan()
         stopHealthMonitor()
+        stopDriftMonitor()
         flightController    = nil
         isAircraftConnected = false
         cameraFrame         = nil
@@ -156,23 +166,16 @@ final class DJISDKBridge: NSObject {
     }
 
     private func applyVirtualStickControlModes(_ fc: DJIFlightController) {
-        // BODY-frame velocity control with Aircraft Heading orientation mode:
+        // BODY-frame velocity control:
         // - pitch + = forward, pitch − = backward
         // - roll  + = right,   roll  − = left
         //
-        // Movement actions are implemented as "yaw first, then pitch forward"
-        // in higher-level behaviors/executor logic.
+        // Heading/yaw alignment is closed-loop in app logic (using telemetry
+        // heading + AirPods relative heading), not via flight-orientation APIs.
         fc.rollPitchCoordinateSystem = DJIVirtualStickFlightCoordinateSystem.body
         fc.rollPitchControlMode      = DJIVirtualStickRollPitchControlMode.velocity
         fc.yawControlMode            = DJIVirtualStickYawControlMode.angularVelocity
         fc.verticalControlMode       = DJIVirtualStickVerticalControlMode.velocity
-        fc.setFlightOrientationMode(.aircraftHeading) { error in
-            if let error {
-                print("DJISDKBridge: Aircraft Heading orientation enable error: \(error.localizedDescription)")
-            } else {
-                print("DJISDKBridge: Aircraft Heading orientation enabled.")
-            }
-        }
     }
 
     /// Reasserts Virtual Stick + control modes, recovering from RC/physical
@@ -323,6 +326,78 @@ final class DJISDKBridge: NSObject {
         lastFeedRecoveryAt  = .distantPast
     }
 
+    private func startDriftMonitor() {
+        stopDriftMonitor()
+        let timer = Timer(timeInterval: 0.1, repeats: true) { [weak self] _ in
+            self?.evaluateDriftProtection()
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        driftMonitorTimer = timer
+        driftAboveThresholdSince = .distantPast
+        driftBelowThresholdSince = .distantPast
+    }
+
+    private func stopDriftMonitor() {
+        driftMonitorTimer?.invalidate()
+        driftMonitorTimer = nil
+        driftAboveThresholdSince = .distantPast
+        driftBelowThresholdSince = .distantPast
+        isDriftProtectionActive = false
+    }
+
+    private func evaluateDriftProtection() {
+        guard isAircraftConnected, !isHealthMonitoringSuspended else { return }
+        guard telemetry.isFlying, !isVirtualStickControlSuspended else {
+            isDriftProtectionActive = false
+            driftAboveThresholdSince = .distantPast
+            driftBelowThresholdSince = .distantPast
+            return
+        }
+
+        let tuning = ActionTuning.shared
+        let horizontalSpeed = hypot(telemetry.velocityX, telemetry.velocityY)
+        let verticalSpeed = abs(telemetry.velocityZ)
+        let isCurrentlyDrifting =
+            horizontalSpeed >= tuning.driftPauseHorizontalSpeedThresholdMps ||
+            verticalSpeed >= tuning.driftPauseVerticalSpeedThresholdMps
+        let hasNoTranslationalInput =
+            abs(lastRequestedPitchMps) <= tuning.driftPauseCommandNeutralToleranceMps &&
+            abs(lastRequestedRollMps) <= tuning.driftPauseCommandNeutralToleranceMps &&
+            abs(lastRequestedThrottleMps) <= tuning.driftPauseCommandNeutralToleranceMps
+        let hasNoYawInput = abs(lastRequestedYawDps) <= tuning.driftPauseYawNeutralToleranceDps
+        let hasNoControlInput = hasNoTranslationalInput && hasNoYawInput
+        let now = Date()
+
+        if !isDriftProtectionActive {
+            if hasNoControlInput, isCurrentlyDrifting {
+                if driftAboveThresholdSince == .distantPast {
+                    driftAboveThresholdSince = now
+                } else if now.timeIntervalSince(driftAboveThresholdSince) >= tuning.driftPauseTriggerSeconds {
+                    isDriftProtectionActive = true
+                    driftBelowThresholdSince = .distantPast
+                    print("DJISDKBridge: drift protection engaged — pausing motion/yaw inputs.")
+                }
+            } else {
+                driftAboveThresholdSince = .distantPast
+            }
+            return
+        }
+
+        if isCurrentlyDrifting {
+            driftBelowThresholdSince = .distantPast
+            return
+        }
+        if driftBelowThresholdSince == .distantPast {
+            driftBelowThresholdSince = now
+            return
+        }
+        if now.timeIntervalSince(driftBelowThresholdSince) >= tuning.driftPauseClearSeconds {
+            isDriftProtectionActive = false
+            driftAboveThresholdSince = .distantPast
+            print("DJISDKBridge: drift protection cleared — resuming motion/yaw inputs.")
+        }
+    }
+
     private func evaluateConnectionHealth() {
         guard isAircraftConnected, !isHealthMonitoringSuspended else { return }
         let now = Date()
@@ -373,11 +448,32 @@ final class DJISDKBridge: NSObject {
         guard let fc = flightController else { return }
         assertControlAuthorityIfNeeded()
 
+        lastRequestedPitchMps = Double(pitch)
+        lastRequestedRollMps = Double(roll)
+        lastRequestedThrottleMps = Double(throttle)
+        lastRequestedYawDps = Double(yaw)
+
         var data = DJIVirtualStickFlightControlData()
-        data.pitch            = safety.clamp(pitch)
-        data.roll             = safety.clamp(roll)
-        data.yaw              = Float(safety.clampYawDps(Double(yaw)))  // capped at safety.maxYawDps
-        data.verticalThrottle = safety.clamp(throttle)
+        if isDriftProtectionActive {
+            data.pitch = 0
+            data.roll = 0
+            data.yaw = 0
+            data.verticalThrottle = 0
+        } else {
+            let mappedPitch: Float
+            let mappedRoll: Float
+            if ActionTuning.shared.swapPitchAndRollAxes {
+                mappedPitch = roll
+                mappedRoll = pitch
+            } else {
+                mappedPitch = pitch
+                mappedRoll = roll
+            }
+            data.pitch            = safety.clamp(mappedPitch)
+            data.roll             = safety.clamp(mappedRoll)
+            data.yaw              = Float(safety.clampYawDps(Double(yaw)))  // capped at safety.maxYawDps
+            data.verticalThrottle = safety.clamp(throttle)
+        }
 
         fc.send(data, withCompletion: nil)
         resetDeadMan()
@@ -958,6 +1054,7 @@ extension DJISDKBridge: DJIFlightControllerDelegate {
             self?.lastTelemetryAt = Date()
             if !state.isFlying {
                 self?.isVirtualStickControlSuspended = false
+                self?.isDriftProtectionActive = false
             }
         }
     }

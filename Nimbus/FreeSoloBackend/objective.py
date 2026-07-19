@@ -11,10 +11,10 @@ Step grammar (args after the op, `?` = optional):
   takeoff
   land
   fly_to|<target>                 visual approach to a named object/place
-  fly_to|forward|<meters?>        relative nudge forward   (default 0.5 m)
-  fly_to|back|<meters?>           relative nudge backward
-  fly_to|left|<meters?>           relative nudge left
-  fly_to|right|<meters?>          relative nudge right
+  fly_direction|forward|<meters?> relative nudge forward   (default 0.5 m)
+  fly_direction|back|<meters?>    relative nudge backward
+  fly_direction|left|<meters?>    relative nudge left
+  fly_direction|right|<meters?>   relative nudge right
   change_altitude|<+/-meters?>    + = climb, - = descend   (default +0.5 m)
   rotate|<left|right>|<deg?>      yaw in place             (default right|90)
   orbit|<target>|<revolutions?>   circle target            (default 1 rev)
@@ -40,6 +40,7 @@ OPS = frozenset(
         "takeoff",
         "land",
         "fly_to",
+        "fly_direction",
         "change_altitude",
         "rotate",
         "orbit",
@@ -59,7 +60,7 @@ OPS = frozenset(
 NO_ARG_OPS = frozenset({"takeoff", "land", "photo", "selfie", "panorama", "return", "abort"})
 
 # Ops whose first argument is a visual target the planner must ground
-# (these get Gemini visual annotation). fly_to relative directions do NOT.
+# (these get Gemini visual annotation).
 TARGET_OPS = frozenset({"fly_to", "orbit", "look_at", "follow"})
 
 ROTATE_DIRECTIONS = frozenset({"left", "right"})
@@ -68,7 +69,7 @@ ROTATE_DIRECTIONS = frozenset({"left", "right"})
 # Used in parse_step when fly_to|<dir>|N or a directional alias is seen.
 _RELATIVE_DIRECTIONS = frozenset({"forward", "back", "backward", "left", "right"})
 
-# Directional alias op → canonical direction string (all resolve to fly_to).
+# Directional alias op → canonical direction string (all resolve to fly_direction).
 _DIRECTION_ALIASES: dict[str, str] = {
     "fly_forward":   "forward",
     "move_forward":  "forward",
@@ -140,8 +141,8 @@ OP_ALIASES: dict[str, str] = {
     "wait": "hover",
     "hold": "hover",
     "hover_station": "hover",
-    # Directional relative moves (all → fly_to; parse_step injects direction)
-    **{k: "fly_to" for k in _DIRECTION_ALIASES},
+    # Directional relative moves (all → fly_direction; parse_step injects direction)
+    **{k: "fly_direction" for k in _DIRECTION_ALIASES},
     # Altitude moves (all → change_altitude; parse_step injects sign)
     **{k: "change_altitude" for k in _ALTITUDE_ALIASES},
 }
@@ -162,10 +163,10 @@ Valid ops:
   takeoff
   land
   fly_to|<target>                 target = visible object or place
-  fly_to|forward|<meters>         relative nudge (omit meters for 0.5 m default)
-  fly_to|back|<meters>
-  fly_to|left|<meters>
-  fly_to|right|<meters>
+  fly_direction|forward|<meters>  relative nudge (omit meters for 0.5 m default)
+  fly_direction|back|<meters>
+  fly_direction|left|<meters>
+  fly_direction|right|<meters>
   change_altitude|<+/-meters>     + climb, - descend (omit for ±0.5 m default)
   rotate|left|<degrees>           (omit degrees for 90)
   rotate|right|<degrees>
@@ -190,7 +191,7 @@ Rules:
 - "look at X/point camera at X" → look_at|X
 - "go up/higher [N]" → change_altitude|+N (convert feet: 1 ft = 0.3 m)
 - "go down/lower [N]" → change_altitude|-N
-- "fly forward/back/left/right [N feet/meters]" → fly_to|forward|N (convert feet to meters)
+- "fly forward/back/left/right [N feet/meters]" → fly_direction|forward|N (convert feet to meters)
 - "turn/spin around" → rotate|right|360 unless direction given
 - When no distance given for nudge/altitude: omit the value (app defaults to 0.5 m)
 - Non-flight or unintelligible → say|<short reply>
@@ -256,12 +257,14 @@ def parse_step(step: str, lenient: bool = False) -> dict[str, Any] | None:
         op = OP_ALIASES.get(op, "")
         if op not in OPS:
             return None
-        # Directional alias (fly_forward|2 etc.) → fly_to with direction + distance
-        if op == "fly_to" and orig_op in _DIRECTION_ALIASES:
+        # Directional alias (fly_forward|2 etc.) → fly_direction with direction.
+        if op == "fly_direction" and orig_op in _DIRECTION_ALIASES:
             direction = _DIRECTION_ALIASES[orig_op]
             dist = _float_or_none(parts[1]) if len(parts) > 1 else None
-            dist = dist if (dist is not None and dist > 0) else DEFAULT_NUDGE_M
-            return {"op": "fly_to", "direction": direction, "distance_m": dist}
+            result: dict[str, Any] = {"op": "fly_direction", "direction": direction}
+            if dist is not None and dist > 0:
+                result["distance_m"] = dist
+            return result
         # Altitude alias (fly_higher|2 etc.) → change_altitude with signed delta
         if op == "change_altitude" and orig_op in _ALTITUDE_ALIASES:
             sign = _ALTITUDE_ALIASES[orig_op]
@@ -279,16 +282,32 @@ def parse_step(step: str, lenient: bool = False) -> dict[str, Any] | None:
     if op in NO_ARG_OPS:
         return out
 
+    if op == "fly_direction":
+        if not args or not args[0]:
+            return None
+        direction = args[0].strip().lower()
+        if direction not in _RELATIVE_DIRECTIONS:
+            return None
+        if direction == "backward":
+            direction = "back"
+        dist = _float_or_none(args[1]) if len(args) > 1 else None
+        result = {"op": "fly_direction", "direction": direction}
+        if dist is not None and dist > 0:
+            result["distance_m"] = dist
+        return result
+
     if op in {"fly_to", "look_at"}:
         if not args or not args[0]:
             return None
         target = args[0].strip()
-        # fly_to|forward|N — relative move with no visual target
+        # Legacy compatibility: fly_to|forward|N maps to fly_direction.
         if op == "fly_to" and target.lower() in _RELATIVE_DIRECTIONS:
             direction = "back" if target.lower() == "backward" else target.lower()
             dist = _float_or_none(args[1]) if len(args) > 1 else None
-            dist = dist if (dist is not None and dist > 0) else DEFAULT_NUDGE_M
-            return {"op": "fly_to", "direction": direction, "distance_m": dist}
+            result = {"op": "fly_direction", "direction": direction}
+            if dist is not None and dist > 0:
+                result["distance_m"] = dist
+            return result
         out["target"] = target
 
     elif op == "change_altitude":
