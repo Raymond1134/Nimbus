@@ -65,6 +65,9 @@ final class WakewordListener {
         let inputNode = audioEngine.inputNode
         let recordingFormat = inputNode.outputFormat(forBus: 0)
         
+        // Remove any stale tap first — prevents NSInternalInconsistencyException
+        // if the engine is restarted quickly after a stopListening() call.
+        inputNode.removeTap(onBus: 0)
         // Smaller buffer lowers wakeword latency.
         inputNode.installTap(onBus: 0, bufferSize: 512, format: recordingFormat) { buffer, _ in
             self.recognitionRequest?.append(buffer)
@@ -105,20 +108,22 @@ final class WakewordListener {
     }
 
     func stopListening() {
-        // 🚀 HARDWARE FIX 1: Completely halt the engine loop and remove hardware pipes
+        // Guard so a double-call (recognizer fires it + Orchestrator fires it)
+        // is always a safe no-op. Without this the second removeTap crashes.
+        guard isListeningForWakeword else { return }
+        isListeningForWakeword = false
+
         audioEngine.stop()
         audioEngine.inputNode.removeTap(onBus: 0)
-        
-        // Reset request boundaries
+
         recognitionRequest?.endAudio()
         recognitionRequest = nil
-        
+
         recognitionTask?.cancel()
         recognitionTask = nil
-        
-        isListeningForWakeword = false
+
         print("🛑 Local audio hardware node completely released and vacant.")
-        }
+    }
 
     private func matchesWakeword(_ transcript: String) -> Bool {
         let words = transcript
