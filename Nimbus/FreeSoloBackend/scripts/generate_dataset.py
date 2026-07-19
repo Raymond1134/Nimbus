@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
-"""Generate (transcript -> OBJECTIVE JSON) SFT data for the intent model (v2).
+"""Generate (transcript -> OBJECTIVE JSON) SFT data for the FreeSolo intent model (v3).
 
-Covers every op in the 14-op v2 grammar (objective.OPS) with varied phrasing,
-ASR-style noise, compound multi-step commands, classic demo sequences, and
-non-flight negatives that map to `say`.
+v3 grammar: takeoff removed. FreeSolo is the sole mission planner.
+Gemini is only called for bounding boxes on fly_to|<target>, orbit, look_at.
 
-  python scripts/generate_dataset.py --count 4000 --eval-count 400
+Key improvements over v2:
+- 'fly up / fly down' explicitly mapped to change_altitude (fixes model bug)
+- Compound direction+altitude examples (the failing 'move left then fly up' case)
+- follow no longer treated as a visual/Gemini op in commentary
+- Larger default dataset (6000 train + 600 eval)
+
+  python scripts/generate_dataset.py --count 6000 --eval-count 600
 """
 
 from __future__ import annotations
@@ -107,7 +112,7 @@ def join_seq(parts: list[str], rng: random.Random) -> str:
 def gen_takeoff(rng: random.Random) -> tuple[str, str]:
     phrase = rng.choice([
         "take off", "takeoff", "lift off", "launch", "get in the air",
-        "spin up and take off", "up you go", "start flying", "take flight",
+        "spin up and take off", "start flying", "take flight", "launch it",
     ])
     return phrase, "takeoff"
 
@@ -173,7 +178,11 @@ def gen_fly_relative(rng: random.Random) -> tuple[str, str]:
 
 
 def gen_change_altitude(rng: random.Random) -> tuple[str, str]:
-    """Climb or descend. + = up, - = down. Bare (no value) defaults to +0.5 m."""
+    """Climb or descend. + = up, - = down. Bare (no value) defaults to +0.5 m.
+
+    IMPORTANT: 'fly up' / 'fly down' must map here, NOT to fly_to.
+    These phrases are heavily represented so the model learns the distinction.
+    """
     up = rng.random() < 0.5
     with_value = rng.random() < 0.5
     if up:
@@ -186,6 +195,7 @@ def gen_change_altitude(rng: random.Random) -> tuple[str, str]:
                     f"fly up {ft} {'foot' if ft == 1 else 'feet'}",
                     f"climb {ft} {'foot' if ft == 1 else 'feet'}",
                     f"rise {ft} {'foot' if ft == 1 else 'feet'}",
+                    f"ascend {ft} {'foot' if ft == 1 else 'feet'}",
                 ])
                 return phrase, f"change_altitude|+{_num(m)}"
             m = rng.choice(ALT_VALUES)
@@ -193,12 +203,15 @@ def gen_change_altitude(rng: random.Random) -> tuple[str, str]:
                 f"go up {_num(m)} meters", f"fly up {_num(m)} meters",
                 f"climb {_num(m)} meters", f"rise {_num(m)} meters",
                 f"gain {_num(m)} meters of altitude", f"ascend {_num(m)} meters",
+                f"get {_num(m)} meters higher", f"up {_num(m)} meters",
             ])
             return phrase, f"change_altitude|+{_num(m)}"
+        # Bare climb — 'fly up' is the critical phrase the v2 model got wrong
         phrase = rng.choice([
             "go up", "go higher", "fly higher", "climb", "ascend",
-            "get some altitude", "up a bit", "gain some height",
-            "a little higher", "up you go a bit",
+            "fly up", "go straight up", "get some altitude", "up a bit",
+            "gain some height", "a little higher", "get higher",
+            "rise up", "take it up", "up you go",
         ])
         return phrase, "change_altitude"
     # descend
@@ -218,11 +231,13 @@ def gen_change_altitude(rng: random.Random) -> tuple[str, str]:
             f"go down {_num(m)} meters", f"fly down {_num(m)} meters",
             f"descend {_num(m)} meters", f"drop {_num(m)} meters",
             f"come down {_num(m)} meters", f"lower by {_num(m)} meters",
+            f"drop {_num(m)} meters", f"sink {_num(m)} meters",
         ])
         return phrase, f"change_altitude|-{_num(m)}"
     phrase = rng.choice([
-        "go down", "go lower", "fly lower", "descend", "come down a bit",
-        "drop down a little", "a little lower", "get lower",
+        "go down", "go lower", "fly lower", "fly down", "descend",
+        "come down a bit", "drop down a little", "a little lower", "get lower",
+        "come down", "lower yourself", "drop altitude",
     ])
     return phrase, "change_altitude|-0.5"
 
@@ -383,24 +398,24 @@ def gen_say(rng: random.Random) -> tuple[str, str]:
 
 
 SINGLE_BUILDERS = [
-    (gen_takeoff, 0.04),
-    (gen_land, 0.04),
-    (gen_fly_to, 0.10),
-    (gen_fly_relative, 0.08),
-    (gen_change_altitude, 0.09),
-    (gen_rotate, 0.08),
-    (gen_orbit, 0.07),
-    (gen_hover, 0.05),
-    (gen_look_at, 0.06),
-    (gen_photo, 0.05),
-    (gen_selfie, 0.04),
-    (gen_panorama, 0.04),
-    (gen_follow, 0.07),
-    (gen_return, 0.05),
-    (gen_abort, 0.04),
+    (gen_takeoff,        0.05),
+    (gen_land,           0.05),
+    (gen_fly_to,         0.11),
+    (gen_fly_relative,   0.10),
+    (gen_change_altitude, 0.12),  # boosted: 'fly up/down' confusion fix
+    (gen_rotate,         0.09),
+    (gen_orbit,          0.08),
+    (gen_hover,          0.06),
+    (gen_look_at,        0.07),
+    (gen_photo,          0.06),
+    (gen_selfie,         0.04),
+    (gen_panorama,       0.04),
+    (gen_follow,         0.08),
+    (gen_return,         0.05),
+    (gen_abort,          0.05),
 ]
 
-TERMINAL_OPS = {"land", "abort", "return"}
+TERMINAL_OPS = {"land", "abort", "return", "takeoff"}
 
 
 def pick_builder(rng: random.Random):
@@ -420,6 +435,66 @@ def gen_photo_of(rng: random.Random) -> tuple[str, list[str]]:
     return phrase, [f"fly_to|{t}", "photo"]
 
 
+def gen_dir_then_altitude(rng: random.Random) -> tuple[list[str], list[str]]:
+    """Compound: relative directional move followed by altitude change.
+
+    This is the exact pattern the v2 model failed on ('move left a meter
+    then fly up'). Heavily represented to fix the fly_to|up bug.
+    """
+    direction = rng.choice(["forward", "backward", "left", "right"])
+    step_dir = "back" if direction == "backward" else direction
+
+    up = rng.random() < 0.6  # bias toward climb since 'fly up' was the bug
+    alt_phrase_up = rng.choice(["fly up", "go up", "climb", "ascend", "get higher", "rise"])
+    alt_phrase_down = rng.choice(["fly down", "go down", "descend", "come down", "drop"])
+    alt_phrase = alt_phrase_up if up else alt_phrase_down
+    alt_sign = "+" if up else "-"
+
+    has_dist = rng.random() < 0.6
+    has_alt_val = rng.random() < 0.5
+
+    if has_dist:
+        dist = rng.choice(DIST_M)
+        dir_phrase = rng.choice([
+            f"move {direction} {dist} meters",
+            f"fly {direction} {dist} meters",
+            f"go {direction} {dist} meters",
+            f"go {direction} {dist}m",
+        ])
+        dir_step = f"fly_to|{step_dir}|{dist}"
+    else:
+        dir_phrase = rng.choice([
+            f"move {direction}", f"go {direction}", f"fly {direction}", f"nudge {step_dir}",
+        ])
+        dir_step = f"fly_to|{step_dir}"
+
+    if has_alt_val:
+        m = rng.choice(ALT_VALUES)
+        alt_step = f"change_altitude|{alt_sign}{_num(m)}"
+        full_alt_phrase = f"{alt_phrase} {_num(m)} meters"
+    else:
+        alt_step = "change_altitude" if up else "change_altitude|-0.5"
+        full_alt_phrase = alt_phrase
+
+    parts = [dir_phrase, full_alt_phrase]
+    steps = [dir_step, alt_step]
+    return parts, steps
+
+
+def gen_altitude_then_dir(rng: random.Random) -> tuple[list[str], list[str]]:
+    """Compound: altitude change followed by directional move."""
+    up = rng.random() < 0.5
+    alt_phrase = rng.choice(["fly up", "go up", "climb"] if up else ["go down", "fly down", "descend"])
+    alt_step = "change_altitude" if up else "change_altitude|-0.5"
+    direction = rng.choice(["forward", "backward", "left", "right"])
+    step_dir = "back" if direction == "backward" else direction
+    dist = rng.choice(DIST_M)
+    dir_step = f"fly_to|{step_dir}|{dist}"
+    parts = [alt_phrase, f"go {direction} {dist} meters"]
+    steps = [alt_step, dir_step]
+    return parts, steps
+
+
 def gen_demo_sequence(rng: random.Random) -> tuple[list[str], list[str]]:
     """Classic demo patterns worth over-representing."""
     t = rng.choice(TARGETS)
@@ -432,15 +507,11 @@ def gen_demo_sequence(rng: random.Random) -> tuple[list[str], list[str]]:
             [f"fly_to|{t}", "photo", "rotate|right|360", "return"],
         ),
         (
-            ["take off", rng.choice([f"fly to the {t}", f"head to the {t}"]), "take a photo"],
-            ["takeoff", f"fly_to|{t}", "photo"],
-        ),
-        (
             [rng.choice([f"orbit the {t}", f"circle the {t}"]), "then take a panorama", "and come back"],
             [f"orbit|{t}", "panorama", "return"],
         ),
         (
-            ["take off", rng.choice(["go up 3 meters", "climb 3 meters"]), "take a panorama"],
+            ["take off", rng.choice(["go up 3 meters", "climb 3 meters", "fly up 3 meters"]), "take a panorama"],
             ["takeoff", "change_altitude|+3", "panorama"],
         ),
         (
@@ -448,8 +519,24 @@ def gen_demo_sequence(rng: random.Random) -> tuple[list[str], list[str]]:
             [f"fly_to|{t}", "photo", "return", "land"],
         ),
         (
+            ["take off", rng.choice([f"fly to the {t}", f"head to the {t}"]), "take a photo", "land"],
+            ["takeoff", f"fly_to|{t}", "photo", "land"],
+        ),
+        (
             ["take a selfie", "then do a panorama"],
             ["selfie", "panorama"],
+        ),
+        (
+            [rng.choice([f"fly to the {t}", f"head to the {t}"]),
+             rng.choice(["fly up 2 meters", "climb 2 meters", "go up 2 meters"]),
+             "take a photo"],
+            [f"fly_to|{t}", "change_altitude|+2", "photo"],
+        ),
+        (
+            [rng.choice(["go up", "climb a bit", "fly up"]),
+             rng.choice([f"orbit the {t}", f"circle the {t}"]),
+             "come back"],
+            ["change_altitude", f"orbit|{t}", "return"],
         ),
     ]
     parts, steps = rng.choice(patterns)
@@ -463,18 +550,27 @@ def generate_one(rng: random.Random) -> dict:
     conf = round(rng.uniform(0.82, 0.99), 2)
     mode = rng.random()
 
-    # photo-of compounds (~10%)
-    if mode < 0.10:
+    # direction + altitude compounds (~12%) — fixes the 'move left then fly up' bug
+    if mode < 0.07:
+        parts, steps = gen_dir_then_altitude(rng)
+        return row(noise(join_seq(parts, rng), rng), steps, conf)
+
+    if mode < 0.12:
+        parts, steps = gen_altitude_then_dir(rng)
+        return row(noise(join_seq(parts, rng), rng), steps, conf)
+
+    # photo-of compounds (~9%)
+    if mode < 0.21:
         phrase, steps = gen_photo_of(rng)
         return row(noise(phrase, rng), steps, conf)
 
     # classic demo sequences (~8%)
-    if mode < 0.18:
+    if mode < 0.29:
         parts, steps = gen_demo_sequence(rng)
         return row(noise(join_seq(parts, rng), rng), steps, conf)
 
-    # random multi-step sequences (~34%)
-    if mode < 0.52:
+    # random multi-step sequences (~31%)
+    if mode < 0.60:
         n = rng.choices([2, 3, 4], weights=[0.5, 0.35, 0.15], k=1)[0]
         parts: list[str] = []
         steps: list[str] = []
@@ -493,11 +589,11 @@ def generate_one(rng: random.Random) -> dict:
         return row(noise(join_seq(parts, rng), rng), steps, conf)
 
     # non-flight / unintelligible -> say (~5%)
-    if mode < 0.57:
+    if mode < 0.65:
         inp, step = gen_say(rng)
         return row(inp, [step], round(rng.uniform(0.5, 0.8), 2))
 
-    # single action (~43%)
+    # single action (~35%)
     phrase, step = pick_builder(rng)(rng)
     return row(noise(phrase, rng), [step], conf)
 
@@ -511,8 +607,8 @@ def write_jsonl(path: Path, rows: list[dict]) -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--count", type=int, default=4000)
-    ap.add_argument("--eval-count", type=int, default=400)
+    ap.add_argument("--count", type=int, default=6000)
+    ap.add_argument("--eval-count", type=int, default=600)
     ap.add_argument("--seed", type=int, default=42)
     args = ap.parse_args()
     rng = random.Random(args.seed)

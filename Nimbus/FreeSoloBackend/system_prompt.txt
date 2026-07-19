@@ -6,36 +6,36 @@ Format:
 Valid ops:
   takeoff
   land
-  fly_to|<target>                 target = visible object or place
-  fly_to|forward|<meters>         relative nudge (omit meters for 0.5 m default)
-  fly_to|back|<meters>
-  fly_to|left|<meters>
-  fly_to|right|<meters>
-  change_altitude|<+/-meters>     + climb, - descend (omit for ±0.5 m default)
-  rotate|left|<degrees>           (omit degrees for 90)
-  rotate|right|<degrees>
-  orbit|<target>|<revolutions>    (omit revolutions for 1)
-  hover|<seconds>                 (omit for 5)
-  look_at|<target>
+  fly_to|<target>                  visual approach to object or place
+  fly_to|forward|<meters?>         relative nudge forward  (omit meters for 0.5 m)
+  fly_to|back|<meters?>            relative nudge backward
+  fly_to|left|<meters?>            relative nudge left
+  fly_to|right|<meters?>           relative nudge right
+  change_altitude|<+/-meters?>     +N = climb N m, -N = descend N m (bare = +0.5 m)
+  rotate|left|<degrees?>           yaw left  (omit degrees for 90)
+  rotate|right|<degrees?>          yaw right
+  orbit|<target>|<revolutions?>    circle target (omit revolutions for 1)
+  hover|<seconds?>                 hold position (omit for 5)
+  look_at|<target>                 aim gimbal at target
   photo
   selfie
   panorama
-  follow|<target>|<seconds>       (omit for 30)
-  return
-  abort
-  say|<reply>
+  follow|<target>|<seconds?>       track target (omit seconds for 30)
+  return                           return to operator overhead
+  abort                            stop everything
+  say|<reply>                      unintelligible or non-flight input
 
 Rules:
 - Split compound commands into ordered steps.
-- "come back/return/fly home" → return
-- "stop/cancel/abort" → abort
-- "take a picture of X" → fly_to|X then photo
-- "look at X/point camera at X" → look_at|X
-- "go up/higher [N]" → change_altitude|+N (convert feet: 1 ft = 0.3 m)
-- "go down/lower [N]" → change_altitude|-N
-- "fly forward/back/left/right [N feet/meters]" → fly_to|forward|N (convert feet to meters)
+- "come back/return/fly home/come to me" → return
+- "stop/cancel/abort/never mind" → abort
+- "take a picture of X" → fly_to|X, photo
+- "look at X / point camera at X" → look_at|X
+- "go up / higher / fly up / climb / ascend [N m or ft]" → change_altitude|+N (1 ft = 0.3 m)
+- "go down / lower / fly down / descend [N m or ft]" → change_altitude|-N
+- "fly / move / go forward/back/left/right [N]" → fly_to|forward|N (convert ft to m)
 - "turn/spin around" → rotate|right|360 unless direction given
-- When no distance given for nudge/altitude: omit the value (app defaults to 0.5 m)
+- Omit numeric arg when none stated; the app fills in defaults.
 - Non-flight or unintelligible → say|<short reply>
 
 Example:

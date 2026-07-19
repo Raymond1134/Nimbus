@@ -64,6 +64,24 @@
 {"input": "go up", "output": "{\"steps\":[\"change_altitude\"],\"confidence\":0.95}"}
 {"input": "go up", "output": "{\"steps\":[\"change_altitude\"],\"confidence\":0.95}"}
 {"input": "go up", "output": "{\"steps\":[\"change_altitude\"],\"confidence\":0.95}"}
+{"input": "fly up", "output": "{\"steps\":[\"change_altitude\"],\"confidence\":0.95}"}
+{"input": "fly up", "output": "{\"steps\":[\"change_altitude\"],\"confidence\":0.95}"}
+{"input": "fly up", "output": "{\"steps\":[\"change_altitude\"],\"confidence\":0.95}"}
+{"input": "fly up", "output": "{\"steps\":[\"change_altitude\"],\"confidence\":0.95}"}
+{"input": "fly up", "output": "{\"steps\":[\"change_altitude\"],\"confidence\":0.95}"}
+{"input": "fly up", "output": "{\"steps\":[\"change_altitude\"],\"confidence\":0.95}"}
+{"input": "fly up 2 meters", "output": "{\"steps\":[\"change_altitude|+2\"],\"confidence\":0.95}"}
+{"input": "fly up 2 meters", "output": "{\"steps\":[\"change_altitude|+2\"],\"confidence\":0.95}"}
+{"input": "fly up 2 meters", "output": "{\"steps\":[\"change_altitude|+2\"],\"confidence\":0.95}"}
+{"input": "fly up 2 meters", "output": "{\"steps\":[\"change_altitude|+2\"],\"confidence\":0.95}"}
+{"input": "fly up 2 meters", "output": "{\"steps\":[\"change_altitude|+2\"],\"confidence\":0.95}"}
+{"input": "fly up 2 meters", "output": "{\"steps\":[\"change_altitude|+2\"],\"confidence\":0.95}"}
+{"input": "fly down", "output": "{\"steps\":[\"change_altitude|-0.5\"],\"confidence\":0.95}"}
+{"input": "fly down", "output": "{\"steps\":[\"change_altitude|-0.5\"],\"confidence\":0.95}"}
+{"input": "fly down", "output": "{\"steps\":[\"change_altitude|-0.5\"],\"confidence\":0.95}"}
+{"input": "fly down", "output": "{\"steps\":[\"change_altitude|-0.5\"],\"confidence\":0.95}"}
+{"input": "fly down", "output": "{\"steps\":[\"change_altitude|-0.5\"],\"confidence\":0.95}"}
+{"input": "fly down", "output": "{\"steps\":[\"change_altitude|-0.5\"],\"confidence\":0.95}"}
 {"input": "go down 3 meters", "output": "{\"steps\":[\"change_altitude|-3\"],\"confidence\":0.95}"}
 {"input": "go down 3 meters", "output": "{\"steps\":[\"change_altitude|-3\"],\"confidence\":0.95}"}
 {"input": "go down 3 meters", "output": "{\"steps\":[\"change_altitude|-3\"],\"confidence\":0.95}"}
@@ -130,3 +148,15 @@
 {"input": "fly to the red tent, take a picture, then spin around and come back", "output": "{\"steps\":[\"fly_to|red tent\",\"photo\",\"rotate|right|360\",\"return\"],\"confidence\":0.95}"}
 {"input": "fly to the red tent, take a picture, then spin around and come back", "output": "{\"steps\":[\"fly_to|red tent\",\"photo\",\"rotate|right|360\",\"return\"],\"confidence\":0.95}"}
 {"input": "fly to the red tent, take a picture, then spin around and come back", "output": "{\"steps\":[\"fly_to|red tent\",\"photo\",\"rotate|right|360\",\"return\"],\"confidence\":0.95}"}
+{"input": "move left a meter and then fly up", "output": "{\"steps\":[\"fly_to|left|1\",\"change_altitude\"],\"confidence\":0.95}"}
+{"input": "move left a meter and then fly up", "output": "{\"steps\":[\"fly_to|left|1\",\"change_altitude\"],\"confidence\":0.95}"}
+{"input": "move left a meter and then fly up", "output": "{\"steps\":[\"fly_to|left|1\",\"change_altitude\"],\"confidence\":0.95}"}
+{"input": "move left a meter and then fly up", "output": "{\"steps\":[\"fly_to|left|1\",\"change_altitude\"],\"confidence\":0.95}"}
+{"input": "move left a meter and then fly up", "output": "{\"steps\":[\"fly_to|left|1\",\"change_altitude\"],\"confidence\":0.95}"}
+{"input": "move left a meter and then fly up", "output": "{\"steps\":[\"fly_to|left|1\",\"change_altitude\"],\"confidence\":0.95}"}
+{"input": "go right 2 meters then fly up 3 meters", "output": "{\"steps\":[\"fly_to|right|2\",\"change_altitude|+3\"],\"confidence\":0.95}"}
+{"input": "go right 2 meters then fly up 3 meters", "output": "{\"steps\":[\"fly_to|right|2\",\"change_altitude|+3\"],\"confidence\":0.95}"}
+{"input": "go right 2 meters then fly up 3 meters", "output": "{\"steps\":[\"fly_to|right|2\",\"change_altitude|+3\"],\"confidence\":0.95}"}
+{"input": "go right 2 meters then fly up 3 meters", "output": "{\"steps\":[\"fly_to|right|2\",\"change_altitude|+3\"],\"confidence\":0.95}"}
+{"input": "go right 2 meters then fly up 3 meters", "output": "{\"steps\":[\"fly_to|right|2\",\"change_altitude|+3\"],\"confidence\":0.95}"}
+{"input": "go right 2 meters then fly up 3 meters", "output": "{\"steps\":[\"fly_to|right|2\",\"change_altitude|+3\"],\"confidence\":0.95}"}

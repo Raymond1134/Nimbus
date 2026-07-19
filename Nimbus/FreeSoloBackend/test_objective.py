@@ -58,14 +58,20 @@ def test_lenient_aliases():
     assert parse_step("fly_forward|2", lenient=True) == {"op": "fly_to", "direction": "forward", "distance_m": 2.0}
     assert parse_step("circle|tree|2", lenient=True) == {"op": "orbit", "target": "tree", "revolutions": 2.0}
     assert parse_step("spin|360", lenient=True) == {"op": "rotate", "direction": "right", "yaw_deg": 360.0}
+    # Critical v3 fix: 'fly_up' must map to change_altitude, NOT fly_to
+    assert parse_step("fly_up", lenient=True) == {"op": "change_altitude", "delta_m": 0.5}
+    assert parse_step("fly_up|2", lenient=True) == {"op": "change_altitude", "delta_m": 2.0}
+    assert parse_step("fly_down|1.5", lenient=True) == {"op": "change_altitude", "delta_m": -1.5}
     # strict mode rejects near-miss aliases
     assert parse_step("fly_higher|2") is None
     assert parse_step("circle|tree") is None
+    assert parse_step("fly_up") is None
 
 
 def test_invalid_steps_rejected():
     for bad in ["", "warp_speed", "fly_to", "fly_to|", "rotate", "rotate|up",
-                "orbit", "follow", "say", "land|now|please|extra".replace("land", "unknown")]:
+                "orbit", "follow", "say",
+                "land|now|please|extra".replace("land", "unknown")]:
         assert parse_step(bad) is None, bad
     # unknown extra args on no-arg ops are tolerated (op wins)
     assert parse_step("land|now") == {"op": "land"}

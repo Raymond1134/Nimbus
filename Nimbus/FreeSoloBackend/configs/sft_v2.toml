@@ -3,15 +3,15 @@ algorithm = "sft"
 seed = 42
 
 [environment]
-id = "nimbus/voice-drone-objective"
+id = "nimbus/voice-drone-v3"
 
 [environment.params]
 split = "train"
 
 [train]
-epochs = 3
-max_examples = 4000
-lora_rank = 16
-lora_alpha = 32
-max_context_tokens = 512
-max_steps = 120
+epochs = 4
+max_examples = 6000
+lora_rank = 32
+lora_alpha = 64
+max_context_tokens = 1024
+max_steps = 500

@@ -1,17 +1,13 @@
-"""Gemini visual annotation for Nimbus OBJECTIVE action dicts.
+"""Gemini visual grounding for Nimbus OBJECTIVE action dicts.
 
-annotate_steps() makes ONE Gemini Flash call to locate all visual targets
-in the current drone frame, then merges box_2d/found/distance_m/confidence
-back into each action dict.
+FreeSolo v3 produces the full mission plan with ops already disambiguated:
+  fly_to|<target>   — visual approach (needs resolve_action)
+  fly_to|left|N     — directional move (no Gemini needed)
+  change_altitude|N — altitude change  (no Gemini needed)
 
-Visual ops (ops that get Gemini annotation):
-  fly_to   — only when the first arg is a named target, NOT a direction word
-  orbit    — always has a target
-  look_at  — always has a target
-  follow   — always has a target
-
-All other steps (and relative fly_to moves) pass through with:
-  found=False, box_2d=[], confidence=0.0, distance_m=None
+For each visual step, resolve_action() is called with the target string
+and op name. It returns box_2d (0-1000 normalized) + confidence.
+Non-visual steps pass through with box_2d=[] / found=False.
 """
 
 from __future__ import annotations
@@ -23,34 +19,16 @@ from pathlib import Path
 from typing import Any
 
 from dotenv import load_dotenv
-from google import genai
-from google.genai import types
-from pydantic import BaseModel
-from grounding import ground_target, preprocess_image
+from resolve_action import resolve_action
 
 load_dotenv(Path(__file__).resolve().parent / ".env")
 
 logger = logging.getLogger(__name__)
 
-_TARGET_OPS = frozenset({"fly_to", "orbit", "look_at", "follow"})
+# Ops that require Gemini visual grounding via resolve_action.
+# follow has a target but is tracked autonomously — no box needed.
+_TARGET_OPS = frozenset({"fly_to", "orbit", "look_at"})
 _RELATIVE_DIRECTIONS = frozenset({"forward", "back", "backward", "left", "right"})
-_PERSON_WORDS = ("person", "man", "woman", "boy", "girl", "human", "operator")
-
-
-# ---------------------------------------------------------------------------
-# Pydantic schemas for the Gemini structured response
-# ---------------------------------------------------------------------------
-
-class TargetAnnotation(BaseModel):
-    target: str
-    found: bool
-    box_2d: list[int]
-    distance_m: float | None
-    confidence: float
-
-
-class AnnotationResult(BaseModel):
-    annotations: list[TargetAnnotation]
 
 
 # ---------------------------------------------------------------------------
@@ -58,64 +36,21 @@ class AnnotationResult(BaseModel):
 # ---------------------------------------------------------------------------
 
 def _is_visual_step(action: dict[str, Any]) -> bool:
-    """True if this step should receive a Gemini box annotation."""
+    """True if this step needs a Gemini box lookup via resolve_action."""
     op = action.get("op", "")
     if op not in _TARGET_OPS:
         return False
     target = action.get("target")
     if not isinstance(target, str) or not target.strip():
         return False
-    # fly_to with a direction word is a relative move — no visual target
+    # fly_to with a direction word is already a relative move — no visual target
     if target.lower() in _RELATIVE_DIRECTIONS:
         return False
     return True
 
 
 def _empty_annotation() -> dict[str, Any]:
-    return {"box_2d": [], "found": False, "distance_m": None, "confidence": 0.0}
-
-
-def _call_gemini(api_key: str, image_bytes: bytes, targets: list[str]) -> AnnotationResult:
-    """Synchronous Gemini call — run via asyncio.to_thread."""
-    prompt = (
-        "You are looking at a drone camera frame.\n"
-        "For each target listed below, determine whether it is visible in the image.\n"
-        "Return a JSON object with an 'annotations' array containing one entry per target.\n"
-        "Fields per entry:\n"
-        "  target    — copy the target string exactly as given\n"
-        "  found     — true if visible, false otherwise\n"
-        "  box_2d    — [ymin, xmin, ymax, xmax] normalized 0-1000 if found, else []\n"
-        "  distance_m — estimated distance in meters if found (null if unknown or not found)\n"
-        "  confidence — detection confidence 0.0-1.0\n\n"
-        "Targets:\n" + "\n".join(f"- {t}" for t in targets)
-    )
-    try:
-        processed = preprocess_image(image_bytes)
-    except ValueError as exc:
-        logger.warning("annotator: image preprocess failed: %s", exc)
-        # Return not-found for all targets
-        return AnnotationResult(
-            annotations=[
-                TargetAnnotation(
-                    target=t, found=False, box_2d=[], distance_m=None, confidence=0.0
-                )
-                for t in targets
-            ]
-        )
-
-    client = genai.Client(api_key=api_key)
-    response = client.models.generate_content(
-        model="gemini-2.5-flash-lite",
-        contents=[
-            types.Part.from_bytes(data=processed, mime_type="image/jpeg"),
-            prompt,
-        ],
-        config=types.GenerateContentConfig(
-            response_mime_type="application/json",
-            response_schema=AnnotationResult,
-        ),
-    )
-    return AnnotationResult.model_validate_json(response.text)
+    return {"box_2d": [], "found": False, "confidence": 0.0}
 
 
 # ---------------------------------------------------------------------------
@@ -123,90 +58,67 @@ def _call_gemini(api_key: str, image_bytes: bytes, targets: list[str]) -> Annota
 # ---------------------------------------------------------------------------
 
 async def annotate_steps(actions: list[dict], image_bytes: bytes) -> list[dict]:
-    """Add visual grounding fields to each action dict.
+    """Add box_2d + found + confidence to visual action dicts via resolve_action.
 
-    Identifies visual steps, makes ONE Gemini Flash call for all unique
-    targets, and merges results back. Falls back gracefully if Gemini fails.
-
-    Every action dict in the returned list has these keys added:
-      box_2d      list[int]   [ymin, xmin, ymax, xmax] 0-1000, or []
-      found       bool
-      distance_m  float | None
-      confidence  float
+    Each visual step (fly_to|<target>, orbit|<target>, look_at|<target>) gets
+    its own resolve_action() call with the op name as intent, so Gemini has
+    the right context. Non-visual steps pass through unchanged.
+    Unique targets are deduplicated — a cached result is reused for duplicates.
     """
-    # Start with copies; seed every step with empty annotation
+    # Shallow-copy all actions; seed every step with empty box fields
     result_actions: list[dict[str, Any]] = [dict(a) for a in actions]
     for action in result_actions:
         action.update(_empty_annotation())
 
-    # Collect unique visual targets
-    visual_indices: list[int] = []
-    targets: list[str] = []
-    seen: set[str] = set()
+    # Identify visual steps
+    visual_indices = [i for i, a in enumerate(result_actions) if _is_visual_step(a)]
+    if not visual_indices:
+        return result_actions  # no visual ops — skip Gemini entirely
 
-    for i, action in enumerate(result_actions):
-        if _is_visual_step(action):
-            visual_indices.append(i)
-            t = action["target"].strip()
-            if t.lower() not in seen:
-                targets.append(t)
-                seen.add(t.lower())
-
-    if not targets:
-        return result_actions
-
-    api_key = os.environ.get("GEMINI_API_KEY", "").strip()
-    if not api_key:
-        logger.warning("GEMINI_API_KEY not set — skipping visual annotation")
-        return result_actions
-
-    try:
-        ann_result = await asyncio.wait_for(
-            asyncio.to_thread(_call_gemini, api_key, image_bytes, targets),
-            timeout=12.0,
-        )
-    except Exception as exc:
-        logger.error(
-            "Gemini annotation failed: %s — returning empty annotations for all visual steps",
-            exc,
-        )
-        return result_actions
-
-    # Build lookup by target name (case-insensitive)
-    lookup: dict[str, TargetAnnotation] = {
-        a.target.lower(): a for a in ann_result.annotations
-    }
-
-    # Merge annotations back into visual steps
+    # Resolve each unique (target, op) pair concurrently
+    seen: dict[str, Any] = {}  # target.lower() -> ActionResolution
+    tasks = []
+    keys = []
     for i in visual_indices:
         target = result_actions[i]["target"].strip()
-        ann = lookup.get(target.lower())
-        if ann is None:
-            logger.warning("No annotation returned for target %r", target)
-            continue
-        result_actions[i]["found"] = ann.found
-        result_actions[i]["box_2d"] = ann.box_2d if ann.found else []
-        result_actions[i]["distance_m"] = ann.distance_m if ann.found else None
-        result_actions[i]["confidence"] = ann.confidence
-    # Retry unresolved person-like targets with a generic "person" lookup.
+        op = result_actions[i]["op"]
+        key = target.lower()
+        if key not in seen:
+            seen[key] = None  # placeholder while resolving
+            tasks.append(asyncio.to_thread(resolve_action, image_bytes, target, op))
+            keys.append(key)
+
+    try:
+        results = await asyncio.wait_for(
+            asyncio.gather(*tasks, return_exceptions=True),
+            timeout=15.0,
+        )
+    except Exception as exc:
+        logger.error("resolve_action gather failed: %s — visual steps get empty boxes", exc)
+        return result_actions
+
+    for key, result in zip(keys, results):
+        if isinstance(result, Exception):
+            logger.error("resolve_action failed for %r: %s", key, result)
+        else:
+            seen[key] = result
+
+    # Merge results back into visual steps
     for i in visual_indices:
-        if result_actions[i].get("found"):
+        target = result_actions[i]["target"].strip()
+        resolution = seen.get(target.lower())
+        if resolution is None or isinstance(resolution, Exception):
             continue
-        target = str(result_actions[i].get("target", "")).strip().lower()
-        if not target or not any(word in target for word in _PERSON_WORDS):
-            continue
-        try:
-            fallback = await asyncio.to_thread(ground_target, image_bytes, "person")
-        except Exception as exc:
-            logger.warning("Fallback person grounding failed for %r: %s", target, exc)
-            continue
-        if fallback.found and fallback.box_2d:
-            result_actions[i]["found"] = True
-            result_actions[i]["box_2d"] = list(fallback.box_2d)
-            result_actions[i]["distance_m"] = None
-            result_actions[i]["confidence"] = max(
-                float(result_actions[i].get("confidence", 0.0)),
-                float(fallback.confidence),
-            )
+        result_actions[i]["box_2d"] = resolution.box_2d
+        result_actions[i]["found"] = len(resolution.box_2d) == 4
+        result_actions[i]["confidence"] = resolution.confidence
+        logger.info(
+            "annotate | target=%r action_type=%s found=%s confidence=%.2f reasoning=%r",
+            target,
+            resolution.action_type,
+            result_actions[i]["found"],
+            resolution.confidence,
+            resolution.reasoning,
+        )
 
     return result_actions

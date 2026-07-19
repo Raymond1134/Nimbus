@@ -1,14 +1,14 @@
-"""Nimbus v2 Voice Command API.
+"""Nimbus Voice Command API.
 
 Pipeline:
-  Voice → FreeSolo OBJECTIVE (pipe-delimited 14-op grammar)
-  → annotate_steps (Gemini visual grounding)
-  → NimbusStep[] (with box_2d per visual target)
-  → app implements each op.
+  Voice → FreeSolo → OBJECTIVE JSON (complete mission steps)
+       → if visual ops present → Gemini: fetch box_2d per target
+       → merge box_2d into OBJECTIVE actions
+       → NimbusStep[] → iOS app executes each op via Virtual Stick
 
-FreeSolo (fine-tuned intent model, OpenAI-compatible endpoint) owns
-text → OBJECTIVE. The annotator owns vision grounding. The iOS app
-owns Virtual Stick execution for each op.
+FreeSolo is the sole mission planner. Gemini is only called when
+fly_to|<target>, orbit|<target>, or look_at|<target> steps are present,
+and it returns bounding boxes only. Non-visual commands never touch Gemini.
 """
 
 import logging
@@ -124,10 +124,10 @@ def _mock_freesolo_objective(transcript: str) -> dict:
         return obj(["panorama"], 0.9)
     if re.search(r"\b(hover|hold position|stay put|hold station)\b", text) and not target:
         return obj(["hover"], 0.9)
-    if re.search(r"\b(higher|go up|climb|fly up)\b", text) and not target:
-        return obj(["change_altitude"], 0.85)           # default +0.5 m climb
-    if re.search(r"\b(lower|go down|descend|fly down)\b", text) and not target:
-        return obj(["change_altitude|-2"], 0.85)        # descend 2 m
+    if re.search(r"\b(higher|go up|climb|fly up|ascend|rise)\b", text) and not target:
+        return obj(["change_altitude"], 0.85)           # bare = +0.5 m climb
+    if re.search(r"\b(lower|go down|descend|fly down|drop)\b", text) and not target:
+        return obj(["change_altitude|-0.5"], 0.85)      # bare = -0.5 m descend
 
     steps: list[str] = []
     wants_photo = bool(re.search(r"\b(photo|picture|pic|photograph|snap|shot)\b", text))
