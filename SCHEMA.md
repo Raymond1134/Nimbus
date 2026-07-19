@@ -68,6 +68,32 @@ FreeSolo outputs this directly. The backend parses and annotates it.
 | `hover` | duration_s | **5 s** |
 | `follow` | duration_s | **30 s** |
 
+### Op Aliases (lenient / inference mode only)
+
+The backend maps near-miss op names onto valid ops at inference time.
+These aliases are **never used for training rewards** — the model is trained on the exact 14 ops above.
+
+| Alias | Resolves to |
+|---|---|
+| `fly_higher`, `fly_up`, `ascend`, `climb` | `change_altitude` (positive delta) |
+| `fly_lower`, `fly_down`, `descend` | `change_altitude` (negative delta) |
+| `fly_forward`, `move_forward`, `go_forward` | `fly_to\|forward` |
+| `fly_backward`, `fly_back`, `move_back`, `go_backward` | `fly_to\|back` |
+| `fly_left`, `move_left`, `strafe_left`, `go_left` | `fly_to\|left` |
+| `fly_right`, `move_right`, `strafe_right`, `go_right` | `fly_to\|right` |
+| `fly_behind`, `fly_past`, `fly_toward`, `go_to`, `approach` | `fly_to` (visual) |
+| `spin`, `turn`, `yaw` | `rotate` |
+| `circle` | `orbit` |
+| `look`, `point_at`, `aim`, `watch`, `gimbal` | `look_at` |
+| `take_photo`, `take_picture`, `picture`, `snap` | `photo` |
+| `dronie` | `selfie` |
+| `pano` | `panorama` |
+| `track` | `follow` |
+| `take_off`, `launch` | `takeoff` |
+| `come_back`, `fly_home`, `return_home`, `go_home`, `rth` | `return` |
+| `stop`, `cancel`, `halt` | `abort` |
+| `wait`, `hold`, `hover_station` | `hover` |
+
 ### Examples
 
 ```json
@@ -252,6 +278,31 @@ Every step always has all fields present (null for unused ones).
 {"op":"say","target":null,"box_2d":[],"found":false,"distance_m":null,"confidence":0.0,"delta_m":null,"direction":null,"degrees":null,"revolutions":null,"seconds":null,"text":"I only handle flight commands."}
 ```
 
+### Per-op field matrix
+
+Which NimbusStep fields are populated (non-null / non-empty) for each op:
+
+| op | target | box_2d | found | distance_m | confidence | delta_m | direction | degrees | revolutions | seconds | text |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| `takeoff` | — | — | — | — | — | — | — | — | — | — | — |
+| `land` | — | — | — | — | — | — | — | — | — | — | — |
+| `fly_to` (visual) | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | — | — | — |
+| `fly_to` (relative) | — | — | — | opt | — | — | ✓ | — | — | — | — |
+| `change_altitude` | — | — | — | — | — | ✓ | — | — | — | — | — |
+| `rotate` | — | — | — | — | — | — | ✓ | ✓ | — | — | — |
+| `orbit` | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | ✓ | — | — |
+| `hover` | — | — | — | — | — | — | — | — | — | ✓ | — |
+| `look_at` | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | — | — | — |
+| `photo` | — | — | — | — | — | — | — | — | — | — | — |
+| `selfie` | — | — | — | — | — | — | — | — | — | — | — |
+| `panorama` | — | — | — | — | — | — | — | — | — | — | — |
+| `follow` | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | — | ✓ | — |
+| `return` | — | — | — | — | — | — | — | — | — | — | — |
+| `abort` | — | — | — | — | — | — | — | — | — | — | — |
+| `say` | — | — | — | — | — | — | — | — | — | — | ✓ |
+
+`✓` = always populated · `opt` = present only if model specified a distance · `—` = always null/empty/false
+
 ---
 
 ## 4. iOS MissionExecutor Dispatch
@@ -277,6 +328,31 @@ How each op is implemented in `MissionExecutor.swift`:
 | `return` | `behaviors.followPerson(maxSeconds: 60, overheadMode: true)` |
 | `abort` | `behaviors.stop()` → `onAbortRequested?()` → Orchestrator calls `resumeOverheadHold()` |
 | `say` | `speak(text)` |
+
+### iOS Swift decoding — CodingKeys
+
+`NimbusStep` uses custom `CodingKeys` to bridge snake_case JSON → camelCase Swift:
+
+```swift
+enum CodingKeys: String, CodingKey {
+    case op, target, found, direction, degrees, revolutions, seconds, text, confidence
+    case box2d     = "box_2d"
+    case distanceM = "distance_m"
+    case deltaM    = "delta_m"
+}
+```
+
+The `id` field is set by `MissionExecutor` (loop index) after decode; the backend never emits it.
+
+### Backend API error codes
+
+| Status | Meaning |
+|---|---|
+| `400` | Image content-type is not `image/*` |
+| `413` | Image exceeds 10 MB |
+| `502` | FreeSolo service unreachable or returned an error |
+| `503` | FreeSolo not configured (`FREESOLO_BASE_URL` / key / model env vars missing) |
+| `500` | Unhandled backend error (`detail` field contains traceback) |
 
 ---
 
