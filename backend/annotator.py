@@ -105,7 +105,7 @@ def _call_gemini(api_key: str, image_bytes: bytes, targets: list[str]) -> Annota
 
     client = genai.Client(api_key=api_key)
     response = client.models.generate_content(
-        model="gemini-flash-latest",
+        model="gemini-2.5-flash-lite",
         contents=[
             types.Part.from_bytes(data=processed, mime_type="image/jpeg"),
             prompt,

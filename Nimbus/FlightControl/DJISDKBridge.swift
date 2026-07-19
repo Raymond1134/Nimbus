@@ -46,6 +46,8 @@ final class DJISDKBridge: NSObject {
     @ObservationIgnored private lazy var liveFeedManager = DJILiveVideoFeedManager(bridge: self)
     @ObservationIgnored private var videoStallTimer: Timer?
     @ObservationIgnored private var lastVideoPacketAt = Date.distantPast
+    @ObservationIgnored private var feedStartupAt = Date.distantPast
+    @ObservationIgnored private var lastFeedRecoveryAt = Date.distantPast
 
     private override init() { super.init() }
 
@@ -88,6 +90,8 @@ final class DJISDKBridge: NSObject {
             self?.liveFeedManager.onAircraftConnectionChanged(connected: false)
         }
         stopVideoStallWatchdog()
+        feedStartupAt = Date.distantPast
+        lastFeedRecoveryAt = Date.distantPast
         print("DJISDKBridge: aircraft disconnected.")
     }
 
@@ -353,6 +357,11 @@ final class DJISDKBridge: NSObject {
         liveFeedManager.detach(from: view)
     }
 
+    @MainActor
+    func requestVideoFeedRecovery() {
+        liveFeedManager.recoverFromVideoStall()
+    }
+
     /// Return the latest camera frame as JPEG, or a tiny placeholder so that
     /// backend calls always have valid image bytes.
     func captureFrameJPEG() -> Data {
@@ -397,17 +406,32 @@ final class DJISDKBridge: NSObject {
     private func startVideoStallWatchdog() {
         stopVideoStallWatchdog()
         lastVideoPacketAt = Date()
+        feedStartupAt = Date()
+        lastFeedRecoveryAt = Date.distantPast
         let timer = Timer(timeInterval: 2.0, repeats: true) { [weak self] _ in
             guard let self else { return }
             guard self.isAircraftConnected else { return }
-            guard self.hasLiveVideoData else { return }
+            let now = Date()
+            let canRecover = now.timeIntervalSince(self.lastFeedRecoveryAt) > 3.0
+            if !self.hasLiveVideoData {
+                // Connected but no packets yet: recover feed startup path.
+                if now.timeIntervalSince(self.feedStartupAt) > 5.0, canRecover {
+                    print("DJISDKBridge: no video packets since startup — restarting feed.")
+                    Task { @MainActor [weak self] in
+                        self?.liveFeedManager.recoverFromVideoStall()
+                    }
+                    self.lastFeedRecoveryAt = now
+                }
+                return
+            }
             let age = Date().timeIntervalSince(self.lastVideoPacketAt)
-            if age > 3.0 {
+            if age > 3.0, canRecover {
                 print("DJISDKBridge: video packet stall (\(String(format: "%.1f", age))s) — restarting feed.")
                 Task { @MainActor [weak self] in
                     self?.liveFeedManager.recoverFromVideoStall()
                 }
-                self.lastVideoPacketAt = Date()
+                self.lastVideoPacketAt = now
+                self.lastFeedRecoveryAt = now
             }
         }
         RunLoop.main.add(timer, forMode: .common)
@@ -418,6 +442,8 @@ final class DJISDKBridge: NSObject {
         videoStallTimer?.invalidate()
         videoStallTimer = nil
         lastVideoPacketAt = Date.distantPast
+        feedStartupAt = Date.distantPast
+        lastFeedRecoveryAt = Date.distantPast
     }
 
     func markVideoPacketReceived() {

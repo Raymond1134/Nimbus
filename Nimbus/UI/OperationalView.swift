@@ -142,9 +142,22 @@ struct OperationalView: View {
                 .foregroundStyle(.white.opacity(0.22))
 
             if orc.bridge.isAircraftConnected {
-                Text("Awaiting camera feed…")
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.35))
+                VStack(spacing: 10) {
+                    Text("Awaiting camera feed…")
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.35))
+                    Button("Restart camera feed") {
+                        Task { @MainActor in
+                            orc.bridge.requestVideoFeedRecovery()
+                        }
+                    }
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(Color.white.opacity(0.16))
+                    .clipShape(Capsule())
+                }
             } else {
                 connectionPanel
             }

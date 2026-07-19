@@ -120,6 +120,19 @@ final class MissionExecutor {
                 behaviors.approach(box: step.box2d, standoffM: standoff, maxSeconds: 40)
                 return await waitForBehavior(timeout: 45)
             } else {
+                if looksLikePersonTarget(step.target),
+                   let frame = bridge.cameraFrame?.cgImage,
+                   let person = FlightBehaviors.detectPersonBox(in: frame) {
+                    let localBox = [
+                        Int((1.0 - person.maxY) * 1000.0),
+                        Int(person.minX * 1000.0),
+                        Int((1.0 - person.minY) * 1000.0),
+                        Int(person.maxX * 1000.0),
+                    ]
+                    log("Gemini target missing; using onboard person detection fallback.")
+                    behaviors.approach(box: localBox, standoffM: 3.0, maxSeconds: 35)
+                    return await waitForBehavior(timeout: 40)
+                }
                 say("I can't see \(step.target ?? "that").")
                 return true  // soft failure — don't abort the mission
             }
@@ -294,5 +307,16 @@ final class MissionExecutor {
         }
         // Let the auto-takeoff climb finish.
         try? await Task.sleep(for: .seconds(1.5))
+    }
+
+    private func looksLikePersonTarget(_ target: String?) -> Bool {
+        guard let text = target?.lowercased() else { return false }
+        return text.contains("person")
+            || text.contains("operator")
+            || text.contains("man")
+            || text.contains("woman")
+            || text.contains("boy")
+            || text.contains("girl")
+            || text.contains("human")
     }
 }

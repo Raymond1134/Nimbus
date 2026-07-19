@@ -3,7 +3,7 @@ algorithm = "sft"
 seed = 42
 
 [environment]
-id = "nimbus/voice-drone-v2"
+id = "nimbus/voice-drone-objective"
 
 [environment.params]
 split = "smoke"

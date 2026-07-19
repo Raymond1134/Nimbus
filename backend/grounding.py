@@ -82,7 +82,7 @@ def ground_target(
         t0 = time.time()
         try:
             response = client.models.generate_content(
-                model="gemini-flash-latest",
+                model="gemini-2.5-flash-lite",
                 contents=[
                     types.Part.from_bytes(data=processed, mime_type="image/jpeg"),
                     _PROMPT_TEMPLATE.format(target=target_description),

@@ -286,6 +286,7 @@ final class Orchestrator {
                 let text = try await ElevenLabsSTT.transcribe(fileURL: fileURL)
                 lastTranscript = text
                 log("STT: \"\(text)\"")
+                speak("Got it. Planning your command now.")
                 await processTranscript(text)
             } catch {
                 log("STT error: \(error.localizedDescription)", level: .error)
@@ -350,6 +351,7 @@ final class Orchestrator {
         let firstOp = steps.first?.op.uppercased() ?? "MISSION"
         appState = .executing(verb: firstOp, target: steps.first?.target)
         log("Mission start: \(steps.map(\.op).joined(separator: " → "))")
+        speak("Executing now.")
         // Keep the wakeword hot during the mission so "Nimbus, stop" interrupts.
         restartWakewordIfNeeded()
 
