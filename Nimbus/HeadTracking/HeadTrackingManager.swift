@@ -35,6 +35,7 @@ final class HeadTrackingManager: NSObject {
     private var compassNorthDeg = 0.0
     private var isFrozen        = false
     private var frozenAttitude: HeadAttitude?
+    private let yawQuantizationStepDeg = 12.0
 
     // MARK: - Init
 
@@ -60,6 +61,12 @@ final class HeadTrackingManager: NSObject {
         compassNorthDeg = compassHeadingDeg
         motionManager.startDeviceMotionUpdates(to: .main) { [weak self] motion, _ in
             guard let self, let motion, !self.isFrozen else { return }
+            // Auto-calibrate on the very first frame — no explicit calibrate() call needed.
+            if !self.isCalibrated {
+                self.calibYawOffset = motion.attitude.yaw * 180 / .pi
+                self.isCalibrated   = true
+                print("HeadTrackingManager: auto-calibrated on first frame.")
+            }
             self.handleMotion(motion)
         }
         isTracking = true
@@ -79,7 +86,15 @@ final class HeadTrackingManager: NSObject {
     /// Record the current raw sensor yaw as the zero reference.
     /// Call once after start(), ideally when the drone is in front of the user.
     func calibrate() {
+        calibrate(toCompassHeadingDeg: compassNorthDeg)
+    }
+
+    /// Record the current raw sensor yaw as zero and remap world heading to a
+    /// supplied compass heading anchor (typically the drone's current heading
+    /// at alignment-release time).
+    func calibrate(toCompassHeadingDeg headingDeg: Double) {
         guard let d = motionManager.deviceMotion else { return }
+        compassNorthDeg = headingDeg
         calibYawOffset = d.attitude.yaw * 180 / .pi
         isCalibrated   = true
         print("HeadTrackingManager: calibrated. sensorOffset=\(calibYawOffset)° compass=\(compassNorthDeg)°")
@@ -113,11 +128,19 @@ final class HeadTrackingManager: NSObject {
         let relative = calibYawOffset - rawYaw
         let raw = (compassNorthDeg + relative).truncatingRemainder(dividingBy: 360)
         let worldYaw = raw < 0 ? raw + 360 : raw   // normalise to [0, 360)
+        let quantizedYaw = quantizedHeading(worldYaw, stepDeg: yawQuantizationStepDeg)
         currentAttitude = HeadAttitude(
-            yawDeg:   worldYaw,
+            yawDeg:   quantizedYaw,
             pitchDeg: motion.attitude.pitch * 180 / .pi,
             rollDeg:  motion.attitude.roll  * 180 / .pi
         )
+    }
+
+    private func quantizedHeading(_ headingDeg: Double, stepDeg: Double) -> Double {
+        guard stepDeg > 0 else { return headingDeg }
+        let snapped = (headingDeg / stepDeg).rounded() * stepDeg
+        let normalized = snapped.truncatingRemainder(dividingBy: 360)
+        return normalized >= 0 ? normalized : normalized + 360
     }
 }
 

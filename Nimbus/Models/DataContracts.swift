@@ -125,6 +125,8 @@ struct TelemetrySnapshot: Sendable {
     let isGPSValid: Bool
     let satelliteCount: Int
     let isFlying: Bool
+    /// True when SDK paused near-ground landing and requires explicit confirmation.
+    let isLandingConfirmationNeeded: Bool
     let currentLocation: GPSCoordinate?
     let homeLocation: GPSCoordinate?
     /// True when the downward vision / optical-flow sensor is actively being
@@ -135,7 +137,8 @@ struct TelemetrySnapshot: Sendable {
         altitudeM: 0, headingDeg: 0,
         velocityX: 0, velocityY: 0, velocityZ: 0,
         batteryPercent: 0, isGPSValid: false, satelliteCount: 0,
-        isFlying: false, currentLocation: nil, homeLocation: nil,
+        isFlying: false, isLandingConfirmationNeeded: false,
+        currentLocation: nil, homeLocation: nil,
         isVisionPositioningActive: false
     )
 }

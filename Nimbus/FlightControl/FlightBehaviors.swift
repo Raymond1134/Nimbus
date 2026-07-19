@@ -50,8 +50,9 @@ final class FlightBehaviors {
     // Change to 180° if you want the drone to face *toward* the user instead.
     private let followYawOffsetDeg = 0.0
     private var followTargetAltitudeM: Double = 4.0
-    private var followFilteredLatErr = 0.0
-    private var followFilteredFwdErr = 0.0
+    /// Alpha-beta filter state: smoothed chase-point position and screen velocity.
+    private var followTrackedPoint: CGPoint?
+    private var followTrackedVel = CGVector(dx: 0, dy: 0)
     private var followTrackRequest: VNTrackObjectRequest?
     private let followTrackMinConfidence: Float = 0.30
     private var followLostTicks = 0
@@ -81,22 +82,16 @@ final class FlightBehaviors {
     private var timedRoll: Float = 0
     private var timedThrottle: Float = 0
     private var timedUntil = Date.distantPast
+    private var isHeadingControlSuppressed = false
 
-    // background heading-hold (runs perpetually; only acts when no behavior owns the aircraft)
-    private var headingHoldTimer: Timer?
 
     enum Mode { case none, approach, orbit, hover, followPerson, navigateToSpot,
-                     rotateBy, altitudeChange, timedVelocity }
+                     rotateBy, altitudeChange, timedVelocity, headingHold }
 
     init(bridge: DJISDKBridge, safety: SafetySupervisor, headTracking: HeadTrackingManager) {
         self.bridge = bridge
         self.safety = safety
         self.headTracking = headTracking
-        startHeadingHoldLoop()
-    }
-
-    deinit {
-        headingHoldTimer?.invalidate()
     }
 
     // MARK: - Public Commands
@@ -140,8 +135,7 @@ final class FlightBehaviors {
         followHeadTopTargetY = overheadMode ? 0.50 : 0.62
         followStartHeadYaw = headTracking.effectiveAttitude.yawDeg
         followStartHeading = bridge.telemetry.headingDeg
-        followFilteredLatErr = 0
-        followFilteredFwdErr = 0
+        resetFollowTargetFilter()
         followTrackRequest = nil
         followLostTicks = 0
         followSeedBox = seedBox
@@ -223,6 +217,12 @@ final class FlightBehaviors {
         aircraft.flightController?.startGoHome(completion: nil)
     }
 
+    /// Temporarily disable yaw heading-tracking output while preserving
+    /// position hold (used by press-and-hold heading calibration).
+    func setHeadingControlSuppressed(_ suppressed: Bool) {
+        isHeadingControlSuppressed = suppressed
+    }
+
     // MARK: - Control Loop
 
     private func startTimer(mode: Mode) {
@@ -252,6 +252,7 @@ final class FlightBehaviors {
         hoverHoldUntil = Date.distantPast
         pendingCompletionAfterHover = false
         followTrackRequest = nil
+        resetFollowTargetFilter()
         Task { @MainActor [weak self] in self?.onFollowTargetBoxUpdated?(nil) }
     }
 
@@ -279,6 +280,7 @@ final class FlightBehaviors {
         case .rotateBy:      tickRotateBy()
         case .altitudeChange: tickAltitudeChange()
         case .timedVelocity: tickTimedVelocity()
+        case .headingHold:   tickHeadingHoldMode()
         case .none:          break
         }
     }
@@ -334,7 +336,7 @@ final class FlightBehaviors {
 
     private func tickHoverHold() {
         // Keep tracking the user's heading even during stabilisation hover.
-        let yaw = headTrackingYawCorrection()
+        let yaw: Float = isHeadingControlSuppressed ? 0 : headTrackingYawCorrection()
         sendSmoothedVelocity(pitch: 0, roll: 0, yaw: yaw, throttle: 0)
         if Date() < hoverHoldUntil { return }
         let shouldNotifyCompletion = pendingCompletionAfterHover
@@ -395,9 +397,8 @@ final class FlightBehaviors {
             startStabilizedHoverHold(notifyCompletion: true)
             return
         }
-        // Home Lock orbit primitive:
-        // roll commands generate tangential motion around home; pitch remains
-        // zero so radial distance stays near constant.
+        // Virtual-stick orbit primitive:
+        // roll commands generate lateral arc motion while pitch stays near zero.
         sendSmoothedVelocity(pitch: 0, roll: orbitTangentialMps, yaw: 0, throttle: 0)
     }
 
@@ -409,68 +410,142 @@ final class FlightBehaviors {
             return
         }
 
-        guard let image = bridge.cameraFrame,
-              let cgImage = image.cgImage else {
-            followLostTicks += 1
-            if followLostTicks > 10 {
-                // Camera feed unavailable for >1s: slow yaw scan for re-acquisition.
-                sendSmoothedVelocity(pitch: 0, roll: 0, yaw: 12, throttle: 0)
-            } else {
-                sendSmoothedVelocity(pitch: 0, roll: 0, yaw: 0, throttle: 0)
-            }
-            return
-        }
-
-        guard let personBox = trackedHeadBox(in: cgImage) else {
-            // Lost tracking: hover in place immediately.
-            followLostTicks += 1
-            Task { @MainActor [weak self] in self?.onFollowTargetBoxUpdated?(nil) }
-            if followLostTicks > 8 {
-                // Brief yaw scan helps recover operator when tracker drifts/losses.
-                sendSmoothedVelocity(pitch: 0, roll: 0, yaw: 10, throttle: 0)
-            } else {
-                sendSmoothedVelocity(pitch: 0, roll: 0, yaw: 0, throttle: 0)
-            }
-            return
-        }
-        followLostTicks = 0
-        Task { @MainActor [weak self] in self?.onFollowTargetBoxUpdated?(personBox) }
-
-        let frameCenter = CGPoint(x: 0.5, y: 0.5)
-        let recursiveTarget = recursiveNearestPoint(on: personBox, toward: frameCenter, depth: 3)
-        let correctedTarget = undistorted(normalizedPoint: recursiveTarget)
-        let headTopY = Double(personBox.maxY)
-        // Follow controller:
-        // - roll/pitch keep subject centered in frame
-        // - yaw follows AirPods heading so drone faces same direction as user
-        let latErr = Double(correctedTarget.x - frameCenter.x)   // right-left screen error
-        let fwdErr = Double(frameCenter.y - correctedTarget.y)   // forward-back screen error (head-centric)
-        followFilteredLatErr += (latErr - followFilteredLatErr) * tuning.followErrorFilterAlpha
-        followFilteredFwdErr += (fwdErr - followFilteredFwdErr) * tuning.followErrorFilterAlpha
-
+        // Yaw ALWAYS follows the user's AirPods heading — computed up front so
+        // rotation stays in sync with the person on every tick, including while
+        // the camera feed or visual tracker is momentarily unavailable.
         let currentHeading = bridge.telemetry.headingDeg
         // Use the AirPods absolute world heading directly — no incremental delta
         // accumulation, which was drifting and computing the wrong offset.
         let desiredHeading = headTracking.effectiveAttitude.yawDeg + followYawOffsetDeg
         let yawError = shortestAngleDelta(target: desiredHeading, current: currentHeading)
         let yawRate = Float(yawError * tuning.followYawGain)
+
+        guard let image = bridge.cameraFrame,
+              let cgImage = image.cgImage else {
+            followLostTicks += 1
+            resetFollowTargetFilter()
+            // Camera feed unavailable: keep rotating with the user; after >1 s
+            // add a slow yaw scan for re-acquisition.
+            let scanYaw: Float = followLostTicks > 10 ? 12 : 0
+            sendSmoothedVelocity(pitch: 0, roll: 0, yaw: yawRate + scanYaw, throttle: 0)
+            return
+        }
+
+        let frameCenter = CGPoint(x: 0.5, y: 0.5)
+        var trackedBox: CGRect?
+        var chasePoint: CGPoint?
+
+        if let personBox = trackedHeadBox(in: cgImage) {
+            followLostTicks = 0
+            trackedBox = personBox
+            let recursiveTarget = recursiveNearestPoint(on: personBox, toward: frameCenter, depth: 3)
+            let correctedTarget = undistorted(normalizedPoint: recursiveTarget)
+            chasePoint = updateFollowTargetFilter(measurement: correctedTarget)
+            // Enforce straight-down gimbal in follow mode.
+            bridge.trackHeadTopWithGimbal(headTopY: personBox.maxY,
+                                          targetY: CGFloat(followHeadTopTargetY),
+                                          airpodsPitchDeg: CGFloat(headTracking.effectiveAttitude.pitchDeg),
+                                          strictDown: true)
+        } else {
+            // Tracker dropout: coast briefly along the predicted path instead of
+            // stopping dead — bridges occlusions / missed frames smoothly.
+            followLostTicks += 1
+            if followLostTicks <= tuning.followCoastMaxTicks {
+                chasePoint = coastFollowPrediction()
+            }
+        }
+
+        Task { @MainActor [weak self] in self?.onFollowTargetBoxUpdated?(trackedBox) }
+
+        guard let chasePoint else {
+            // Target fully lost: hover in place but keep rotating with the user;
+            // after a longer loss add a slow yaw scan to help re-acquire.
+            resetFollowTargetFilter()
+            let scanYaw: Float = followLostTicks > 8 ? 10 : 0
+            sendSmoothedVelocity(pitch: 0, roll: 0, yaw: yawRate + scanYaw, throttle: 0)
+            return
+        }
+
+        // Follow controller:
+        // - roll/pitch chase the predicted (smoothed + look-ahead) target point
+        // - velocity feed-forward matches the person's pace to remove lag
+        // - yaw follows AirPods heading so drone faces same direction as user
+        let latErr = Double(chasePoint.x - frameCenter.x)   // right-left screen error
+        let fwdErr = Double(frameCenter.y - chasePoint.y)   // forward-back screen error (head-centric)
+
         // Yaw-first sequencing for stability:
         // if heading is still off, rotate first and defer translational corrections.
         let applyTranslation = abs(yawError) < tuning.followYawFirstThresholdDeg
-        // Screen errors are body-frame (right / forward).
-        let bodyRight = applyTranslation ? followFilteredLatErr * tuning.followLateralGain : 0
-        let bodyFwd = applyTranslation ? followFilteredFwdErr * tuning.followForwardGain : 0
+        // Screen errors are body-frame (right / forward). Feed-forward adds the
+        // target's estimated screen velocity so a walking person is matched
+        // instead of perpetually chased.
+        let ff = tuning.followVelocityFeedForwardGain
+        let bodyRight = applyTranslation
+            ? latErr * tuning.followLateralGain + Double(followTrackedVel.dx) * ff
+            : 0
+        let bodyFwd = applyTranslation
+            ? fwdErr * tuning.followForwardGain - Double(followTrackedVel.dy) * ff
+            : 0
         let pitch = Float(bodyFwd)
         let roll = Float(bodyRight)
         let altError = followTargetAltitudeM - bridge.telemetry.altitudeM
         let throttle = Float(altError * tuning.followAltitudeGain)
-        // Enforce straight-down gimbal in follow mode.
-        bridge.trackHeadTopWithGimbal(headTopY: CGFloat(headTopY),
-                                      targetY: CGFloat(followHeadTopTargetY),
-                                      airpodsPitchDeg: CGFloat(headTracking.effectiveAttitude.pitchDeg),
-                                      strictDown: true)
 
         sendSmoothedVelocity(pitch: pitch, roll: roll, yaw: yawRate, throttle: throttle)
+    }
+
+    // MARK: - Predictive Target Filter (alpha-beta / g-h)
+
+    /// Fuse a new tracker measurement into the position + velocity estimate and
+    /// return the look-ahead chase point. Runs at the 10 Hz behavior tick.
+    private func updateFollowTargetFilter(measurement: CGPoint) -> CGPoint {
+        let dt: CGFloat = 0.1
+        guard let pos = followTrackedPoint else {
+            followTrackedPoint = measurement
+            followTrackedVel = CGVector(dx: 0, dy: 0)
+            return measurement
+        }
+        // Predict forward one tick, then correct with the measurement residual.
+        let predicted = CGPoint(x: pos.x + followTrackedVel.dx * dt,
+                                y: pos.y + followTrackedVel.dy * dt)
+        let rx = measurement.x - predicted.x
+        let ry = measurement.y - predicted.y
+        let alpha = CGFloat(tuning.followPosFilterAlpha)
+        let beta  = CGFloat(tuning.followVelFilterBeta)
+        let newPos = CGPoint(x: predicted.x + alpha * rx,
+                             y: predicted.y + alpha * ry)
+        followTrackedVel = CGVector(dx: followTrackedVel.dx + (beta / dt) * rx,
+                                    dy: followTrackedVel.dy + (beta / dt) * ry)
+        followTrackedPoint = newPos
+        return lookaheadChasePoint(from: newPos)
+    }
+
+    /// Advance the estimate one blind tick while the tracker is lost (velocity
+    /// decays each tick so a stale prediction can never run away).
+    private func coastFollowPrediction() -> CGPoint? {
+        guard let pos = followTrackedPoint else { return nil }
+        let dt: CGFloat = 0.1
+        let decay = CGFloat(tuning.followCoastVelocityDecay)
+        followTrackedVel = CGVector(dx: followTrackedVel.dx * decay,
+                                    dy: followTrackedVel.dy * decay)
+        let next = CGPoint(x: min(max(pos.x + followTrackedVel.dx * dt, 0), 1),
+                           y: min(max(pos.y + followTrackedVel.dy * dt, 0), 1))
+        followTrackedPoint = next
+        return lookaheadChasePoint(from: next)
+    }
+
+    /// Project the smoothed position a short time into the future so the
+    /// controller leads a moving target instead of lagging behind it.
+    private func lookaheadChasePoint(from pos: CGPoint) -> CGPoint {
+        let t = CGFloat(tuning.followPredictionLookaheadSec)
+        let p = CGPoint(x: pos.x + followTrackedVel.dx * t,
+                        y: pos.y + followTrackedVel.dy * t)
+        return CGPoint(x: min(max(p.x, 0), 1), y: min(max(p.y, 0), 1))
+    }
+
+    private func resetFollowTargetFilter() {
+        followTrackedPoint = nil
+        followTrackedVel = CGVector(dx: 0, dy: 0)
     }
     private func trackedHeadBox(in cgImage: CGImage) -> CGRect? {
         if followTrackRequest == nil {
@@ -627,13 +702,20 @@ final class FlightBehaviors {
             return
         }
 
-        // Body-frame VS: project world bearing error into forward/right.
+        // Body-frame VS with yaw-first forward-only motion.
         let headingErrorDeg = shortestAngleDelta(target: bearingDeg, current: bridge.telemetry.headingDeg)
-        let headingErrorRad = headingErrorDeg * .pi / 180.0
+        let headingAligned = abs(headingErrorDeg) < 8.0
+        let yawRate = Float(max(-40.0, min(40.0, headingErrorDeg * 1.4)))
 
-        let kPos: Double = 0.08
-        let pitch = Float(cos(headingErrorRad) * distanceM * kPos)
-        let roll = Float(sin(headingErrorRad) * distanceM * kPos)
+        // Yaw first, then move with forward pitch only to avoid awkward
+        // side-slip movement while turning.
+        let pitch: Float
+        if headingAligned {
+            pitch = Float(min(2.0, max(0.3, distanceM * 0.12)))
+        } else {
+            pitch = 0
+        }
+        let roll: Float = 0
 
         var throttle: Float = 0
         if let targetAlt = target.altitudeM,
@@ -641,38 +723,41 @@ final class FlightBehaviors {
             let altError = targetAlt - currentAlt
             throttle = Float(altError * 0.3)
         }
-
-        sendSmoothedVelocity(pitch: pitch, roll: roll, yaw: 0, throttle: throttle)
+        sendSmoothedVelocity(pitch: pitch, roll: roll, yaw: yawRate, throttle: throttle)
     }
 
-    // MARK: - Background Heading Hold
+    // MARK: - Heading Hold Mode
 
-    /// Perpetual 10 Hz loop. Sends a proportional yaw correction toward the
-    /// user's AirPods heading whenever no other behavior owns the aircraft.
-    /// Active modes that control yaw themselves (approach, orbit, rotateBy,
-    /// timedVelocity, navigateToSpot) are excluded via the activeMode guard.
-    private func startHeadingHoldLoop() {
-        let t = Timer(timeInterval: 0.1, repeats: true) { [weak self] _ in
-            self?.tickHeadingHold()
+    /// Enter the persistent heading-hold state: hold position and continuously
+    /// align yaw to the user's AirPods heading. Unlike stop() there is no
+    /// stabilisation hover — the mode starts immediately. isExecuting is left
+    /// false so MissionExecutor.waitForBehavior returns immediately and missions
+    /// can interrupt at any time via startTimer().
+    func headingHold() {
+        stopBehavior()
+        activeMode = .headingHold
+        // isExecuting stays false — heading hold is a passive background state.
+        let timer = Timer(timeInterval: 0.1, repeats: true) { [weak self] _ in
+            self?.tick()
         }
-        RunLoop.main.add(t, forMode: .common)
-        headingHoldTimer = t
+        RunLoop.main.add(timer, forMode: .common)
+        behaviorTimer = timer
     }
 
-    private func tickHeadingHold() {
-        // Only act when the drone is truly idle (behavior timer not running).
-        // hover / followPerson / altitudeChange handle their own yaw inline.
-        guard activeMode == .none, headTracking.isTracking else { return }
-        let yaw = headTrackingYawCorrection()
-        // Bypass the slew limiter — behavior timer is inactive, no state conflict.
-        bridge.sendVelocity(pitch: 0, roll: 0, yaw: yaw, throttle: 0)
+    private func tickHeadingHoldMode() {
+        // Always send even when yaw == 0 to keep VS mode alive (FC holds X/Y/Z).
+        let yaw: Float = isHeadingControlSuppressed ? 0 : headTrackingYawCorrection()
+        sendSmoothedVelocity(pitch: 0, roll: 0, yaw: yaw, throttle: 0)
     }
 
     /// Proportional yaw correction toward the user's AirPods heading.
     /// Returns 0 when AirPods are not tracking or error is within the dead zone.
     private func headTrackingYawCorrection() -> Float {
         guard headTracking.isTracking else { return 0 }
-        let desired = headTracking.effectiveAttitude.yawDeg
+        // Use currentAttitude (live) not effectiveAttitude (may be frozen for
+        // grounding). Heading hold should track the real head direction even
+        // while the attitude is frozen for command capture.
+        let desired = headTracking.currentAttitude.yawDeg
         let error = shortestAngleDelta(target: desired, current: bridge.telemetry.headingDeg)
         guard abs(error) > tuning.headingHoldDeadZoneDeg else { return 0 }
         let dir: Double = error > 0 ? 1 : -1

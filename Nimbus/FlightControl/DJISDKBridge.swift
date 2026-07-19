@@ -56,6 +56,9 @@ final class DJISDKBridge: NSObject {
     @ObservationIgnored private var lastVideoPacketAt = Date.distantPast
     @ObservationIgnored private var feedStartupAt = Date.distantPast
     @ObservationIgnored private var lastFeedRecoveryAt = Date.distantPast
+    @ObservationIgnored private var lastControlAuthorityAssertAt = Date.distantPast
+    @ObservationIgnored private var isAssertingControlAuthority = false
+    @ObservationIgnored private var isVirtualStickControlSuspended = false
 
     private override init() { super.init() }
 
@@ -99,6 +102,33 @@ final class DJISDKBridge: NSObject {
         print("DJISDKBridge: aircraft '\(aircraft.model ?? "unknown")' connected — Virtual Stick init deferred 1.5 s.")
     }
 
+    private func waitForLandingCompletion(timeout: Double) async -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if !telemetry.isFlying { return true }
+            if telemetry.isLandingConfirmationNeeded {
+                _ = await confirmLanding()
+            }
+            try? await Task.sleep(for: .seconds(0.2))
+        }
+        print("DJISDKBridge: landing timeout waiting for touchdown.")
+        return false
+    }
+
+    private func confirmLanding() async -> Bool {
+        guard let fc = flightController else { return false }
+        return await withCheckedContinuation { cont in
+            fc.confirmLanding { error in
+                if let error {
+                    print("DJISDKBridge: confirmLanding error: \(error.localizedDescription)")
+                    cont.resume(returning: false)
+                } else {
+                    cont.resume(returning: true)
+                }
+            }
+        }
+    }
+
     func onProductDisconnected() {
         stopDeadMan()
         stopHealthMonitor()
@@ -126,26 +156,43 @@ final class DJISDKBridge: NSObject {
     }
 
     private func applyVirtualStickControlModes(_ fc: DJIFlightController) {
-        // BODY-frame velocity control with Home Lock flight orientation mode:
+        // BODY-frame velocity control with Aircraft Heading orientation mode:
         // - pitch + = forward, pitch − = backward
         // - roll  + = right,   roll  − = left
-        // - in Home Lock, forward/back are radial to home and left/right arc
-        //   around home at current radius.
         //
-        // Notes:
-        // - Home Lock availability still depends on aircraft/GPS/mode constraints.
-        // - If Home Lock is unavailable the SDK falls back to aircraft-heading
-        //   behavior while keeping pitch-as-forward semantics.
+        // Movement actions are implemented as "yaw first, then pitch forward"
+        // in higher-level behaviors/executor logic.
         fc.rollPitchCoordinateSystem = DJIVirtualStickFlightCoordinateSystem.body
         fc.rollPitchControlMode      = DJIVirtualStickRollPitchControlMode.velocity
         fc.yawControlMode            = DJIVirtualStickYawControlMode.angularVelocity
         fc.verticalControlMode       = DJIVirtualStickVerticalControlMode.velocity
-        fc.setFlightOrientationMode(.homeLock) { error in
+        fc.setFlightOrientationMode(.aircraftHeading) { error in
             if let error {
-                print("DJISDKBridge: Home Lock orientation enable error: \(error.localizedDescription)")
+                print("DJISDKBridge: Aircraft Heading orientation enable error: \(error.localizedDescription)")
             } else {
-                print("DJISDKBridge: Home Lock orientation enabled.")
+                print("DJISDKBridge: Aircraft Heading orientation enabled.")
             }
+        }
+    }
+
+    /// Reasserts Virtual Stick + control modes, recovering from RC/physical
+    /// input authority takeovers that can silently disable SDK command control.
+    private func assertControlAuthorityIfNeeded(force: Bool = false) {
+        if isVirtualStickControlSuspended { return }
+        guard let fc = flightController else { return }
+        if isAssertingControlAuthority { return }
+        let now = Date()
+        if !force, now.timeIntervalSince(lastControlAuthorityAssertAt) < 2.0 { return }
+        isAssertingControlAuthority = true
+        fc.setVirtualStickModeEnabled(true) { [weak self] error in
+            guard let self else { return }
+            if let error {
+                print("DJISDKBridge: VS authority reassert error: \(error.localizedDescription)")
+            } else {
+                self.applyVirtualStickControlModes(fc)
+            }
+            self.lastControlAuthorityAssertAt = Date()
+            self.isAssertingControlAuthority = false
         }
     }
 
@@ -172,6 +219,14 @@ final class DJISDKBridge: NSObject {
         print("DJISDKBridge: recheckVirtualStick() — re-applying VS configuration.")
         configureVirtualStick(fc)
         enableIndoorStabilisation(fc, aircraft: aircraft)
+    }
+
+    /// Call this right before starting a movement action to maximize the chance
+    /// the SDK owns control even after manual/physical stick interference.
+    func prepareForActionControl() async {
+        isVirtualStickControlSuspended = false
+        assertControlAuthorityIfNeeded(force: true)
+        try? await Task.sleep(for: .seconds(0.12))
     }
 
     // MARK: - Indoor Stabilisation (no-GPS / cramped-space mode)
@@ -314,7 +369,9 @@ final class DJISDKBridge: NSObject {
                       roll:     Float = 0,
                       yaw:      Float = 0,
                       throttle: Float = 0) {
+        if isVirtualStickControlSuspended { return }
         guard let fc = flightController else { return }
+        assertControlAuthorityIfNeeded()
 
         var data = DJIVirtualStickFlightControlData()
         data.pitch            = safety.clamp(pitch)
@@ -398,6 +455,8 @@ final class DJISDKBridge: NSObject {
     @discardableResult
     func takeOff() async -> Bool {
         guard let fc = flightController else { return false }
+        isVirtualStickControlSuspended = false
+        assertControlAuthorityIfNeeded(force: true)
         return await withCheckedContinuation { cont in
             fc.startTakeoff { error in
                 if let error {
@@ -410,7 +469,8 @@ final class DJISDKBridge: NSObject {
         }
     }
 
-    /// Auto-land. Returns true on success.
+    /// Auto-land and wait until touchdown. Returns true only when the aircraft
+    /// has actually finished landing (or was already not flying).
     ///
     /// Virtual Stick must be disabled before the SDK will accept the landing
     /// command (error -1008 otherwise). We disable VS, land, then rely on the
@@ -418,20 +478,25 @@ final class DJISDKBridge: NSObject {
     @discardableResult
     func startLanding() async -> Bool {
         guard let fc = flightController else { return false }
+        isVirtualStickControlSuspended = true
+        stopDeadMan()
+        if !telemetry.isFlying { return true }
         // Disable Virtual Stick — SDK rejects startLanding while VS is active.
         await setVirtualStickEnabled(false)
         // Brief settle so the flight controller acknowledges the mode change.
         try? await Task.sleep(for: .seconds(0.3))
-        return await withCheckedContinuation { cont in
+        let didStart = await withCheckedContinuation { cont in
             fc.startLanding { error in
                 if let error {
                     print("DJISDKBridge: landing error: \(error.localizedDescription)")
+                    self.isVirtualStickControlSuspended = false
                     cont.resume(returning: false)
                 } else {
                     cont.resume(returning: true)
                 }
             }
         }
+        return didStart
     }
 
     // MARK: - Camera Photo Capture
@@ -883,6 +948,7 @@ extension DJISDKBridge: DJIFlightControllerDelegate {
             isGPSValid:     state.satelliteCount > 4,
             satelliteCount: Int(state.satelliteCount),
             isFlying:       state.isFlying,
+            isLandingConfirmationNeeded: state.isLandingConfirmationNeeded,
             currentLocation: currentLocation,
             homeLocation:   homeLocation,
             isVisionPositioningActive: state.isVisionPositioningSensorBeingUsed
@@ -890,6 +956,9 @@ extension DJISDKBridge: DJIFlightControllerDelegate {
         Task { @MainActor [weak self] in
             self?.telemetry = snap
             self?.lastTelemetryAt = Date()
+            if !state.isFlying {
+                self?.isVirtualStickControlSuspended = false
+            }
         }
     }
 }

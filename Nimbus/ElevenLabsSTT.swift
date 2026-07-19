@@ -84,6 +84,14 @@ final class AudioRecorderManager: NSObject, AVAudioRecorderDelegate {
         recorder.updateMeters()
         return recorder.averagePower(forChannel: 0)
     }
+
+    /// Returns (average, peak) power in dBFS for channel 0 in a single meter
+    /// update. Use this when you need both values to avoid calling updateMeters() twice.
+    func currentMeterLevels() -> (average: Float, peak: Float)? {
+        guard let recorder else { return nil }
+        recorder.updateMeters()
+        return (recorder.averagePower(forChannel: 0), recorder.peakPower(forChannel: 0))
+    }
 }
 
 // MARK: - 2. ElevenLabs Speech-to-Text
@@ -249,34 +257,35 @@ final class VoiceCommandPipeline {
 
     private enum CaptureMode { case idle, wakewordPreRoll, command }
     private var captureMode: CaptureMode = .idle
-    private var preRollRollTask: Task<Void, Never>?
-    private let preRollRotationSeconds: Double = 10.0
 
-    /// Legacy entry point used by PTT and debug hold-to-talk.
+    /// Entry point used by PTT and debug hold-to-talk.
     func onPressStartTalking() {
-        startCommandCapture(includeWakewordPreRoll: false)
+        recorder.configureSession()
+        recorder.startRecording()
+        captureMode = .command
     }
 
-    /// Used by wakeword flow: if a pre-roll recording is already live, promote
-    /// it to command capture so words spoken just before activation are kept.
+    /// Entry point used by wakeword flow. The caller MUST have already stopped
+    /// AVAudioEngine (wakeword listener) and AVSpeechSynthesizer before calling
+    /// this — they share the same input hardware as AVAudioRecorder.
     func onWakewordActivatedStartTalking() {
-        startCommandCapture(includeWakewordPreRoll: true)
+        recorder.configureSession()
+        recorder.startRecording()
+        captureMode = .command
     }
 
-    /// Begin rolling pre-roll capture while waiting for wakeword activation.
-    /// File is rotated periodically to bound disk growth.
+    /// Mark the pipeline as waiting for a wakeword. Does NOT start recording:
+    /// AVAudioEngine (wakeword listener) and AVAudioRecorder share the same
+    /// input hardware — recording begins only once the wakeword fires and the
+    /// engine has been stopped.
     func startWakewordPreRollCapture() {
         guard captureMode == .idle else { return }
         recorder.configureSession()
-        recorder.startRecording()
         captureMode = .wakewordPreRoll
-        startPreRollRotation()
     }
 
     func stopWakewordPreRollCapture() {
         guard captureMode == .wakewordPreRoll else { return }
-        stopPreRollRotation()
-        _ = recorder.stopRecording()
         captureMode = .idle
     }
 
@@ -285,41 +294,7 @@ final class VoiceCommandPipeline {
         guard captureMode == .command else { return nil }
         let url = recorder.stopRecording()
         captureMode = .idle
-        stopPreRollRotation()
         return url
-    }
-
-    private func startCommandCapture(includeWakewordPreRoll: Bool) {
-        recorder.configureSession()
-
-        if includeWakewordPreRoll, captureMode == .wakewordPreRoll {
-            stopPreRollRotation()
-            captureMode = .command
-            return
-        }
-
-        recorder.startRecording()
-        captureMode = .command
-        stopPreRollRotation()
-    }
-
-    private func startPreRollRotation() {
-        stopPreRollRotation()
-        preRollRollTask = Task { [weak self] in
-            guard let self else { return }
-            while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(self.preRollRotationSeconds))
-                if Task.isCancelled { return }
-                guard self.captureMode == .wakewordPreRoll else { return }
-                _ = self.recorder.stopRecording()
-                self.recorder.startRecording()
-            }
-        }
-    }
-
-    private func stopPreRollRotation() {
-        preRollRollTask?.cancel()
-        preRollRollTask = nil
     }
 }
 

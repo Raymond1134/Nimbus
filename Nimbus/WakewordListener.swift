@@ -22,9 +22,12 @@ final class WakewordListener {
     // Callback closure to trigger the ElevenLabs recording pipeline
     var onWakewordDetected: (() -> Void)?
     var isListeningForWakeword = false
+    var latestTranscription = ""
+    var wakewordDetectionCount = 0
 
     func startListening() {
         guard !audioEngine.isRunning else { return }
+        latestTranscription = ""
         let status = SFSpeechRecognizer.authorizationStatus()
         if status == .authorized {
             setupAudioEngineAndStart()
@@ -92,6 +95,9 @@ final class WakewordListener {
             // Scan transcription string for your custom keywords
             let latestTranscription = result.bestTranscription.formattedString.lowercased()
             print("Local buffer raw text: \(latestTranscription)")
+            DispatchQueue.main.async {
+                self.latestTranscription = latestTranscription
+            }
             
             if self.matchesWakeword(latestTranscription) {
                 let now = Date()
@@ -99,6 +105,7 @@ final class WakewordListener {
                 self.lastWakewordAt = now
                 print("🎯 Wakeword 'Nimbus' Detected locally!")
                 DispatchQueue.main.async {
+                    self.wakewordDetectionCount += 1
                     self.stopListening()
                     // Fire off the callback to start recording for ElevenLabs!
                     self.onWakewordDetected?()

@@ -93,6 +93,9 @@ final class MissionExecutor {
     // MARK: - Step Dispatch
 
     private func execute(step: NimbusStep) async -> Bool {
+        if step.op != "land" {
+            await bridge.prepareForActionControl()
+        }
         switch step.op {
 
         case "takeoff":
@@ -241,30 +244,31 @@ final class MissionExecutor {
     private func runCardinalFlyTo(direction: String, distanceM: Double?) async -> Bool {
         let dist  = max(0.3, distanceM ?? tuning.flyToCardinalDefaultDistanceM)
         let speed = tuning.flyToCardinalSpeedMps
-        let dur   = dist / Double(speed)
+        let maxSeconds = max(2.5, dist * tuning.flyToCardinalMaxSecondsPerMeter)
 
         let offsets: [String: Double] = ["forward": 0, "right": 90, "back": 180, "left": -90]
-        let head = behaviors.headTracking
-        if head.isTracking, let offset = offsets[direction] {
-            let targetHeading = head.effectiveAttitude.yawDeg + offset
-            log("Cardinal fly_to \(direction): user yaw \(Int(head.effectiveAttitude.yawDeg))° → heading \(Int(targetHeading))°.")
-            behaviors.rotateToHeading(targetHeading)
-            guard await waitForBehavior(timeout: 30) else { return false }
-            if cancelRequested { return false }
-            behaviors.timedVelocity(pitch: speed, duration: dur)
-            return await waitForBehavior(timeout: dur + 5)
+        guard let offset = offsets[direction] else {
+            return await runMeasuredBodyMove(
+                pitch: speed,
+                roll: 0,
+                targetDistanceM: dist,
+                maxSeconds: maxSeconds
+            )
         }
 
-        // Fallback (no AirPods heading): body-frame nudge.
-        log("Cardinal fly_to \(direction): no head tracking — body-frame fallback.")
-        switch direction {
-        case "forward": behaviors.timedVelocity(pitch:  speed, duration: dur)
-        case "back":    behaviors.timedVelocity(pitch: -speed, duration: dur)
-        case "left":    behaviors.timedVelocity(roll:  -speed, duration: dur)
-        case "right":   behaviors.timedVelocity(roll:   speed, duration: dur)
-        default:        behaviors.timedVelocity(pitch:  speed, duration: dur)
-        }
-        return await waitForBehavior(timeout: dur + 5)
+        let head = behaviors.headTracking
+        let baseHeading = head.isTracking ? head.effectiveAttitude.yawDeg : bridge.telemetry.headingDeg
+        let targetHeading = baseHeading + offset
+        log("Cardinal fly_to \(direction): heading \(Int(baseHeading))° + \(Int(offset))° → \(Int(targetHeading))°, then pitch-forward.")
+        behaviors.rotateToHeading(targetHeading)
+        guard await waitForBehavior(timeout: 30) else { return false }
+        if cancelRequested { return false }
+        return await runMeasuredBodyMove(
+            pitch: speed,
+            roll: 0,
+            targetDistanceM: dist,
+            maxSeconds: maxSeconds
+        )
     }
 
     /// Orbit (spec): circle the target at a fixed radius. Prefers the DJI
@@ -415,6 +419,72 @@ final class MissionExecutor {
         let w = CGFloat(box[3] - box[1]) / 1000
         let h = CGFloat(box[2] - box[0]) / 1000
         return CGRect(x: xMin, y: yMin, width: w, height: h)
+    }
+
+    /// Closed-loop horizontal body-frame move: command pitch/roll continuously
+    /// and stop once measured travel reaches the requested distance.
+    ///
+    /// Measurement priority:
+    ///   1) GPS delta from start (when available)
+    ///   2) Integrated horizontal speed from telemetry (VIO/GPS)
+    private func runMeasuredBodyMove(pitch: Float,
+                                     roll: Float,
+                                     targetDistanceM: Double,
+                                     maxSeconds: Double) async -> Bool {
+        let target = max(0.1, targetDistanceM)
+        let tolerance = tuning.flyToCardinalDistanceToleranceM
+        let deadline = Date().addingTimeInterval(maxSeconds)
+        let startLocation = bridge.telemetry.currentLocation
+        var integratedDistance = 0.0
+        var lastSampleAt = Date()
+
+        // Ensure no behavior timer is concurrently writing velocity.
+        behaviors.stop()
+
+        while Date() < deadline {
+            if cancelRequested {
+                bridge.sendHover()
+                return false
+            }
+
+            bridge.sendVelocity(pitch: pitch, roll: roll, yaw: 0, throttle: 0)
+
+            let now = Date()
+            let dt = max(0, now.timeIntervalSince(lastSampleAt))
+            lastSampleAt = now
+
+            let measuredDistance: Double
+            if let startLocation,
+               let current = bridge.telemetry.currentLocation {
+                measuredDistance = horizontalDistanceMeters(from: startLocation, to: current)
+            } else {
+                let speed = hypot(bridge.telemetry.velocityX, bridge.telemetry.velocityY)
+                integratedDistance += speed * dt
+                measuredDistance = integratedDistance
+            }
+
+            if measuredDistance >= max(0, target - tolerance) {
+                bridge.sendHover()
+                log("Cardinal fly_to: reached \(String(format: "%.2f", measuredDistance)) m (target \(String(format: "%.2f", target)) m).")
+                return true
+            }
+
+            try? await Task.sleep(for: .seconds(0.1))
+        }
+
+        bridge.sendHover()
+        log("Cardinal fly_to timed out before full distance target (\(String(format: "%.2f", target)) m).")
+        return false
+    }
+
+    private func horizontalDistanceMeters(from a: GPSCoordinate, to b: GPSCoordinate) -> Double {
+        let lat1 = a.latitude * .pi / 180.0
+        let lat2 = b.latitude * .pi / 180.0
+        let dLat = (b.latitude - a.latitude) * .pi / 180.0
+        let dLon = (b.longitude - a.longitude) * .pi / 180.0
+        let hav = pow(sin(dLat / 2), 2) + cos(lat1) * cos(lat2) * pow(sin(dLon / 2), 2)
+        let c = 2 * atan2(sqrt(hav), sqrt(1 - hav))
+        return 6_371_000.0 * c
     }
 
     /// Await the active FlightBehaviors loop reaching its completion condition.

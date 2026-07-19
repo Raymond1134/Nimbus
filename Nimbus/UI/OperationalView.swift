@@ -10,6 +10,7 @@ struct OperationalView: View {
 
     @Environment(Orchestrator.self) private var orc
     @State private var isPressing = false
+    @State private var isHoldingHeadingCalibrate = false
     @State private var overlayDetections: [DetectedObject] = []
     private let overlayTimer = Timer.publish(every: 0.25, on: .main, in: .common).autoconnect()
 
@@ -35,6 +36,10 @@ struct OperationalView: View {
             orc.detector.onDetectionsUpdated = nil
         }
         .onReceive(overlayTimer) { _ in
+            guard isFollowModeActive else {
+                if !overlayDetections.isEmpty { overlayDetections = [] }
+                return
+            }
             processCurrentFrameForOverlays()
         }
     }
@@ -141,9 +146,15 @@ struct OperationalView: View {
     }
 
     private func processCurrentFrameForOverlays() {
+        guard isFollowModeActive else { return }
         guard let cgImage = orc.bridge.cameraFrame?.cgImage else { return }
 
         orc.detector.process(cgImage: cgImage)
+    }
+
+    private var isFollowModeActive: Bool {
+        guard case .executing(let verb, _) = orc.appState else { return false }
+        return verb.uppercased() == "FOLLOW"
     }
 
     private var noFeedPlaceholder: some View {
@@ -424,6 +435,39 @@ struct OperationalView: View {
                         .clipShape(Capsule())
                 }
                 .transition(.scale.combined(with: .opacity))
+            }
+            // Heading alignment calibration (press-and-hold)
+            VStack(spacing: 6) {
+                Text(isHoldingHeadingCalibrate ? "Release to save heading alignment" : "Hold to align drone heading to yours")
+                    .font(.caption2)
+                    .foregroundStyle(.white.opacity(0.6))
+
+                Capsule()
+                    .fill(isHoldingHeadingCalibrate ? Color.teal.opacity(0.9) : Color.white.opacity(0.14))
+                    .frame(height: 42)
+                    .overlay {
+                        Label(
+                            isHoldingHeadingCalibrate ? "ALIGNING… KEEP DRONE STILL" : "CALIBRATE HEADING (HOLD)",
+                            systemImage: isHoldingHeadingCalibrate ? "dot.radiowaves.left.and.right" : "scope"
+                        )
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.white)
+                    }
+                    .gesture(
+                        DragGesture(minimumDistance: 0)
+                            .onChanged { _ in
+                                guard !isHoldingHeadingCalibrate else { return }
+                                guard orc.bridge.isAircraftConnected, orc.bridge.telemetry.isFlying else { return }
+                                isHoldingHeadingCalibrate = true
+                                orc.beginHeadingAlignmentCalibrationHold()
+                            }
+                            .onEnded { _ in
+                                guard isHoldingHeadingCalibrate else { return }
+                                isHoldingHeadingCalibrate = false
+                                orc.endHeadingAlignmentCalibrationHold()
+                            }
+                    )
+                    .opacity((orc.bridge.isAircraftConnected && orc.bridge.telemetry.isFlying) ? 1.0 : 0.45)
             }
 
             // Push-to-talk

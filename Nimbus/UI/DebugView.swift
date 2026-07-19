@@ -15,6 +15,7 @@ struct DebugView: View {
     @State private var isSttTest   = false
     @State private var testPipeline = VoiceCommandPipeline()
     @State private var sttPlaybackPlayer: AVAudioPlayer?
+    @State private var debugWakeword = WakewordListener()
     @State private var liveInputLevelDB: Float = -160
 
     // Audio input/output device switching (debug)
@@ -48,6 +49,7 @@ struct DebugView: View {
                 backendSection
                 lastCommandSection
                 logSection
+                wakewordDebugSection
                 audioDevicesSection
                 sttTestSection
             }
@@ -57,6 +59,9 @@ struct DebugView: View {
             .onAppear { audioRoutes.refresh() }
             .onReceive(Timer.publish(every: 0.12, on: .main, in: .common).autoconnect()) { _ in
                 liveInputLevelDB = currentLiveInputLevelDB() ?? -160
+            }
+            .onDisappear {
+                debugWakeword.stopListening()
             }
         }
     }
@@ -484,6 +489,38 @@ struct DebugView: View {
     }
 
     // MARK: - Standalone STT Test
+
+    private var wakewordDebugSection: some View {
+        Section("Wakeword debug") {
+            row("Listening", debugWakeword.isListeningForWakeword ? "✓ Active" : "✗ Inactive",
+                color: debugWakeword.isListeningForWakeword ? .green : .secondary)
+            row("Detections", "\(debugWakeword.wakewordDetectionCount)")
+
+            if debugWakeword.latestTranscription.isEmpty {
+                Text("Say “hey nimbus” to test activation. Live recognized speech will appear here.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else {
+                Text(debugWakeword.latestTranscription)
+                    .font(.system(.caption, design: .monospaced))
+                    .foregroundStyle(.primary)
+                    .lineLimit(4)
+            }
+
+            if debugWakeword.isListeningForWakeword {
+                Button("Stop wakeword listening") {
+                    debugWakeword.stopListening()
+                }
+                .font(.subheadline)
+                .foregroundStyle(.red)
+            } else {
+                Button("Start wakeword listening") {
+                    debugWakeword.startListening()
+                }
+                .font(.subheadline)
+            }
+        }
+    }
 
     private var sttTestSection: some View {
         Section("STT (standalone test)") {

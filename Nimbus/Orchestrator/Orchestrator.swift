@@ -30,6 +30,8 @@ final class Orchestrator {
     /// True once the user launched a session: drone is airborne and defaults
     /// to hovering above the operator's head between commands.
     var isSessionActive                 = false
+    /// True while the heading-align hold button is being pressed.
+    var isHeadingCalibrationHoldActive  = false
     /// Hands-free mode: "Nimbus …" wakeword triggers listening automatically.
     var isHandsFreeEnabled              = false
     var handsFreeVadStartThresholdDB: Float { handsFreeSpeechStartThresholdDB }
@@ -67,6 +69,16 @@ final class Orchestrator {
     @ObservationIgnored private let handsFreeSpeechStartThresholdDB: Float = -38
     /// dBFS threshold to continue speech (more sensitive hysteresis).
     @ObservationIgnored private let handsFreeSpeechContinueThresholdDB: Float = -45
+    /// Minimum crest factor (peak − average, dB) required to qualify as speech.
+    /// Speech is bursty: crest factor is typically 6–18 dB.
+    /// Steady drone / wind noise is continuous: crest factor is usually < 4 dB.
+    @ObservationIgnored private let handsFreeMinCrestFactorDB: Float = 5.0
+    /// Consecutive meter frames that must pass the speech test before committing.
+    /// At 80 ms/frame this is 160 ms — filters out transient clicks / taps.
+    @ObservationIgnored private let handsFreeMinSpeechFrames: Int = 2
+    /// If no qualifying speech is heard within this window, abandon silently
+    /// and rearm the wakeword instead of sending an empty recording to STT.
+    @ObservationIgnored private let handsFreeNoSpeechTimeoutSeconds: Double = 4.0
     @ObservationIgnored private let handsFreeMeterPollSeconds: Double = 0.08
     @ObservationIgnored private var handsFreeCaptureTask: Task<Void, Never>?
     @ObservationIgnored private let speechSynth = AVSpeechSynthesizer()
@@ -79,14 +91,14 @@ final class Orchestrator {
             guard let self else { return }
             // During a mission the executor owns behavior sequencing.
             if self.missionExecutor?.isRunning == true { return }
-            // Overhead follow is the session default — keep it alive.
-            if self.isSessionActive, case .executing(let verb, _) = self.appState, verb == "OVERHEAD" {
-                self.log("Overhead follow window elapsed — renewing.")
-                self.resumeOverheadHold()
-                return
+            self.log("Behavior complete → heading hold.")
+            if self.isSessionActive && self.bridge.isAircraftConnected
+                                    && self.bridge.telemetry.isFlying {
+                self.resumeHeadingHold()
+            } else {
+                self.headTracking.unfreeze()
+                self.appState = .idle
             }
-            self.log("Behavior complete → idle.")
-            self.returnToIdle()
         }
         b.onFollowTargetBoxUpdated = { [weak self] box in
             self?.followTargetBox = box
@@ -102,7 +114,7 @@ final class Orchestrator {
         missionExecutor.onAbortRequested = { [weak self] in
             guard let self else { return }
             if ActionTuning.shared.abortResumesOverheadHold {
-                self.resumeOverheadHold_public()
+                self.resumeHeadingHold()
             } else {
                 // Spec: stop everything and hold in place.
                 self.behaviors.hover()
@@ -150,9 +162,8 @@ final class Orchestrator {
                 }
                 try? await Task.sleep(for: .seconds(1.5))
             }
-            await self.waitForCameraWarmup(maxSeconds: 8.0)
             self.speak("Nimbus airborne.")
-            self.resumeOverheadHold()
+            self.resumeHeadingHold()
             if self.isHandsFreeEnabled { self.wakeword.startListening() }
         }
     }
@@ -191,28 +202,17 @@ final class Orchestrator {
         }
     }
 
-    /// (Re)start the default hover-above-head hold. Uses person detection to
-    /// find the operator, keeps the gimbal straight down, and yaw-follows the
-    /// AirPods heading.
-    private func resumeOverheadHold() {
+    /// Stop any active behavior and settle into a position hold, letting the
+    /// background heading-hold loop continuously align yaw to the user's
+    /// AirPods heading. No person-tracking — the FC holds X/Y/Z via VPS/GPS.
+    private func resumeHeadingHold() {
         guard isSessionActive, bridge.isAircraftConnected else { return }
         if !headTracking.isTracking {
             headTracking.start(compassHeadingDeg: bridge.telemetry.headingDeg)
         }
-        if bridge.cameraFrame == nil {
-            Task { [weak self] in
-                guard let self else { return }
-                await self.waitForCameraWarmup(maxSeconds: 4.0)
-                guard self.isSessionActive, self.bridge.isAircraftConnected else { return }
-                self.resumeOverheadHold()
-            }
-            return
-        }
-        bridge.pointGimbalDownImmediately(airpodsPitchDeg: CGFloat(headTracking.effectiveAttitude.pitchDeg),
-                                          strictDown: true)
-        behaviors.followPerson(maxSeconds: 600, overheadMode: true)
-        appState = .executing(verb: "OVERHEAD", target: "operator")
-        log("Holding overhead of operator (default state).")
+        behaviors.headingHold()
+        appState = .idle
+        log("Heading hold active — aligning to user heading.")
     }
 
     // MARK: - Hands-Free Wakeword
@@ -250,12 +250,22 @@ final class Orchestrator {
     private func beginHandsFreeCapture() {
         spatialAudio.playCommandConfirmation()
         headTracking.freeze()
-        voicePipeline.onWakewordActivatedStartTalking()
+        // Stop TTS and the wakeword AVAudioEngine before starting AVAudioRecorder.
+        // All three compete for the same audio session hardware; leaving either
+        // running silently kills microphone input into the new recording.
+        speechSynth.stopSpeaking(at: .immediate)
+        wakeword.stopListening()
         appState = .listening
         log("Wakeword → listening (auto-stop on silence, max \(Int(handsFreeMaxRecordSeconds))s)…")
         handsFreeCaptureTask?.cancel()
         handsFreeCaptureTask = Task { [weak self] in
-            await self?.monitorHandsFreeCaptureUntilSpeechEnds()
+            guard let self else { return }
+            // Let the audio session finish releasing AVAudioEngine / TTS hardware
+            // before AVAudioRecorder claims the mic.
+            try? await Task.sleep(for: .seconds(0.15))
+            guard case .listening = self.appState else { return }
+            self.voicePipeline.onWakewordActivatedStartTalking()
+            await self.monitorHandsFreeCaptureUntilSpeechEnds()
         }
     }
 
@@ -263,7 +273,7 @@ final class Orchestrator {
     /// (mission or overhead hold) and listen.
     private func interruptForNewCommand() {
         missionExecutor.cancel()
-        behaviors.stop()          // hover while listening
+        behaviors.headingHold()   // keep tracking heading while listening
         appState = .idle
         beginHandsFreeCapture()
     }
@@ -298,7 +308,7 @@ final class Orchestrator {
         case .executing:
             log("PTT during \(appState.displayTitle) — interrupting.")
             missionExecutor.cancel()
-            behaviors.stop()
+            behaviors.headingHold()   // keep tracking heading while listening
             tracker.stopTracking()
         case .error:
             log("PTT recovering from error state.")
@@ -306,10 +316,11 @@ final class Orchestrator {
             log("PTT ignored — state is \(appState.displayTitle).", level: .warning)
             return
         }
-        // Release the wakeword mic BEFORE starting the recorder.
-        // AVAudioEngine (wakeword) and AVAudioRecorder share the same input
-        // hardware — running both simultaneously silently kills the recording.
+        // Release the wakeword engine and TTS before starting the recorder.
+        // AVAudioEngine (wakeword), AVSpeechSynthesizer, and AVAudioRecorder all
+        // share the same input hardware — running them together kills the recording.
         wakeword.stopListening()
+        speechSynth.stopSpeaking(at: .immediate)
         headTracking.freeze()
         voicePipeline.onPressStartTalking()
         appState = .listening
@@ -362,7 +373,7 @@ final class Orchestrator {
         }
         headTracking.unfreeze()
         if isSessionActive && bridge.telemetry.isFlying {
-            resumeOverheadHold()
+            resumeHeadingHold()
         } else {
             returnToIdle()
         }
@@ -433,8 +444,8 @@ final class Orchestrator {
         headTracking.unfreeze()
         log("User aborted.")
         if isSessionActive && bridge.telemetry.isFlying {
-            // Stay airborne — hold overhead and wait for the next command.
-            resumeOverheadHold()
+            // Stay airborne — hover with heading hold and wait for next command.
+            resumeHeadingHold()
             restartWakewordIfNeeded()
         } else {
             returnToIdle()
@@ -502,9 +513,43 @@ final class Orchestrator {
     }
 
     func stopSpecialMission() {
-        behaviors.stop()
+        behaviors.headingHold()
         headTracking.unfreeze()
-        returnToIdle()
+        appState = .idle
+    }
+
+    // MARK: - Heading Alignment Calibration (hold-to-align)
+
+    /// Press-and-hold: freeze yaw alignment output so the drone does not rotate
+    /// while the operator lines up their facing direction with the aircraft.
+    func beginHeadingAlignmentCalibrationHold() {
+        guard bridge.isAircraftConnected else { return }
+        guard bridge.telemetry.isFlying else { return }
+        guard !isHeadingCalibrationHoldActive else { return }
+        if !headTracking.isTracking {
+            headTracking.start(compassHeadingDeg: bridge.telemetry.headingDeg)
+        }
+        isHeadingCalibrationHoldActive = true
+        headTracking.freeze()
+        behaviors.setHeadingControlSuppressed(true)
+        behaviors.headingHold()
+        log("Heading calibration hold started — yaw frozen.")
+    }
+
+    /// Release: save the AirPods offset against the drone's current heading,
+    /// then resume normal heading-hold behavior.
+    func endHeadingAlignmentCalibrationHold() {
+        guard isHeadingCalibrationHoldActive else { return }
+        isHeadingCalibrationHoldActive = false
+        headTracking.calibrate(toCompassHeadingDeg: bridge.telemetry.headingDeg)
+        headTracking.unfreeze()
+        behaviors.setHeadingControlSuppressed(false)
+        if isSessionActive && bridge.isAircraftConnected && bridge.telemetry.isFlying {
+            resumeHeadingHold()
+        } else {
+            appState = .idle
+        }
+        log("Heading calibration saved at drone heading \(Int(bridge.telemetry.headingDeg))°.")
     }
 
     // MARK: - Debug Mission (Debug panel op dropdown)
@@ -570,36 +615,63 @@ final class Orchestrator {
 
     private func monitorHandsFreeCaptureUntilSpeechEnds() async {
         let startedAt = Date()
-        var speechDetected = false
-        var lastSpeechAt = startedAt
+        var speechStartedAt: Date?          // nil until enough qualifying frames seen
+        var lastSpeechAt:   Date = startedAt
+        var consecutiveSpeechFrames = 0
 
         while !Task.isCancelled {
             guard case .listening = appState else { return }
             guard voicePipeline.recorder.isRecording else { return }
 
-            let now = Date()
-            let powerDB = voicePipeline.recorder.currentAveragePowerDB() ?? -160
-            let threshold = speechDetected
-                ? handsFreeSpeechContinueThresholdDB
-                : handsFreeSpeechStartThresholdDB
-            let isSpeech = powerDB > threshold
+            let now     = Date()
+            let elapsed = now.timeIntervalSince(startedAt)
 
-            if isSpeech {
-                if !speechDetected {
-                    speechDetected = true
-                    log("Wakeword capture: speech detected.")
+            // --- Speech detection (volume + crest-factor filter) ---
+            // Crest factor = peak − average. Speech: 6–18 dB. Drone/wind: < 4 dB.
+            // Requiring both conditions filters out steady broadband noise that
+            // happens to be loud enough to cross the volume threshold alone.
+            if let (avgDB, peakDB) = voicePipeline.recorder.currentMeterLevels() {
+                let crestFactor = peakDB - avgDB
+                let volumeThreshold = speechStartedAt != nil
+                    ? handsFreeSpeechContinueThresholdDB   // hysteresis: easier to stay in speech
+                    : handsFreeSpeechStartThresholdDB
+                let frameIsSpeech = avgDB > volumeThreshold && crestFactor > handsFreeMinCrestFactorDB
+
+                if frameIsSpeech {
+                    consecutiveSpeechFrames += 1
+                    // Require a run of qualifying frames so single taps/clicks don't trigger.
+                    if consecutiveSpeechFrames >= handsFreeMinSpeechFrames {
+                        if speechStartedAt == nil {
+                            speechStartedAt = now
+                            log(String(format: "Wakeword capture: speech detected (avg %.0f dB, crest %.0f dB).", avgDB, crestFactor))
+                        }
+                        lastSpeechAt = now
+                    }
+                } else {
+                    consecutiveSpeechFrames = 0
                 }
-                lastSpeechAt = now
             }
 
-            if speechDetected,
+            // --- Stop conditions ---
+
+            // Trailing silence after confirmed speech → send to STT.
+            if let _ = speechStartedAt,
                now.timeIntervalSince(lastSpeechAt) >= handsFreeSilenceStopSeconds {
-                log("Wakeword capture: trailing silence detected → processing.")
+                log("Wakeword capture: trailing silence → processing.")
                 handleVoiceRelease()
                 return
             }
 
-            if now.timeIntervalSince(startedAt) >= handsFreeMaxRecordSeconds {
+            // No qualifying speech within the startup window → abandon and rearm
+            // rather than sending an empty (or noise-only) clip to STT.
+            if speechStartedAt == nil, elapsed >= handsFreeNoSpeechTimeoutSeconds {
+                log("Wakeword capture: no speech in \(Int(handsFreeNoSpeechTimeoutSeconds))s — rearming wakeword.")
+                abandonListening()
+                return
+            }
+
+            // Absolute ceiling — force a cut even mid-sentence.
+            if elapsed >= handsFreeMaxRecordSeconds {
                 log("Wakeword capture: max window reached → processing.")
                 handleVoiceRelease()
                 return
@@ -609,8 +681,18 @@ final class Orchestrator {
         }
     }
 
-    private func resumeOverheadHold_public() {
-        resumeOverheadHold()
+    /// Silently abandon a listening session that captured no qualifying speech.
+    /// Discards the recording without hitting the STT API and rearms the wakeword.
+    private func abandonListening() {
+        guard case .listening = appState else { return }
+        handsFreeCaptureTask = nil   // we're already inside the task; just clear the ref
+        headTracking.unfreeze()
+        _ = voicePipeline.stopCommandCapture()  // discard the short/noise-only file
+        appState = .idle
+        if isSessionActive && bridge.telemetry.isFlying {
+            resumeHeadingHold()
+        }
+        restartWakewordIfNeeded()
     }
 
     // MARK: - Logging

@@ -60,6 +60,11 @@ final class ActionTuning {
     /// Cardinal moves: 3 m/s cruise, 3 m default distance (meaningful, visible move).
     var flyToCardinalSpeedMps: Float = 3.0
     var flyToCardinalDefaultDistanceM = 3.0
+    /// Stop tolerance for closed-loop distance moves (meters).
+    var flyToCardinalDistanceToleranceM = 0.20
+    /// Timeout budget for closed-loop cardinal motion (seconds per meter).
+    /// Keeps commands bounded if telemetry is noisy or propulsion is constrained.
+    var flyToCardinalMaxSecondsPerMeter = 2.5
 
     // MARK: - change_altitude
 
@@ -150,12 +155,33 @@ final class ActionTuning {
     /// Radial lens-distortion coefficient for the bbox chase point (barrel < 0).
     var followLensK1            = -0.18
 
+    // Predictive target filter (alpha-beta / g-h filter on the chase point).
+    //
+    // The tracker measurement is smoothed into a position + velocity estimate;
+    // the controller chases a short look-ahead prediction of where the person
+    // WILL be, which removes lag without amplifying jitter.
+
+    /// Position correction gain (0–1). Higher = trust new measurements more.
+    var followPosFilterAlpha    = 0.35
+    /// Velocity correction gain (0–1). Higher = velocity estimate adapts faster.
+    var followVelFilterBeta     = 0.10
+    /// Seconds of look-ahead prediction applied to the chase point.
+    var followPredictionLookaheadSec = 0.25
+    /// Feed-forward: fraction of the target's screen velocity added to the
+    /// body velocity command so the drone matches a moving person's pace.
+    var followVelocityFeedForwardGain = 0.6
+    /// Ticks (10 Hz) to keep flying on the predicted path after the visual
+    /// tracker drops out, before falling back to hover + re-acquisition scan.
+    var followCoastMaxTicks     = 6
+    /// Per-tick velocity decay while coasting blind (keeps coast conservative).
+    var followCoastVelocityDecay = 0.85
+
     // MARK: - headingHold (background yaw alignment to user's AirPods heading)
 
     /// Heading errors smaller than this are ignored to prevent constant micro-jitter.
-    var headingHoldDeadZoneDeg  = 5.0
+    var headingHoldDeadZoneDeg  = 2.0
     /// Proportional rate gain: rate = |error| × gain, clamped to rotate min/max.
-    var headingHoldGain         = 1.2
+    var headingHoldGain         = 3.0
 
     // MARK: - return
 
