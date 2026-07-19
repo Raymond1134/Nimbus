@@ -133,6 +133,7 @@ final class Orchestrator {
                 }
                 try? await Task.sleep(for: .seconds(1.5))
             }
+            await self.waitForCameraWarmup(maxSeconds: 8.0)
             self.speak("Nimbus airborne.")
             self.resumeOverheadHold()
             if self.isHandsFreeEnabled { self.wakeword.startListening() }
@@ -161,6 +162,15 @@ final class Orchestrator {
         guard isSessionActive, bridge.isAircraftConnected else { return }
         if !headTracking.isTracking {
             headTracking.start(compassHeadingDeg: bridge.telemetry.headingDeg)
+        }
+        if bridge.cameraFrame == nil {
+            Task { [weak self] in
+                guard let self else { return }
+                await self.waitForCameraWarmup(maxSeconds: 4.0)
+                guard self.isSessionActive, self.bridge.isAircraftConnected else { return }
+                self.resumeOverheadHold()
+            }
+            return
         }
         bridge.pointGimbalDownImmediately(airpodsPitchDeg: CGFloat(headTracking.effectiveAttitude.pitchDeg),
                                           strictDown: true)
@@ -460,6 +470,14 @@ final class Orchestrator {
             try? await Task.sleep(for: .seconds(seconds))
             // If a session is live, recover into the overhead hold instead of idling.
             finishCommandCycle()
+        }
+    }
+
+    private func waitForCameraWarmup(maxSeconds: Double) async {
+        let deadline = Date().addingTimeInterval(maxSeconds)
+        while Date() < deadline {
+            if bridge.hasLiveVideoData, bridge.cameraFrame != nil { return }
+            try? await Task.sleep(for: .seconds(0.2))
         }
     }
 

@@ -292,7 +292,12 @@ def _action_to_nimbus_step(action: dict[str, Any]) -> dict[str, Any]:
 
 @app.get("/health")
 async def health() -> dict:
-    return {"status": "ok"}
+    return {
+        "status": "ok",
+        "mode": "mock" if _USE_MOCK else "live",
+        "gemini_configured": bool(os.getenv("GEMINI_API_KEY", "").strip()),
+        "freesolo_configured": bool(_FREESOLO_BASE_URL and _FREESOLO_API_KEY and _FREESOLO_MODEL),
+    }
 
 
 @app.post("/voice_command")

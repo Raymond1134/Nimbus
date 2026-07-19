@@ -18,6 +18,10 @@ final class FlightBehaviors {
     private var activeMode = Mode.none
 
     private(set) var isExecuting = false
+    private var lastPitchCommand: Float = 0
+    private var lastRollCommand: Float = 0
+    private var lastYawCommand: Float = 0
+    private var lastThrottleCommand: Float = 0
 
     /// Fires on the main actor when a behavior reaches its completion condition.
     var onBehaviorComplete: (() -> Void)?
@@ -49,6 +53,7 @@ final class FlightBehaviors {
     private var followTrackRequest: VNTrackObjectRequest?
     private let followTrackMinConfidence: Float = 0.30
     private let followYawFirstThresholdDeg = 5.0
+    private var followLostTicks = 0
     /// Optional explicit tracker seed (Vision-normalized) set at follow start.
     private var followSeedBox: CGRect?
 
@@ -129,7 +134,11 @@ final class FlightBehaviors {
         followFilteredLatErr = 0
         followFilteredFwdErr = 0
         followTrackRequest = nil
+        followLostTicks = 0
         followSeedBox = seedBox
+        let ceiling = safety.maxAltitudeM - 1.0
+        let baseline = max(2.8, bridge.telemetry.altitudeM)
+        followTargetAltitudeM = min(ceiling, baseline)
         Task { @MainActor [weak self] in self?.onFollowTargetBoxUpdated?(nil) }
         startTimer(mode: .followPerson)
     }
@@ -218,6 +227,10 @@ final class FlightBehaviors {
         behaviorTimer = nil
         activeMode    = .none
         isExecuting   = false
+        lastPitchCommand = 0
+        lastRollCommand = 0
+        lastYawCommand = 0
+        lastThrottleCommand = 0
         navTarget = nil
         hoverHoldUntil = Date.distantPast
         pendingCompletionAfterHover = false
@@ -231,7 +244,7 @@ final class FlightBehaviors {
         hoverHoldUntil = Date().addingTimeInterval(hoverStabilizationDurationSec)
         activeMode = .hover
         isExecuting = true
-        bridge.sendHover()
+        sendSmoothedVelocity(pitch: 0, roll: 0, yaw: 0, throttle: 0)
         let timer = Timer(timeInterval: 0.1, repeats: true) { [weak self] _ in
             self?.tick()
         }
@@ -272,7 +285,7 @@ final class FlightBehaviors {
         }
         // Slow down near the end for a clean stop.
         let rate = min(40.0, max(8.0, rotateRemainingDeg * 1.2))
-        bridge.sendVelocity(pitch: 0, roll: 0, yaw: Float(rate * rotateDirection), throttle: 0)
+        sendSmoothedVelocity(pitch: 0, roll: 0, yaw: Float(rate * rotateDirection), throttle: 0)
     }
 
     // MARK: - Altitude Change
@@ -287,7 +300,7 @@ final class FlightBehaviors {
             startStabilizedHoverHold(notifyCompletion: true)
             return
         }
-        bridge.sendVelocity(pitch: 0, roll: 0, yaw: 0, throttle: Float(err * 0.8))
+        sendSmoothedVelocity(pitch: 0, roll: 0, yaw: 0, throttle: Float(err * 0.8))
     }
 
     // MARK: - Timed Velocity
@@ -297,11 +310,11 @@ final class FlightBehaviors {
             startStabilizedHoverHold(notifyCompletion: true)
             return
         }
-        bridge.sendVelocity(pitch: timedPitch, roll: timedRoll, yaw: 0, throttle: timedThrottle)
+        sendSmoothedVelocity(pitch: timedPitch, roll: timedRoll, yaw: 0, throttle: timedThrottle)
     }
 
     private func tickHoverHold() {
-        bridge.sendHover()
+        sendSmoothedVelocity(pitch: 0, roll: 0, yaw: 0, throttle: 0)
         if Date() < hoverHoldUntil { return }
         let shouldNotifyCompletion = pendingCompletionAfterHover
         stopBehavior()
@@ -350,7 +363,7 @@ final class FlightBehaviors {
         let yawRate  = Float(latErr * kYaw)
         let throttle = Float(-vertErr * kVert)
 
-        bridge.sendVelocity(pitch: fwd, roll: 0, yaw: yawRate, throttle: throttle)
+        sendSmoothedVelocity(pitch: fwd, roll: 0, yaw: yawRate, throttle: throttle)
     }
 
     // MARK: - Orbit
@@ -361,7 +374,7 @@ final class FlightBehaviors {
             return
         }
         // Constant yaw + forward velocity; orbit radius is set by v / ω.
-        bridge.sendVelocity(pitch: orbitPitchMps, roll: 0, yaw: Float(orbitAngDps), throttle: 0)
+        sendSmoothedVelocity(pitch: orbitPitchMps, roll: 0, yaw: Float(orbitAngDps), throttle: 0)
     }
 
     // MARK: - Person Follow
@@ -374,16 +387,29 @@ final class FlightBehaviors {
 
         guard let image = bridge.cameraFrame,
               let cgImage = image.cgImage else {
-            bridge.sendHover()
+            followLostTicks += 1
+            if followLostTicks > 10 {
+                // Camera feed unavailable for >1s: slow yaw scan for re-acquisition.
+                sendSmoothedVelocity(pitch: 0, roll: 0, yaw: 12, throttle: 0)
+            } else {
+                sendSmoothedVelocity(pitch: 0, roll: 0, yaw: 0, throttle: 0)
+            }
             return
         }
 
         guard let personBox = trackedHeadBox(in: cgImage) else {
             // Lost tracking: hover in place immediately.
+            followLostTicks += 1
             Task { @MainActor [weak self] in self?.onFollowTargetBoxUpdated?(nil) }
-            bridge.sendHover()
+            if followLostTicks > 8 {
+                // Brief yaw scan helps recover operator when tracker drifts/losses.
+                sendSmoothedVelocity(pitch: 0, roll: 0, yaw: 10, throttle: 0)
+            } else {
+                sendSmoothedVelocity(pitch: 0, roll: 0, yaw: 0, throttle: 0)
+            }
             return
         }
+        followLostTicks = 0
         Task { @MainActor [weak self] in self?.onFollowTargetBoxUpdated?(personBox) }
 
         let frameCenter = CGPoint(x: 0.5, y: 0.5)
@@ -421,7 +447,7 @@ final class FlightBehaviors {
                                       airpodsPitchDeg: CGFloat(headTracking.effectiveAttitude.pitchDeg),
                                       strictDown: true)
 
-        bridge.sendVelocity(pitch: pitch, roll: roll, yaw: yawRate, throttle: throttle)
+        sendSmoothedVelocity(pitch: pitch, roll: roll, yaw: yawRate, throttle: throttle)
     }
     private func trackedHeadBox(in cgImage: CGImage) -> CGRect? {
         if followTrackRequest == nil {
@@ -547,7 +573,7 @@ final class FlightBehaviors {
             throttle = Float(altError * 0.3)
         }
 
-        bridge.sendVelocity(pitch: pitch, roll: roll, yaw: 0, throttle: throttle)
+        sendSmoothedVelocity(pitch: pitch, roll: roll, yaw: 0, throttle: throttle)
     }
 
     private func distanceAndBearing(from current: GPSCoordinate, to target: GPSCoordinate) -> (distanceM: Double, bearingDeg: Double) {
@@ -567,5 +593,29 @@ final class FlightBehaviors {
     private func shortestAngleDelta(target: Double, current: Double) -> Double {
         let delta = (target - current + 540).truncatingRemainder(dividingBy: 360) - 180
         return delta
+    }
+
+    private func sendSmoothedVelocity(pitch: Float,
+                                      roll: Float,
+                                      yaw: Float,
+                                      throttle: Float) {
+        let maxDeltaLinear: Float = 0.35
+        let maxDeltaYaw: Float = 12.0
+        let nextPitch = slewLimit(current: lastPitchCommand, target: pitch, maxDelta: maxDeltaLinear)
+        let nextRoll = slewLimit(current: lastRollCommand, target: roll, maxDelta: maxDeltaLinear)
+        let nextYaw = slewLimit(current: lastYawCommand, target: yaw, maxDelta: maxDeltaYaw)
+        let nextThrottle = slewLimit(current: lastThrottleCommand, target: throttle, maxDelta: maxDeltaLinear)
+        lastPitchCommand = nextPitch
+        lastRollCommand = nextRoll
+        lastYawCommand = nextYaw
+        lastThrottleCommand = nextThrottle
+        bridge.sendVelocity(pitch: nextPitch, roll: nextRoll, yaw: nextYaw, throttle: nextThrottle)
+    }
+
+    private func slewLimit(current: Float, target: Float, maxDelta: Float) -> Float {
+        let delta = target - current
+        if delta > maxDelta { return current + maxDelta }
+        if delta < -maxDelta { return current - maxDelta }
+        return target
     }
 }

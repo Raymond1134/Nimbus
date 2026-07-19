@@ -44,6 +44,8 @@ final class DJISDKBridge: NSObject {
     /// Counter for VS heartbeat logging (logs once per 100 sendVelocity calls in DEBUG).
     @ObservationIgnored private var vsHeartbeatCounter = 0
     @ObservationIgnored private lazy var liveFeedManager = DJILiveVideoFeedManager(bridge: self)
+    @ObservationIgnored private var videoStallTimer: Timer?
+    @ObservationIgnored private var lastVideoPacketAt = Date.distantPast
 
     private override init() { super.init() }
 
@@ -70,6 +72,7 @@ final class DJISDKBridge: NSObject {
         Task { @MainActor [weak self] in
             self?.liveFeedManager.onAircraftConnectionChanged(connected: true)
         }
+        startVideoStallWatchdog()
         print("DJISDKBridge: aircraft '\(product?.model ?? "unknown")' connected — Virtual Stick init deferred 1.5 s.")
     }
 
@@ -84,6 +87,7 @@ final class DJISDKBridge: NSObject {
         Task { @MainActor [weak self] in
             self?.liveFeedManager.onAircraftConnectionChanged(connected: false)
         }
+        stopVideoStallWatchdog()
         print("DJISDKBridge: aircraft disconnected.")
     }
 
@@ -262,30 +266,27 @@ final class DJISDKBridge: NSObject {
             print("DJISDKBridge: capturePhoto — no camera.")
             return false
         }
-        // 1) Ensure shoot-photo mode.
-        let modeOK: Bool = await withCheckedContinuation { cont in
-            camera.setMode(.shootPhoto) { error in
-                if let error {
-                    print("DJISDKBridge: setMode(.shootPhoto) error: \(error.localizedDescription)")
-                }
-                cont.resume(returning: error == nil)
-            }
+        // 1) Ensure shoot-photo mode with one retry.
+        var modeOK = await setCameraMode(camera, mode: .shootPhoto)
+        if !modeOK {
+            try? await Task.sleep(for: .seconds(0.4))
+            modeOK = await setCameraMode(camera, mode: .shootPhoto)
         }
-        if modeOK {
-            // Small settle so the mode switch completes before the shutter.
+        if modeOK { try? await Task.sleep(for: .seconds(0.5)) }
+
+        // 2) Fire the shutter with one retry.
+        var shotOK = await shootPhoto(camera)
+        if !shotOK {
             try? await Task.sleep(for: .seconds(0.5))
+            shotOK = await shootPhoto(camera)
         }
-        // 2) Fire the shutter.
-        let shotOK: Bool = await withCheckedContinuation { cont in
-            camera.startShootPhoto { error in
-                if let error {
-                    print("DJISDKBridge: startShootPhoto error: \(error.localizedDescription)")
-                }
-                cont.resume(returning: error == nil)
-            }
-        }
-        // Give the camera a beat to store the photo.
-        try? await Task.sleep(for: .seconds(1.0))
+
+        // 3) Restore video mode so the live stream stays stable after snapshots.
+        _ = await setCameraMode(camera, mode: .recordVideo)
+        try? await Task.sleep(for: .seconds(0.4))
+
+        // Give the camera a beat to store the photo and resume stable streaming.
+        try? await Task.sleep(for: .seconds(0.8))
         print("DJISDKBridge: capturePhoto \(shotOK ? "ok" : "failed").")
         return shotOK
     }
@@ -369,6 +370,58 @@ final class DJISDKBridge: NSObject {
             ctx.fill(CGRect(x: 0, y: 0, width: 4, height: 4))
         }
         return img.jpegData(compressionQuality: 0.5) ?? Data()
+    }
+
+    private func setCameraMode(_ camera: DJICamera, mode: DJICameraMode) async -> Bool {
+        await withCheckedContinuation { cont in
+            camera.setMode(mode) { error in
+                if let error {
+                    print("DJISDKBridge: setMode(\(mode.rawValue)) error: \(error.localizedDescription)")
+                }
+                cont.resume(returning: error == nil)
+            }
+        }
+    }
+
+    private func shootPhoto(_ camera: DJICamera) async -> Bool {
+        await withCheckedContinuation { cont in
+            camera.startShootPhoto { error in
+                if let error {
+                    print("DJISDKBridge: startShootPhoto error: \(error.localizedDescription)")
+                }
+                cont.resume(returning: error == nil)
+            }
+        }
+    }
+
+    private func startVideoStallWatchdog() {
+        stopVideoStallWatchdog()
+        lastVideoPacketAt = Date()
+        let timer = Timer(timeInterval: 2.0, repeats: true) { [weak self] _ in
+            guard let self else { return }
+            guard self.isAircraftConnected else { return }
+            guard self.hasLiveVideoData else { return }
+            let age = Date().timeIntervalSince(self.lastVideoPacketAt)
+            if age > 3.0 {
+                print("DJISDKBridge: video packet stall (\(String(format: "%.1f", age))s) — restarting feed.")
+                Task { @MainActor [weak self] in
+                    self?.liveFeedManager.recoverFromVideoStall()
+                }
+                self.lastVideoPacketAt = Date()
+            }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        videoStallTimer = timer
+    }
+
+    private func stopVideoStallWatchdog() {
+        videoStallTimer?.invalidate()
+        videoStallTimer = nil
+        lastVideoPacketAt = Date.distantPast
+    }
+
+    func markVideoPacketReceived() {
+        lastVideoPacketAt = Date()
     }
 }
 
@@ -465,6 +518,15 @@ final class DJILiveVideoFeedManager: NSObject {
         isFeedRunning = false
     }
 
+    func recoverFromVideoStall() {
+        guard isFeedRunning else { return }
+        activeFeed?.remove(self)
+        activeFeed?.add(self, with: nil)
+        if let hostView = previewHostView {
+            attachPreview(to: hostView)
+        }
+    }
+
     // MARK: - Preview lifecycle
 
     /// Point the previewer at `view`.  Starts the decoder on the first call;
@@ -493,9 +555,11 @@ final class DJILiveVideoFeedManager: NSObject {
 
     private func startSnapshotTimer() {
         stopSnapshotTimer()
-        snapshotTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+        let timer = Timer(timeInterval: 0.5, repeats: true) { [weak self] _ in
             self?.capturePreviewSnapshot()
         }
+        RunLoop.main.add(timer, forMode: .common)
+        snapshotTimer = timer
     }
 
     private func stopSnapshotTimer() {
@@ -517,6 +581,7 @@ extension DJILiveVideoFeedManager: DJIVideoFeedListener {
     nonisolated func videoFeed(_ videoFeed: DJIVideoFeed, didUpdateVideoData videoData: Data) {
         Task { @MainActor [weak self] in
             self?.bridge?.hasLiveVideoData = true
+            self?.bridge?.markVideoPacketReceived()
         }
         #if canImport(DJIWidget)
         videoData.withUnsafeBytes { rawBuffer in

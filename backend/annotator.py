@@ -26,8 +26,7 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 from pydantic import BaseModel
-
-from grounding import preprocess_image
+from grounding import ground_target, preprocess_image
 
 load_dotenv(Path(__file__).resolve().parent / ".env")
 
@@ -35,6 +34,7 @@ logger = logging.getLogger(__name__)
 
 _TARGET_OPS = frozenset({"fly_to", "orbit", "look_at", "follow"})
 _RELATIVE_DIRECTIONS = frozenset({"forward", "back", "backward", "left", "right"})
+_PERSON_WORDS = ("person", "man", "woman", "boy", "girl", "human", "operator")
 
 
 # ---------------------------------------------------------------------------
@@ -161,8 +161,9 @@ async def annotate_steps(actions: list[dict], image_bytes: bytes) -> list[dict]:
         return result_actions
 
     try:
-        ann_result = await asyncio.to_thread(
-            _call_gemini, api_key, image_bytes, targets
+        ann_result = await asyncio.wait_for(
+            asyncio.to_thread(_call_gemini, api_key, image_bytes, targets),
+            timeout=12.0,
         )
     except Exception as exc:
         logger.error(
@@ -187,5 +188,25 @@ async def annotate_steps(actions: list[dict], image_bytes: bytes) -> list[dict]:
         result_actions[i]["box_2d"] = ann.box_2d if ann.found else []
         result_actions[i]["distance_m"] = ann.distance_m if ann.found else None
         result_actions[i]["confidence"] = ann.confidence
+    # Retry unresolved person-like targets with a generic "person" lookup.
+    for i in visual_indices:
+        if result_actions[i].get("found"):
+            continue
+        target = str(result_actions[i].get("target", "")).strip().lower()
+        if not target or not any(word in target for word in _PERSON_WORDS):
+            continue
+        try:
+            fallback = await asyncio.to_thread(ground_target, image_bytes, "person")
+        except Exception as exc:
+            logger.warning("Fallback person grounding failed for %r: %s", target, exc)
+            continue
+        if fallback.found and fallback.box_2d:
+            result_actions[i]["found"] = True
+            result_actions[i]["box_2d"] = list(fallback.box_2d)
+            result_actions[i]["distance_m"] = None
+            result_actions[i]["confidence"] = max(
+                float(result_actions[i].get("confidence", 0.0)),
+                float(fallback.confidence),
+            )
 
     return result_actions
