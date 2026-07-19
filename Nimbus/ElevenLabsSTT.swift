@@ -144,7 +144,9 @@ enum ElevenLabsSTT {
         }
         let fileAttributes = try FileManager.default.attributesOfItem(atPath: fileURL.path)
         let size = (fileAttributes[.size] as? NSNumber)?.intValue ?? 0
-        guard size > 2048 else { throw ElevenLabsSTTError.audioFileTooSmall }
+        // At AAC high quality, ~0.5s of audio is roughly 8–12 KB.
+        // Files below 8 KB are too short to contain a real spoken command.
+        guard size > 8_000 else { throw ElevenLabsSTTError.audioFileTooSmall }
 
         var lastError: Error?
         for attempt in 1...maxAttempts {
@@ -177,7 +179,7 @@ enum ElevenLabsSTT {
         var body = Data()
         body.appendStr("--\(boundary)\r\n")
         body.appendStr("Content-Disposition: form-data; name=\"model_id\"\r\n\r\n")
-        body.appendStr("scribe_v1\r\n")
+        body.appendStr("scribe_v2\r\n")
         body.appendStr("--\(boundary)\r\n")
         body.appendStr("Content-Disposition: form-data; name=\"language_code\"\r\n\r\n")
         body.appendStr("en\r\n")
