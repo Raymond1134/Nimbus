@@ -14,6 +14,7 @@ final class AudioRecorderManager: NSObject, AVAudioRecorderDelegate {
     private var recordingURL: URL?
     private(set) var lastRecordingURL: URL?
     var isRecording: Bool { recorder?.isRecording == true }
+    private var hasRequestedPermission = false
 
     func configureSession() {
         let session = AVAudioSession.sharedInstance()
@@ -23,9 +24,12 @@ final class AudioRecorderManager: NSObject, AVAudioRecorderDelegate {
                 options: [.allowBluetoothHFP, .defaultToSpeaker]
             )
             try session.setActive(true)
-            Task {
-                let granted = await AVAudioApplication.requestRecordPermission()
-                print(granted ? "Mic: granted" : "Mic: denied")
+            if !hasRequestedPermission {
+                hasRequestedPermission = true
+                Task {
+                    let granted = await AVAudioApplication.requestRecordPermission()
+                    print(granted ? "Mic: granted" : "Mic: denied")
+                }
             }
         } catch {
             print("Audio session error: \(error)")
@@ -50,7 +54,6 @@ final class AudioRecorderManager: NSObject, AVAudioRecorderDelegate {
             AVNumberOfChannelsKey:    1,
             AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue,
         ]
-
         do {
             recorder = try AVAudioRecorder(url: url, settings: settings)
             recorder?.delegate = self

@@ -32,6 +32,7 @@ from objective import (
     normalize_objective,
     parse_and_normalize,
 )
+from resolve_action import ActionResolution, resolve_action
 
 _BACKEND_ROOT = Path(__file__).resolve().parent
 load_dotenv(_BACKEND_ROOT / ".env")
@@ -298,6 +299,44 @@ async def health() -> dict:
         "gemini_configured": bool(os.getenv("GEMINI_API_KEY", "").strip()),
         "freesolo_configured": bool(_FREESOLO_BASE_URL and _FREESOLO_API_KEY and _FREESOLO_MODEL),
     }
+
+
+@app.post("/resolve_action", response_model=ActionResolution)
+async def resolve_action_route(
+    image: UploadFile = File(...),
+    target: str = Form(...),
+    intent: str = Form(...),
+) -> JSONResponse:
+    """Classify a FreeSolo raw_target into seek_object / fly_direction / change_altitude.
+
+    Uses Gemini (gemini-2.5-flash) to disambiguate the target string and, for
+    seek_object, locate the bounding box in the provided camera frame.
+
+    Form fields:
+      image  — drone camera frame (image/*)
+      target — raw target string from FreeSolo (e.g. "left", "pillar", "up")
+      intent — raw intent string from FreeSolo (e.g. "seek_and_photo")
+
+    Returns ActionResolution JSON.
+    """
+    try:
+        image_bytes = await _read_image(image)
+        logger.info(
+            "resolve_action_route | target=%r intent=%r image_bytes=%d",
+            target,
+            intent,
+            len(image_bytes),
+        )
+        result = resolve_action(image_bytes, target, intent)
+        return JSONResponse(content=result.model_dump())
+    except HTTPException:
+        raise
+    except Exception:
+        logger.error("Unhandled error in /resolve_action:\n%s", traceback.format_exc())
+        return JSONResponse(
+            status_code=500,
+            content={"error": "Internal server error", "detail": traceback.format_exc()},
+        )
 
 
 @app.post("/voice_command")

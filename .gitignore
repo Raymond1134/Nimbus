@@ -103,3 +103,4 @@ Nimbus/Secrets.xcconfig
 Nimbus/Secrets-Debug.xcconfig
 Nimbus/Secrets-Release.xcconfig
 Nimbus/FreeSoloBackend/.env
+*.swift
