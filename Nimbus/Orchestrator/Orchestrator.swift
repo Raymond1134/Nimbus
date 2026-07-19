@@ -56,8 +56,12 @@ final class Orchestrator {
     /// Executes multi-step MissionPlans from the backend.
     @ObservationIgnored private(set) var missionExecutor: MissionExecutor!
     @ObservationIgnored private let rememberedSpotsKey = "Nimbus.RememberedSpots"
-    /// How long the auto-recording window stays open after the wakeword fires.
-    @ObservationIgnored private let handsFreeRecordSeconds: Double = 5.0
+    /// Safety ceiling: recording stops here even if the user never pauses.
+    /// VAD (silence detection below) is the normal stop path.
+    @ObservationIgnored private let handsFreeRecordSeconds: Double = 15.0
+    @ObservationIgnored private let handsFreeSilenceCutoffDb: Float = -43
+    @ObservationIgnored private let handsFreeSilenceDurationSec: Double = 0.3
+    @ObservationIgnored private let handsFreeMinSpeechSec: Double = 0.1
     @ObservationIgnored private let speechSynth = AVSpeechSynthesizer()
 
     // MARK: - Init
@@ -212,11 +216,33 @@ final class Orchestrator {
         headTracking.freeze()
         voicePipeline.onPressStartTalking()
         appState = .listening
-        log("Wakeword → listening for \(Int(handsFreeRecordSeconds))s…")
+        log("Wakeword → listening (VAD, max \(String(format: "%.0f", handsFreeRecordSeconds))s)…")
         Task { [weak self] in
             guard let self else { return }
-            try? await Task.sleep(for: .seconds(self.handsFreeRecordSeconds))
-            self.handleVoiceRelease()
+            let startedAt = Date()
+            var lastLoudAt = startedAt
+            var seenSpeech = false
+            while true {
+                guard case .listening = self.appState else { return }
+                let now = Date()
+                if let power = self.voicePipeline.recorder.averagePower() {
+                    if power > self.handsFreeSilenceCutoffDb {
+                        seenSpeech = true
+                        lastLoudAt = now
+                    }
+                }
+                let elapsed = now.timeIntervalSince(startedAt)
+                let silentFor = now.timeIntervalSince(lastLoudAt)
+                let shouldStopForSilence =
+                    seenSpeech &&
+                    elapsed > self.handsFreeMinSpeechSec &&
+                    silentFor >= self.handsFreeSilenceDurationSec
+                if shouldStopForSilence || elapsed >= self.handsFreeRecordSeconds {
+                    self.handleVoiceRelease()
+                    return
+                }
+                try? await Task.sleep(for: .seconds(0.08))
+            }
         }
     }
 

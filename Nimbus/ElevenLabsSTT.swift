@@ -12,15 +12,19 @@ final class AudioRecorderManager: NSObject, AVAudioRecorderDelegate {
 
     private var recorder: AVAudioRecorder?
     private var recordingURL: URL?
+    private var hasRequestedPermission = false
 
     func configureSession() {
         let session = AVAudioSession.sharedInstance()
         do {
             try session.setCategory(.playAndRecord, options: [.allowBluetoothHFP, .defaultToSpeaker])
             try session.setActive(true)
-            Task {
-                let granted = await AVAudioApplication.requestRecordPermission()
-                print(granted ? "Mic: granted" : "Mic: denied")
+            if !hasRequestedPermission {
+                hasRequestedPermission = true
+                Task {
+                    let granted = await AVAudioApplication.requestRecordPermission()
+                    print(granted ? "Mic: granted" : "Mic: denied")
+                }
             }
         } catch {
             print("Audio session error: \(error)")
@@ -39,16 +43,14 @@ final class AudioRecorderManager: NSObject, AVAudioRecorderDelegate {
             AVNumberOfChannelsKey:    1,
             AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue,
         ]
-        DispatchQueue.main.async { [weak self] in
-            guard let self else { return }
-            do {
-                self.recorder = try AVAudioRecorder(url: url, settings: settings)
-                self.recorder?.delegate = self
-                self.recorder?.record()
-                print("Recording started.")
-            } catch {
-                print("Recording start error: \(error)")
-            }
+        do {
+            recorder = try AVAudioRecorder(url: url, settings: settings)
+            recorder?.delegate = self
+            recorder?.isMeteringEnabled = true
+            recorder?.record()
+            print("Recording started.")
+        } catch {
+            print("Recording start error: \(error)")
         }
     }
 
@@ -56,6 +58,14 @@ final class AudioRecorderManager: NSObject, AVAudioRecorderDelegate {
         recorder?.stop()
         recorder = nil
         return recordingURL
+    }
+
+    var isRecording: Bool { recorder?.isRecording == true }
+
+    func averagePower() -> Float? {
+        guard let recorder, recorder.isRecording else { return nil }
+        recorder.updateMeters()
+        return recorder.averagePower(forChannel: 0)
     }
 }
 
